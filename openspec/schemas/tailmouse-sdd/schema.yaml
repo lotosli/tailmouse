@@ -1,0 +1,48 @@
+name: tailmouse-sdd
+version: 1
+description: Minimal TailMouse proposal to specs to tasks workflow
+
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Why the change is needed and what it changes
+    template: proposal.md
+    instruction: |
+      State the problem, measurable outcome, scope, non-goals, evidence, assumptions,
+      affected capabilities, and impact. List each added dependency, workspace,
+      configuration surface, or abstraction with the current scenario that needs it
+      and the simpler alternative. Include material cross-boundary, security, protocol,
+      migration, or hard-to-reverse decisions only when needed. Keep it concise.
+    requires: []
+
+  - id: specs
+    generates: 'specs/**/*.md'
+    description: Observable behavior deltas for affected capabilities
+    template: spec.md
+    instruction: |
+      Create one delta spec per capability named by the proposal. Use a 50+ character
+      Purpose for a new capability, then ADDED, MODIFIED, REMOVED, or RENAMED
+      Requirements sections. Each requirement uses SHALL or MUST and has at least one
+      four-hash Scenario with WHEN and THEN bullets. A MODIFIED requirement contains
+      its complete replacement. Define relevant failure, cancellation, limit, security,
+      and compatibility behavior without implementation details.
+    requires: [proposal]
+
+  - id: tasks
+    generates: tasks.md
+    description: Dependency-ordered implementation and verification checklist
+    template: tasks.md
+    instruction: |
+      Create numbered checkbox tasks using `- [ ] X.Y ...`. Keep each task small and
+      within accepted scope, order by dependency, and include the exact test, inspection,
+      or command that proves it complete. Map security and protocol risks to evidence in
+      the relevant task instead of creating another artifact.
+    requires: [specs]
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Read project context, implement only pending accepted tasks,
+    and stop at the first failed prerequisite or gate. Do not add unplanned abstractions
+    or dependencies.

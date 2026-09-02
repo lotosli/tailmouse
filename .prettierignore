@@ -1,0 +1,10 @@
+.agents/skills/
+.artifacts/
+coverage/
+docs/evidence/
+dist/
+node_modules/
+playwright-report/
+pnpm-lock.yaml
+test-results/
+third_party/tailcat/

@@ -1,0 +1,11 @@
+.artifacts/
+.cache/
+.DS_Store
+coverage/
+dist/
+node_modules/
+playwright-report/
+test-results/
+*.coverprofile
+*.log
+*.tsbuildinfo

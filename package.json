@@ -1,0 +1,39 @@
+{
+  "name": "tailmouse-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TailMouse polyglot monorepo and spec-driven development harness",
+  "type": "module",
+  "engines": {
+    "node": "26.8.1"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "build": "pnpm --recursive --if-present run build",
+    "check:architecture": "node tools/check-architecture.mjs",
+    "check:format": "prettier --check . --ignore-unknown",
+    "check:open-spec": "openspec validate --all --strict --no-interactive && openspec schema validate tailmouse-sdd",
+    "coverage": "pnpm --recursive --if-present run coverage && node tools/go-gate.mjs coverage",
+    "e2e": "node tools/web-task.mjs e2e",
+    "format": "prettier --write . --ignore-unknown",
+    "fuzz:smoke": "node tools/go-gate.mjs fuzz",
+    "gate": "node tools/gate.mjs",
+    "gate:quick": "node tools/gate.mjs --quick",
+    "go:check": "node tools/go-gate.mjs check",
+    "go:full": "node tools/go-gate.mjs full",
+    "lint": "oxlint --type-aware --deny-warnings --ignore-pattern third_party/tailcat .",
+    "openspec": "openspec",
+    "tailcat:check": "node tools/tailcat-gate.mjs full",
+    "test": "pnpm --recursive --if-present run test",
+    "typecheck": "pnpm --recursive --if-present run typecheck"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@fission-ai/openspec": "1.11.0",
+    "@types/node": "26.4.1",
+    "oxlint": "1.81.0",
+    "oxlint-tsgolint": "7.0.2001",
+    "prettier": "3.9.6",
+    "typescript": "7.0.2"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "go": "1.27.1",
+  "githubActions": {
+    "actions/checkout": {
+      "revision": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "version": "7.0.1"
+    },
+    "actions/setup-go": {
+      "revision": "b7ad1dad31e06c5925ef5d2fc7ad053ef454303e",
+      "version": "7.0.0"
+    },
+    "actions/setup-node": {
+      "revision": "820762786026740c76f36085b0efc47a31fe5020",
+      "version": "7.0.0"
+    },
+    "pnpm/action-setup": {
+      "revision": "ff378ebe6b225b0680b81c1ad4498ae0d1d3a5e3",
+      "version": "6.0.10"
+    }
+  },
+  "node": "26.8.1",
+  "openspec": "1.11.0",
+  "oxlint": "1.81.0",
+  "oxlintTsgolint": "7.0.2001",
+  "pnpm": "11.25.0",
+  "tailcat": {
+    "branch": "main",
+    "kind": "git-submodule",
+    "module": "github.com/tailscale/tailcat",
+    "path": "third_party/tailcat",
+    "repository": "https://github.com/tailscale/tailcat.git"
+  }
+}

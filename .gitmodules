@@ -1,0 +1,4 @@
+[submodule "third_party/tailcat"]
+	path = third_party/tailcat
+	url = https://github.com/tailscale/tailcat.git
+	branch = main

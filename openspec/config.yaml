@@ -1,0 +1,32 @@
+schema: tailmouse-sdd
+
+context: |
+  TailMouse v0.1 is a Go native CLI plus a static TypeScript/Preact/Vite browser client.
+  TMOUSE/1 is language-neutral. Native and browser Tailcat v0.x imports stay behind dedicated adapters.
+  Tailcat source is an external read-only Git submodule. Its configured update branch is main, while each parent commit records an exact gitlink.
+  ConnBlobs and invitation URL fragments are bearer credentials and must never be logged or persisted.
+  Current scope is escape and leash only; accounts, databases, control planes, business relays and P1/P2 hooks are non-goals.
+  Production coverage floors are 80%; gates fail on the first error.
+  Prefer the smallest concrete design. No speculative abstractions, packages, frameworks, services or dependencies.
+  Read context.md, docs/governance/constitution.md and docs/architecture.md before planning.
+
+rules:
+  proposal:
+    - State measurable outcomes, explicit non-goals, evidence/assumptions, and failure/security impact.
+    - List every new dependency, workspace, configuration surface and abstraction with the current requirement that needs it.
+    - Include the simpler alternative and explain why it cannot meet an acceptance scenario.
+  specs:
+    - Define success, cancellation, malformed/oversized input and compatibility behavior where applicable.
+    - Use observable SHALL or MUST requirements; keep implementation types and framework choices out.
+  tasks:
+    - Keep tasks dependency-ordered, independently verifiable and within the accepted scope.
+    - Put deterministic test or inspection evidence in each task and run the cheapest relevant gate after each group.
+
+operations:
+  apply:
+    guidance:
+      - Stop at the first failed prerequisite, test or gate and report the root cause.
+      - Do not implement unplanned dependencies, abstractions or future extension points.
+  archive:
+    guidance:
+      - Require a passing full gate and sync context, decisions and outcome evidence.

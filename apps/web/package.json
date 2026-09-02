@@ -1,0 +1,22 @@
+{
+  "name": "@tailmouse/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../../tools/web-task.mjs build",
+    "coverage": "node ../../tools/web-task.mjs coverage",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit --pretty false -p tsconfig.json"
+  },
+  "dependencies": {
+    "preact": "catalog:"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "catalog:",
+    "@types/babel__core": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

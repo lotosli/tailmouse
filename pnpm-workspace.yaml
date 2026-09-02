@@ -1,0 +1,24 @@
+packages:
+  - apps/*
+
+catalog:
+  '@playwright/test': 1.62.1
+  '@preact/preset-vite': 2.10.6
+  '@types/babel__core': 7.20.5
+  '@vitest/coverage-v8': 4.1.11
+  preact: 10.29.8
+  vite: 8.2.2
+  vitest: 4.1.11
+
+blockExoticSubdeps: true
+disallowWorkspaceCycles: true
+engineStrict: true
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@types/node@26.4.1'
+  - '@oxlint/*'
+  - 'globals@17.12.0'
+  - 'oxlint@1.81.0'
+  - 'oxlint-tsgolint@7.0.2001'
+saveExact: true
+strictPeerDependencies: true
