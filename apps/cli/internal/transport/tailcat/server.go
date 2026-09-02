@@ -1,0 +1,345 @@
+// Package tailcat is the only native boundary between TailMouse and the
+// unstable Tailcat Go API.
+package tailcat
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net"
+	"net/netip"
+	"net/url"
+	"slices"
+	"strings"
+	"sync"
+	"time"
+
+	upstream "github.com/tailscale/tailcat"
+	"tailscale.com/tailcfg"
+	"tailscale.com/wgengine/filter"
+)
+
+const (
+	// VirtualPort is the only Tailcat TCP port accepted by TailMouse.
+	VirtualPort uint16 = 44321
+	drainLimit         = 2 * time.Second
+
+	defaultCustomRegionID   = 900
+	defaultCustomRegionCode = "mouse"
+	defaultCustomRegionName = "TailMouse Custom DERP"
+)
+
+var (
+	ErrInvalidConfig = errors.New("invalid tailcat transport configuration")
+	ErrStart         = errors.New("tailcat transport start failed")
+	ErrCredential    = errors.New("tailcat connection credential is invalid")
+	ErrDrain         = errors.New("tailcat transport drain failed")
+	ErrClose         = errors.New("tailcat transport close failed")
+	ErrClosed        = errors.New("tailcat transport is closed")
+)
+
+// ByteStream is the transport contract consumed by the native session layer.
+type ByteStream interface {
+	io.Reader
+	io.Writer
+	io.Closer
+}
+
+// RelayMode identifies the configured relay source without exposing a map URL
+// or connection credential.
+type RelayMode string
+
+const (
+	RelayOfficial   RelayMode = "official"
+	RelayCustomHost RelayMode = "custom-host"
+	RelayCustomMap  RelayMode = "custom-map"
+)
+
+// Relay describes non-secret relay metadata safe for diagnostics.
+type Relay struct {
+	Mode       RelayMode
+	RegionID   int
+	RegionCode string
+	RegionName string
+	Host       string
+}
+
+// Config contains only the transport inputs needed to start Tailcat.
+type Config struct {
+	DERPHosts    []string
+	DERPMapURL   string
+	DERPRegion   int
+	OnConnection func(ByteStream)
+}
+
+// Server owns a started Tailcat server and its in-memory connection address.
+// It deliberately implements no formatter or marshaler for the credential.
+type Server struct {
+	backend backend
+	relay   Relay
+
+	mu      sync.RWMutex
+	address []byte
+	closed  bool
+
+	closeOnce sync.Once
+	closeErr  error
+}
+
+type backend interface {
+	Start() error
+	ConnBlob() string
+	DrainTCP(context.Context) error
+	Close() error
+}
+
+type realBackend struct {
+	server *upstream.Server
+}
+
+func (b *realBackend) Start() error                       { return b.server.Start() }
+func (b *realBackend) ConnBlob() string                   { return string(b.server.ConnBlob()) }
+func (b *realBackend) DrainTCP(ctx context.Context) error { return b.server.DrainTCP(ctx) }
+func (b *realBackend) Close() error                       { return b.server.Close() }
+
+type backendFactory func(Config) (backend, Relay, error)
+
+// Start creates the production Tailcat adapter. Upstream error text is never
+// returned because it can contain a bearer address.
+func Start(ctx context.Context, config Config) (*Server, error) {
+	return start(ctx, config, newBackend)
+}
+
+func start(ctx context.Context, config Config, factory backendFactory) (*Server, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("start transport: %w", err)
+	}
+	configured, configuredRelay, err := factory(config)
+	if err != nil {
+		return nil, err
+	}
+	if err := configured.Start(); err != nil {
+		_ = configured.Close()
+		return nil, fmt.Errorf("start transport: %w", ErrStart)
+	}
+	if err := ctx.Err(); err != nil {
+		_ = configured.Close()
+		return nil, fmt.Errorf("start transport: %w", err)
+	}
+	address := configured.ConnBlob()
+	relay, err := relayFromAddress(configuredRelay.Mode, address)
+	if err != nil {
+		_ = configured.Close()
+		return nil, err
+	}
+	if configuredRelay.Mode == RelayCustomHost {
+		if relay.Host != configuredRelay.Host {
+			_ = configured.Close()
+			return nil, fmt.Errorf("inspect transport credential: %w", ErrCredential)
+		}
+		relay = configuredRelay
+	}
+	return &Server{
+		backend: configured,
+		relay:   relay,
+		address: []byte(address),
+	}, nil
+}
+
+func newBackend(config Config) (backend, Relay, error) {
+	configuredRelay, region, mapURL, err := normalizeRelay(config)
+	if err != nil {
+		return nil, Relay{}, err
+	}
+	server := &upstream.Server{
+		Logf: func(string, ...any) {},
+		OnTCP: func(port uint16) func(net.Conn) {
+			if port != VirtualPort || config.OnConnection == nil {
+				return nil
+			}
+			return func(connection net.Conn) {
+				config.OnConnection(connection)
+			}
+		},
+		ServedTCPPorts: []filter.PortRange{{First: VirtualPort, Last: VirtualPort}},
+	}
+	if region != nil {
+		server.Region = region
+	}
+	if mapURL != "" {
+		server.DERPMapURL = mapURL
+	}
+	return &realBackend{server: server}, configuredRelay, nil
+}
+
+func normalizeRelay(config Config) (Relay, *tailcfg.DERPRegion, string, error) {
+	if config.OnConnection == nil {
+		return Relay{}, nil, "", fmt.Errorf(
+			"configure transport: %w: connection handler is required",
+			ErrInvalidConfig,
+		)
+	}
+	if len(config.DERPHosts) > 0 && config.DERPMapURL != "" {
+		return Relay{}, nil, "", fmt.Errorf(
+			"configure relay: %w: DERP host and map are mutually exclusive",
+			ErrInvalidConfig,
+		)
+	}
+	if config.DERPMapURL != "" {
+		parsed, err := url.Parse(config.DERPMapURL)
+		if err != nil || parsed.Scheme != "https" || parsed.Host == "" ||
+			parsed.User != nil || parsed.Fragment != "" {
+			return Relay{}, nil, "", fmt.Errorf(
+				"configure relay: %w: DERP map must be an absolute HTTPS URL",
+				ErrInvalidConfig,
+			)
+		}
+		return Relay{Mode: RelayCustomMap}, nil, parsed.String(), nil
+	}
+	if len(config.DERPHosts) == 0 {
+		if config.DERPRegion != 0 {
+			return Relay{}, nil, "", fmt.Errorf(
+				"configure relay: %w: custom region requires DERP hosts",
+				ErrInvalidConfig,
+			)
+		}
+		return Relay{Mode: RelayOfficial}, nil, "", nil
+	}
+
+	regionID := config.DERPRegion
+	if regionID == 0 {
+		regionID = defaultCustomRegionID
+	}
+	if regionID < 900 || regionID > 999 {
+		return Relay{}, nil, "", fmt.Errorf(
+			"configure relay: %w: custom region must be between 900 and 999",
+			ErrInvalidConfig,
+		)
+	}
+	hosts := make([]string, 0, len(config.DERPHosts))
+	seen := make(map[string]struct{}, len(config.DERPHosts))
+	for _, value := range config.DERPHosts {
+		host, err := normalizeHostname(value)
+		if err != nil {
+			return Relay{}, nil, "", err
+		}
+		if _, exists := seen[host]; exists {
+			continue
+		}
+		seen[host] = struct{}{}
+		hosts = append(hosts, host)
+	}
+	if len(hosts) == 0 {
+		return Relay{}, nil, "", fmt.Errorf(
+			"configure relay: %w: at least one DERP host is required",
+			ErrInvalidConfig,
+		)
+	}
+	slices.Sort(hosts)
+	region := &tailcfg.DERPRegion{
+		RegionID:   tailcfg.DERPRegionID(regionID),
+		RegionCode: defaultCustomRegionCode,
+		RegionName: defaultCustomRegionName,
+	}
+	for index, host := range hosts {
+		region.Nodes = append(region.Nodes, &tailcfg.DERPNode{
+			Name:     fmt.Sprintf("mouse-%d", index+1),
+			RegionID: tailcfg.DERPRegionID(regionID),
+			HostName: host,
+			DERPPort: 443,
+			STUNPort: 3478,
+		})
+	}
+	return Relay{
+		Mode:       RelayCustomHost,
+		RegionID:   regionID,
+		RegionCode: defaultCustomRegionCode,
+		RegionName: defaultCustomRegionName,
+		Host:       hosts[0],
+	}, region, "", nil
+}
+
+func normalizeHostname(value string) (string, error) {
+	host := strings.ToLower(strings.TrimSuffix(strings.TrimSpace(value), "."))
+	if host == "" || len(host) > 253 {
+		return "", fmt.Errorf("configure relay: %w: invalid DERP hostname", ErrInvalidConfig)
+	}
+	if _, err := netip.ParseAddr(host); err == nil {
+		return "", fmt.Errorf("configure relay: %w: DERP hostname cannot be an IP address", ErrInvalidConfig)
+	}
+	for _, label := range strings.Split(host, ".") {
+		if len(label) == 0 || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
+			return "", fmt.Errorf("configure relay: %w: invalid DERP hostname", ErrInvalidConfig)
+		}
+		for _, character := range label {
+			if character > 127 || !(character == '-' || character >= '0' && character <= '9' ||
+				character >= 'a' && character <= 'z') {
+				return "", fmt.Errorf("configure relay: %w: invalid DERP hostname", ErrInvalidConfig)
+			}
+		}
+	}
+	return host, nil
+}
+
+func relayFromAddress(mode RelayMode, address string) (Relay, error) {
+	info, err := upstream.ParseConnBlob(upstream.ConnBlob(address))
+	if err != nil || len(info.Region) != 1 || info.Region[0] == nil || len(info.Region[0].Nodes) == 0 {
+		return Relay{}, fmt.Errorf("inspect transport credential: %w", ErrCredential)
+	}
+	region := info.Region[0]
+	host := ""
+	for _, node := range region.Nodes {
+		if node != nil && node.HostName != "" {
+			host = node.HostName
+			break
+		}
+	}
+	return Relay{
+		Mode:       mode,
+		RegionID:   int(region.RegionID),
+		RegionCode: region.RegionCode,
+		RegionName: region.RegionName,
+		Host:       host,
+	}, nil
+}
+
+// Relay returns a copy of the adapter's safe relay metadata.
+func (s *Server) Relay() Relay {
+	return s.relay
+}
+
+// CopyAddress returns an explicit disposable copy for invitation construction.
+func (s *Server) CopyAddress() ([]byte, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.closed {
+		return nil, ErrClosed
+	}
+	return slices.Clone(s.address), nil
+}
+
+// Close drains for at most two seconds, closes Tailcat, and erases the
+// adapter's retained address. Repeated calls return the first close result.
+func (s *Server) Close(ctx context.Context) error {
+	s.closeOnce.Do(func() {
+		drainContext, cancel := context.WithTimeout(ctx, drainLimit)
+		defer cancel()
+		var failures []error
+		if err := s.backend.DrainTCP(drainContext); err != nil {
+			failures = append(failures, ErrDrain)
+		}
+		if err := s.backend.Close(); err != nil {
+			failures = append(failures, ErrClose)
+		}
+		s.mu.Lock()
+		for index := range s.address {
+			s.address[index] = 0
+		}
+		s.address = nil
+		s.closed = true
+		s.mu.Unlock()
+		s.closeErr = errors.Join(failures...)
+	})
+	return s.closeErr
+}

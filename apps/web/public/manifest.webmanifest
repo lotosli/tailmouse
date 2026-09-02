@@ -1,0 +1,10 @@
+{
+  "name": "TailMouse",
+  "short_name": "TailMouse",
+  "description": "A zero-install Tailcat browser client for TailMouse sessions.",
+  "display": "standalone",
+  "start_url": "./",
+  "scope": "./",
+  "background_color": "#10140f",
+  "theme_color": "#10140f"
+}

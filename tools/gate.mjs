@@ -51,11 +51,11 @@ const phases = [
     'Go coverage',
     () => run(process.execPath, ['tools/go-gate.mjs', 'coverage']),
   ],
-  ['build', () => runPnpm(['--recursive', '--if-present', 'run', 'build'])],
   [
     'Tailcat native and WebAssembly builds',
     () => run(process.execPath, ['tools/tailcat-gate.mjs', 'build']),
   ],
+  ['build', () => runPnpm(['--recursive', '--if-present', 'run', 'build'])],
   ['browser end-to-end tests', () => runPnpm(['run', 'e2e'])],
   ...(!quick
     ? [

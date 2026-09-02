@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit --pretty false -p tsconfig.json"
   },
   "dependencies": {
+    "@xterm/addon-fit": "catalog:",
+    "@xterm/xterm": "catalog:",
+    "cborg": "catalog:",
     "preact": "catalog:"
   },
   "devDependencies": {

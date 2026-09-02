@@ -9,6 +9,7 @@ Build and evolve TailMouse from PRD v1.0 through a small polyglot monorepo, risk
 - **Observed, 2026-09-02:** The owner requested this engineering foundation, current language practices, at least 80% test coverage, fail-fast behavior, and explicit protection against over-engineering.
 - **Reported, PRD v1.0 dated 2026-02-22:** TailMouse combines an RTT-shaped cat-and-mouse game (`escape`) with controlled browser access to one launched terminal process (`leash`). See `docs/product-baseline.md`.
 - **Observed online, 2026-09-02:** Tailcat `main` is ahead of its latest tagged release, remains a v0 API, and currently declares Go 1.27.0.
+- **Observed online, 2026-09-02:** The M0 product dependency baseline uses the latest stable compatible Go and npm releases recorded in decision 2026-002. xterm.js 6 removed its Canvas addon, so Escape uses Canvas 2D directly while Leash uses xterm.js and FitAddon.
 
 ## Accepted decisions
 
@@ -18,6 +19,7 @@ Build and evolve TailMouse from PRD v1.0 through a small polyglot monorepo, risk
 - OpenSpec is required for behavior, protocol, security, cross-runtime, dependency, and architecture changes. Mechanical edits use the smallest useful artifact.
 - TypeScript enforces 80% for statements, branches, functions, and lines. Go enforces 80% statement coverage.
 - The delivery gate runs sequentially and exits on the first failure without automatic mutation or silent fallback.
+- Product dependency versions are exact and minimal; the rationale and verified registry versions are recorded in `docs/decisions/2026-002-product-dependencies.md`.
 
 Rationale is recorded in `docs/decisions/2026-001-engineering-foundation.md`.
 

@@ -1,0 +1,132 @@
+:root {
+  color: #f6f3e9;
+  background: #10140f;
+  font-family:
+    Inter,
+    ui-rounded,
+    'SF Pro Rounded',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 50% 0%, #293724 0, transparent 42%), #10140f;
+}
+
+button {
+  min-width: 11rem;
+  min-height: 3rem;
+  border: 0;
+  border-radius: 999px;
+  color: #10140f;
+  background: #d8ff62;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 4px;
+}
+
+.shell {
+  display: grid;
+  width: min(100%, 34rem);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: max(2rem, env(safe-area-inset-top)) 1.25rem
+    max(2rem, env(safe-area-inset-bottom));
+  align-content: center;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #b8d7aa;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 12vw, 5rem);
+  line-height: 0.92;
+}
+
+.status-card {
+  padding: 1.25rem;
+  border: 1px solid #465742;
+  border-radius: 1.25rem;
+  background: rgb(15 20 15 / 82%);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 30%);
+}
+
+.status-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: #b8d7aa;
+}
+
+.status {
+  min-height: 3rem;
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.status::before {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.65rem;
+  border-radius: 50%;
+  background: #ffd562;
+  content: '';
+}
+
+.status-complete::before {
+  background: #79f2a0;
+}
+
+.status-error::before {
+  background: #ff766d;
+}
+
+.security-note {
+  margin: 0;
+  color: #b8c1b3;
+  font-size: 0.875rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .status-loading::before,
+  .status-connecting::before,
+  .status-establishing::before {
+    animation: pulse 1.2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.35;
+  }
+}

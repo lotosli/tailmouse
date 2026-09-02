@@ -1,4 +1,15 @@
-import { existsSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, relative, resolve, sep } from 'node:path';
 import { run } from './process.mjs';
 
@@ -28,7 +39,128 @@ function assertClean() {
   }
 }
 
+function recordedRevision() {
+  const entry = run(
+    'git',
+    ['ls-files', '--stage', '--', 'third_party/tailcat'],
+    { capture: true, cwd: root },
+  ).stdout.trim();
+  const match = entry.match(/^160000 ([0-9a-f]{40}) 0\tthird_party\/tailcat$/);
+  if (!match) {
+    throw new Error(
+      'Tailcat is not recorded as an exact Git submodule gitlink.',
+    );
+  }
+  return match[1];
+}
+
+function assertRecordedCheckout(revision) {
+  const checkout = run('git', ['rev-parse', 'HEAD'], {
+    capture: true,
+    cwd: tailcat,
+  }).stdout.trim();
+  if (checkout !== revision) {
+    throw new Error(
+      `Tailcat checkout ${checkout} does not match recorded gitlink ${revision}.`,
+    );
+  }
+}
+
+function fileIdentity(path) {
+  const bytes = readFileSync(path);
+  return {
+    bytes: bytes.byteLength,
+    sha256: createHash('sha256').update(bytes).digest('hex'),
+  };
+}
+
+function verifyWasmArtifact(directory, revision) {
+  const manifestPath = join(directory, 'manifest.json');
+  if (!existsSync(manifestPath)) {
+    throw new Error('Tailcat Wasm manifest is missing.');
+  }
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  if (manifest.schemaVersion !== 1 || manifest.tailcatRevision !== revision) {
+    throw new Error(
+      'Tailcat Wasm manifest revision does not match the gitlink.',
+    );
+  }
+  for (const name of ['tailcat-web.wasm', 'wasm_exec.js']) {
+    const path = join(directory, name);
+    if (!existsSync(path) || !statSync(path).isFile()) {
+      throw new Error(`Tailcat Wasm artifact is missing: ${name}.`);
+    }
+    const identity = fileIdentity(path);
+    if (
+      manifest.files?.[name]?.bytes !== identity.bytes ||
+      manifest.files?.[name]?.sha256 !== identity.sha256
+    ) {
+      throw new Error(`Tailcat Wasm artifact identity mismatch: ${name}.`);
+    }
+  }
+}
+
+function buildWasmArtifact(revision) {
+  const artifactDirectory = join(root, '.artifacts', 'tailcat');
+  const temporaryDirectory = mkdtempSync(
+    join(tmpdir(), 'tailmouse-tailcat-wasm-'),
+  );
+  try {
+    run(
+      'go',
+      [
+        'run',
+        './cmd/tailcat-webdist',
+        '-o',
+        temporaryDirectory,
+        '-web-dir',
+        'web',
+      ],
+      { cwd: tailcat, env: goEnv },
+    );
+    mkdirSync(artifactDirectory, { recursive: true });
+    copyFileSync(
+      join(temporaryDirectory, 'main.wasm'),
+      join(artifactDirectory, 'tailcat-web.wasm'),
+    );
+    copyFileSync(
+      join(temporaryDirectory, 'wasm_exec.js'),
+      join(artifactDirectory, 'wasm_exec.js'),
+    );
+    const files = Object.fromEntries(
+      ['tailcat-web.wasm', 'wasm_exec.js'].map((name) => [
+        name,
+        fileIdentity(join(artifactDirectory, name)),
+      ]),
+    );
+    const goVersion = run('go', ['env', 'GOVERSION'], {
+      capture: true,
+      cwd: tailcat,
+      env: goEnv,
+    }).stdout.trim();
+    writeFileSync(
+      join(artifactDirectory, 'manifest.json'),
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          tailcatRevision: revision,
+          sourcePackage: './web',
+          goVersion,
+          files,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    verifyWasmArtifact(artifactDirectory, revision);
+  } finally {
+    rmSync(temporaryDirectory, { force: true, recursive: true });
+  }
+}
+
 assertClean();
+const revision = recordedRevision();
+assertRecordedCheckout(revision);
 
 if (mode === 'check' || mode === 'full') {
   run('go', ['mod', 'verify'], { cwd: tailcat, env: goEnv });
@@ -66,17 +198,11 @@ if (mode === 'test' || mode === 'full') {
 
 if (mode === 'build' || mode === 'full') {
   run('go', ['build', './...'], { cwd: tailcat, env: goEnv });
-  const artifactDirectory = join(root, '.artifacts', 'tailcat');
-  mkdirSync(artifactDirectory, { recursive: true });
-  run(
-    'go',
-    ['build', '-o', join(artifactDirectory, 'tailcat-web.wasm'), './web'],
-    {
-      cwd: tailcat,
-      env: { ...goEnv, GOARCH: 'wasm', GOOS: 'js' },
-    },
-  );
+  buildWasmArtifact(revision);
 }
 
 assertClean();
-process.stdout.write(`[tailcat:${mode}] passed with an unchanged submodule.\n`);
+assertRecordedCheckout(revision);
+process.stdout.write(
+  `[tailcat:${mode}] passed at ${revision.slice(0, 12)} with an unchanged submodule.\n`,
+);
