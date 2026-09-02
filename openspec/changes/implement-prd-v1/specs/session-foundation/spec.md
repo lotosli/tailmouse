@@ -1,0 +1,55 @@
+## ADDED Requirements
+
+### Requirement: Complete session lifecycle
+
+Every session SHALL transition only through creating, listening, connecting, active, reconnect-grace, expired, and closed states as applicable, with one terminal transition and idempotent cleanup. Mode completion, local revoke, TTL, protocol failure, transport failure, and grace expiry MUST have explicit outcomes.
+
+#### Scenario: TTL expires while active
+
+- **WHEN** authoritative session time reaches its nonzero expiry
+- **THEN** the host rejects new mode work, notifies the peer when safe, applies mode cleanup policy, drains transport within its bound, and exits with expiry/revocation code 8
+
+### Requirement: Mode-specific lifetime defaults
+
+Escape SHALL default to a ten-minute invitation/session TTL, leash to four hours, leash post-exit retention to ten minutes, and reconnect grace to 30 seconds. TTL zero MAY retain a session only until host exit or mode completion and SHALL produce a warning for public sharing.
+
+#### Scenario: Zero TTL is selected
+
+- **WHEN** a user explicitly configures unlimited host lifetime
+- **THEN** TailMouse accepts it, displays the elevated bearer-risk warning, and still closes on local revoke or mode completion
+
+### Requirement: One active browser with bounded takeover
+
+The first connection completing a valid HELLO SHALL own the active slot. A concurrent valid connection MUST receive `SESSION_BUSY` without affecting the owner. After disconnect, exactly one valid replacement MAY take over during grace, with no claim of strong device identity.
+
+#### Scenario: Leaked link races during grace
+
+- **WHEN** two replacement connections present the same bearer invitation
+- **THEN** at most one atomically acquires the slot and the other receives `SESSION_BUSY`
+
+### Requirement: Capabilities are host-authoritative
+
+The host SHALL derive capabilities from mode and local flags, publish them in welcome, and check them again before every input, resize, control, or other side effect. Browser declarations and MouseCard fields MUST NOT grant authority.
+
+#### Scenario: Readonly browser sends terminal input
+
+- **WHEN** a syntactically valid input frame arrives in a readonly session
+- **THEN** the host returns `READONLY`, writes no PTY bytes, and retains the session unless policy requires closure
+
+### Requirement: Reconnect preserves only declared state
+
+Reconnect SHALL create a new Tailcat stream and protocol handshake, retain host-authoritative mode state, discard stale connection-local writes, and resume only the state defined by the active mode. Grace expiry MUST free the browser slot and mode resources according to policy.
+
+#### Scenario: Escape reconnects during grace
+
+- **WHEN** a valid replacement completes negotiation before 30 seconds
+- **THEN** it receives current authoritative game state and no movement intent queued by the old stream is replayed
+
+### Requirement: Ordered bounded shutdown
+
+Shutdown SHALL stop accepting frames, cancel connection-local work, close the application stream, clean up the mode, drain Tailcat for at most two seconds, close Tailcat, restore the terminal, and erase invitation references. Repeating shutdown MUST be safe.
+
+#### Scenario: Tailcat drain exceeds its deadline
+
+- **WHEN** drain remains incomplete after two seconds
+- **THEN** TailMouse preserves the root outcome, force-closes transport, completes remaining cleanup, and reports the bounded drain failure safely
