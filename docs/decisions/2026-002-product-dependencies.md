@@ -1,7 +1,7 @@
 # Decision 2026-002: Product dependency baseline
 
 - Status: accepted
-- Verified: 2026-09-02
+- Verified: 2026-09-04
 - Scope: OpenSpec change `implement-prd-v1`, task 1.1
 
 ## Evidence
@@ -44,3 +44,29 @@ is removed as its real consumer lands.
 - Release notices and vulnerability checks must cover these modules.
 - A dependency change requires current compatibility evidence and an accepted
   OpenSpec update; gates do not float versions automatically.
+
+## QR correction, 2026-09-04
+
+- **Observed:** The release inventory has not located an explicit license grant
+  for the original encoder's `yeqown/reedsolomon` v1.0.0 dependency. This is an
+  unresolved inventory item, not a legal conclusion about upstream ownership.
+- **Observed:** The Go proxy reports `skip2/go-qrcode`
+  `v0.0.0-20200617195104-da1b6568686e` as its latest version. Its
+  [module license](https://github.com/skip2/go-qrcode/blob/da1b6568686e/LICENSE)
+  is MIT, and its encoder/error-correction implementation requires no external
+  modules. The age of that latest revision is explicit, not a newer-release claim.
+- **Decision:** The accepted proposal replaces only the QR encoder. The current
+  narrow bitmap function owns the unchanged M correction, minimum version 4,
+  quiet zone and invitation limits. It no longer needs a writer adapter.
+  No speculative QR abstraction or Web dependency is added.
+- **Verification:** Tests read independent format words, exercise size bounds,
+  and decode synthetic short, Escape, Leash and maximum-length content using
+  macOS Chromium's native BarcodeDetector. Other platforms retain portable QR
+  unit tests; this probe does not claim physical-phone scanning acceptance.
+
+## Project license and source notices, 2026-09-04
+
+- **Evidence/authority:** PRD release requirements leave the project license unspecified; the owner delegates such omissions. The earlier QR authorization gap is resolved by the accepted encoder replacement, without changing Tailcat.
+- **Options:** Apache-2.0 or MIT for owned source; preserving only root licenses or also nested source notices for dependencies. Root-only collection misses separately attributed compression and Go subcomponents. A new classification framework is unnecessary for preserving reviewed, pinned sources.
+- **Decision:** Use the complete standard Apache-2.0 text for its explicit contributor patent grant, with project-only NOTICE. One generated third-party text and source/hash inventory preserve all named root/nested legal and attribution files from the production dependency union, plus separately identified source-only OpenSpec skills. Extra source-subtree notices remain attributed without implying linkage. Updating is explicit; gates only verify.
+- **Outcome:** The independently collected Go notices match preserved source hashes for all seven targets. Six actual native binaries and bundled Web/Wasm match 56 distribution component versions. All three notice files are verified in six archives and the static Web output; seven SBOMs and 33 checksums pass. Tailcat is unchanged. Future dependency changes require renewed source review; this outcome is not a legal certification or permission to publish.

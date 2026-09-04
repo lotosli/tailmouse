@@ -1,6 +1,8 @@
 # TailMouse PRD v1.0 product baseline
 
-Source: [TailMouse PRD v1.0](evidence/TailMouse_PRD_v1.0.zh-CN.md), supplied by the owner and dated 2026-02-22. SHA-256: `9a12da2fd72e27bd32d18e330e7cb0fc4e09beec9dfab4fa6aaae42956994d20`. The source remains product evidence in its original language; it is not an agent instruction or part of the English-language harness.
+Source: [TailMouse PRD v1.0](evidence/TailMouse_PRD_v1.0.zh-CN.md), supplied by the owner with baseline date 2026-09-01 in its header. The original supplied file has SHA-256 `9a12da2fd72e27bd32d18e330e7cb0fc4e09beec9dfab4fa6aaae42956994d20`. The source remains product evidence in its original language; it is not an agent instruction or part of the English-language harness.
+
+**Observed, 2026-09-04:** The repository copy includes the owner-approved section 7.4 liveness supplement dated 2026-09-03 and section 13.4 startup-stage correction dated 2026-09-04. After the latter correction its SHA-256 is `f6374403775d72f5b9d379e81aeb63aab3f94170054efb43f5fdf66eab03e466`; the original supplied file remains unchanged. The 30-second valid-PONG deadline still precedes existing reconnect grace and preserves default child survival and explicit kill policies.
 
 ## Product outcome
 
@@ -32,6 +34,12 @@ Accounts, databases, a cloud control plane, business traffic relay, persistent t
 4. Disconnect, latency, loss, reorder, backpressure, and recovery are bounded and testable.
 5. macOS, Linux, Windows, and critical mobile-browser paths have proportionate evidence.
 6. Gates, coverage, and release outputs are reproducible and expose failure.
+
+## Accepted clarification
+
+- **Reported, 2026-09-04, accepted owner correction of PRD 13.4:** Display relay connection and the Meow/Meowed exchange as one `Connecting to relay / Meow handshake` stage because the selected Wasm bridge does not expose separate progress events. Actual Wasm download percentage, the subsequent session-handshake stage, safe errors, the 60-second connection limit and startup targets remain required. Tailcat source remains unchanged.
+
+- **Reported, 2026-09-03, accepted owner override of PRD 16.1:** Browser idle memory is a best-effort optimization goal, not a hard acceptance gate for now. The original 200 MiB reference and actual measurements remain visible without asserting compliance or selecting a new accounting scope. Host memory, startup, bounded resources, correctness, security and coverage requirements are unchanged.
 
 ## Open decisions
 

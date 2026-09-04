@@ -2,6 +2,11 @@ const VIRTUAL_PORT = 44321;
 const MAX_CHUNK_BYTES = 1 << 20;
 const DEFAULT_LOAD_TIMEOUT_MS = 30_000;
 const DEFAULT_DIAL_TIMEOUT_MS = 60_000;
+declare const __TAILMOUSE_TAILCAT_ASSETS__: {
+  runtime: string;
+  wasm: string;
+  wasmBytes: number;
+};
 
 export type TransportErrorCode =
   | 'ASSET_URL_INVALID'
@@ -57,7 +62,7 @@ export class TailcatTransportError extends Error {
 export interface ByteStream {
   read(): Promise<Uint8Array | null>;
   write(data: Uint8Array): Promise<void>;
-  close(): Promise<void>;
+  close(options?: { graceful?: boolean; signal?: AbortSignal }): Promise<void>;
 }
 
 export interface LoadOptions {
@@ -65,6 +70,7 @@ export interface LoadOptions {
   wasmURL?: string;
   timeoutMs?: number;
   signal?: AbortSignal;
+  onProgress?: (percent: number) => void;
 }
 
 export interface DialOptions {
@@ -79,6 +85,7 @@ interface RawConnection {
   port: number;
   read(): Promise<unknown>;
   write(data: Uint8Array): Promise<unknown>;
+  closeWrite(): Promise<unknown>;
   close(): unknown;
 }
 
@@ -101,15 +108,23 @@ const runtimeGlobal = globalThis as RuntimeGlobal;
 let runtimePromise: Promise<void> | undefined;
 
 export async function loadTailcat(options: LoadOptions = {}): Promise<void> {
+  let progress = -1;
+  const report = (percent: number): void => {
+    if (options.signal?.aborted === true || percent === progress) return;
+    progress = percent;
+    options.onProgress?.(percent);
+  };
   if (typeof runtimeGlobal.tailcatDial === 'function') {
+    report(100);
     return;
   }
+  report(0);
   if (runtimePromise === undefined) {
     const pending = bounded(
       options.timeoutMs ?? DEFAULT_LOAD_TIMEOUT_MS,
       options.signal,
       'LOAD_TIMEOUT',
-      (signal) => loadRuntime(options, signal),
+      (signal) => loadRuntime({ ...options, onProgress: report }, signal),
     ).catch((error: unknown) => {
       if (runtimePromise === pending) {
         runtimePromise = undefined;
@@ -123,6 +138,7 @@ export async function loadTailcat(options: LoadOptions = {}): Promise<void> {
     runtimePromise = undefined;
     throw new TailcatTransportError('BRIDGE_NOT_READY');
   }
+  report(100);
 }
 
 export async function dialTailcat(
@@ -180,10 +196,10 @@ async function loadRuntime(
   signal: AbortSignal,
 ): Promise<void> {
   const runtimeScriptURL = localAssetURL(
-    options.runtimeScriptURL ?? './tailcat/wasm_exec.js',
+    options.runtimeScriptURL ?? __TAILMOUSE_TAILCAT_ASSETS__.runtime,
   );
   const wasmURL = localAssetURL(
-    options.wasmURL ?? './tailcat/tailcat-web.wasm',
+    options.wasmURL ?? __TAILMOUSE_TAILCAT_ASSETS__.wasm,
   );
   if (typeof runtimeGlobal.Go !== 'function') {
     await loadRuntimeScript(runtimeScriptURL, signal);
@@ -193,29 +209,60 @@ async function loadRuntime(
     throw new TailcatTransportError('RUNTIME_MISSING');
   }
   const runtime = new Go();
-  let response: Response;
-  try {
-    response = await fetch(wasmURL, {
-      cache: 'force-cache',
-      credentials: 'same-origin',
-      referrerPolicy: 'no-referrer',
-      signal,
-    });
-  } catch {
-    throw new TailcatTransportError('WASM_FETCH_FAILED');
-  }
-  if (!response.ok) {
-    throw new TailcatTransportError('WASM_FETCH_FAILED');
-  }
-
+  const download = new AbortController();
+  const downloadSignal = AbortSignal.any([signal, download.signal]);
   let instance: WebAssembly.Instance;
   try {
-    ({ instance } = await WebAssembly.instantiateStreaming(
-      response,
-      runtime.importObject,
-    ));
-  } catch {
-    throw new TailcatTransportError('WASM_COMPILE_FAILED');
+    let response: Response;
+    try {
+      response = await fetch(wasmURL, {
+        cache: 'force-cache',
+        credentials: 'same-origin',
+        referrerPolicy: 'no-referrer',
+        signal: downloadSignal,
+      });
+    } catch {
+      throw new TailcatTransportError('WASM_FETCH_FAILED');
+    }
+    if (!response.ok || response.body === null) {
+      throw new TailcatTransportError('WASM_FETCH_FAILED');
+    }
+
+    const encoding = response.headers.get('Content-Encoding');
+    const length =
+      encoding === null || encoding === 'identity'
+        ? Number(response.headers.get('Content-Length'))
+        : NaN;
+    const total =
+      Number.isSafeInteger(length) && length > 0
+        ? length
+        : __TAILMOUSE_TAILCAT_ASSETS__.wasmBytes;
+    let received = 0;
+    const body = response.body.pipeThrough(
+      new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk, controller) {
+          received += chunk.byteLength;
+          options.onProgress?.(
+            Math.min(99, Math.floor((received / total) * 100)),
+          );
+          controller.enqueue(chunk);
+        },
+        flush() {
+          options.onProgress?.(100);
+        },
+      }),
+      { signal: downloadSignal },
+    );
+    try {
+      ({ instance } = await WebAssembly.instantiateStreaming(
+        new Response(body, { headers: response.headers }),
+        runtime.importObject,
+      ));
+    } catch {
+      throw new TailcatTransportError('WASM_COMPILE_FAILED');
+    }
+  } finally {
+    download.abort();
   }
 
   await runUntilReady(runtime, instance, signal);
@@ -320,6 +367,7 @@ function adaptConnection(value: unknown): ByteStream {
   let connection: RawConnection | undefined = value;
   let reading = false;
   let writing = false;
+  let closing: Promise<void> | undefined;
   return {
     async read(): Promise<Uint8Array | null> {
       if (connection === undefined) {
@@ -369,19 +417,49 @@ function adaptConnection(value: unknown): ByteStream {
         writing = false;
       }
     },
-    async close(): Promise<void> {
+    async close(options = {}): Promise<void> {
+      if (closing !== undefined) return closing;
       if (connection === undefined) {
         return;
       }
       const current = connection;
       connection = undefined;
-      try {
-        await Promise.resolve(current.close());
-      } catch {
-        throw new TailcatTransportError('CLOSE_FAILED');
-      }
+      closing = closeConnection(current, options, reading || writing);
+      return closing;
     },
   };
+}
+
+// Normal completion lets the browser send FIN first. Tailcat's native drain
+// waits for fully closed endpoints and cannot drain an active closer in
+// TIME-WAIT. Cancellation still uses immediate force-close, never a second read.
+async function closeConnection(
+  connection: RawConnection,
+  options: { graceful?: boolean; signal?: AbortSignal },
+  operationInProgress: boolean,
+): Promise<void> {
+  let failure: TailcatTransportError | undefined;
+  if (options.graceful === true) {
+    try {
+      if (operationInProgress) throw new TailcatTransportError('CLOSE_FAILED');
+      await bounded(2000, options.signal, 'CLOSE_FAILED', async (signal) => {
+        await connection.closeWrite();
+        if (signal.aborted) throw new TailcatTransportError('CANCELED');
+        if ((await connection.read()) !== null)
+          throw new TailcatTransportError('CLOSE_FAILED');
+      });
+    } catch (error: unknown) {
+      failure = asTransportError(error, 'CLOSE_FAILED');
+    }
+  }
+  try {
+    await bounded(2000, undefined, 'CLOSE_FAILED', async () => {
+      await Promise.resolve(connection.close());
+    });
+  } catch (error: unknown) {
+    failure ??= asTransportError(error, 'CLOSE_FAILED');
+  }
+  if (failure !== undefined) throw failure;
 }
 
 function isRawConnection(value: unknown): value is RawConnection {
@@ -393,6 +471,7 @@ function isRawConnection(value: unknown): value is RawConnection {
     candidate.port === VIRTUAL_PORT &&
     typeof candidate.read === 'function' &&
     typeof candidate.write === 'function' &&
+    typeof candidate.closeWrite === 'function' &&
     typeof candidate.close === 'function'
   );
 }

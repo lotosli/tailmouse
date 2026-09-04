@@ -25,6 +25,8 @@ Spelling, links, formatting, behavior-neutral mechanical configuration, and dire
 
 An unreviewed proposal is not implementation authority. New scope returns to the proposal.
 
+Clean-source verification may require a local implementation checkpoint after review and a passing full gate, before the final conformance audit. Commit only reviewed task paths; preserve unrelated owner edits and use a clean verification checkout when necessary. A checkpoint does not mark incomplete requirements done or authorize release. Final spec synchronization, archival and the final documentation commit still require completed acceptance; do not make clean-build evidence depend on a commit that the same plan prohibits until that evidence exists.
+
 ## Artifact contract
 
 The required path is `proposal -> specs -> tasks`:

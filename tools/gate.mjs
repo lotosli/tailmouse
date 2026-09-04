@@ -27,6 +27,22 @@ const phases = [
   ],
   ['lint', () => runPnpm(['run', 'lint'])],
   [
+    'build identity, release and static asset tests',
+    () =>
+      run(process.execPath, [
+        '--test',
+        'tools/m0-acceptance.test.ts',
+        'tools/go-gate.test.ts',
+        'tools/leash-acceptance.test.ts',
+        'tools/build-identity.test.ts',
+        'tools/release-native.test.ts',
+        'tools/release-licenses.test.ts',
+        'tools/web-assets.test.ts',
+        'tools/web-dependencies.test.ts',
+        'tools/sbom.test.ts',
+      ]),
+  ],
+  [
     'typecheck',
     () => runPnpm(['--recursive', '--if-present', 'run', 'typecheck']),
   ],
@@ -55,13 +71,92 @@ const phases = [
     'Tailcat native and WebAssembly builds',
     () => run(process.execPath, ['tools/tailcat-gate.mjs', 'build']),
   ],
-  ['build', () => runPnpm(['--recursive', '--if-present', 'run', 'build'])],
+  ['build', () => runPnpm(['run', 'build'])],
+  [
+    'dependency notices',
+    () => run(process.execPath, ['tools/release-licenses.mjs', 'check']),
+  ],
+  [
+    'native browser QR decoding',
+    () => {
+      if (process.platform !== 'darwin') {
+        process.stdout.write(
+          'Native BarcodeDetector acceptance is macOS-only; portable QR format and boundary tests remain required.\n',
+        );
+        return;
+      }
+      run('go', [
+        'test',
+        '-tags=tailcatintegration',
+        '-count=1',
+        '-failfast',
+        '-timeout=45s',
+        '-run=^TestQRBrowserDecode$',
+        './apps/cli/internal/invitation',
+      ]);
+    },
+  ],
+  ['hermetic transport integration', () => runPnpm(['run', 'test:transport'])],
+  [
+    'Unix Leash native/browser acceptance',
+    () => {
+      if (process.platform === 'win32') {
+        process.stdout.write(
+          'Unix PTY acceptance is not applicable on Windows; ConPTY acceptance remains required.\n',
+        );
+        return;
+      }
+      runPnpm(['run', 'test:leash']);
+    },
+  ],
+  [
+    'Escape impairment smoke',
+    () =>
+      run('go', [
+        'test',
+        '-tags=tailcatintegration',
+        '-count=1',
+        '-failfast',
+        '-timeout=2m',
+        '-run=TestImpairment|TestEscapeNetworkRelayDisconnect|TestEscapeNetworkMatrix/rtt150-jitter30-loss0-kbit256$',
+        './apps/cli/internal/transport/tailcat',
+      ]),
+  ],
   ['browser end-to-end tests', () => runPnpm(['run', 'e2e'])],
   ...(!quick
     ? [
         [
+          'Firefox and WebKit real transport acceptance',
+          () =>
+            run('go', [
+              'test',
+              '-tags=tailcatintegration',
+              '-count=1',
+              '-failfast',
+              '-timeout=4m',
+              '-run=^TestHermeticTailcatBrowserEngines$',
+              './apps/cli/internal/transport/tailcat',
+            ]),
+        ],
+        [
           'Go race and vulnerability checks',
           () => run(process.execPath, ['tools/go-gate.mjs', 'release']),
+        ],
+        [
+          'Escape complete network matrix and outages',
+          () => runPnpm(['run', 'test:escape-network']),
+        ],
+        [
+          'Unix Leash complete network matrix',
+          () => {
+            if (process.platform === 'win32') {
+              process.stdout.write(
+                'Unix PTY impairment acceptance is not applicable on Windows; ConPTY acceptance remains required.\n',
+              );
+              return;
+            }
+            runPnpm(['run', 'test:leash-network']);
+          },
         ],
       ]
     : []),

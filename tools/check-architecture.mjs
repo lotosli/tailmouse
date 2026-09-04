@@ -8,6 +8,10 @@ const forbiddenParentName = ['Knowledge', 'Base'].join('');
 
 const required = [
   'AGENTS.md',
+  'LICENSE',
+  'NOTICE',
+  'THIRD_PARTY_NOTICES.txt',
+  'tooling/third-party-licenses.json',
   'README.md',
   '.github/workflows/gate.yml',
   '.gitmodules',
@@ -127,6 +131,12 @@ const versions = JSON.parse(
 const packageJson = JSON.parse(
   readFileSync(join(root, 'package.json'), 'utf8'),
 );
+for (const path of ['package.json', 'apps/web/package.json']) {
+  if (
+    JSON.parse(readFileSync(join(root, path), 'utf8')).license !== 'Apache-2.0'
+  )
+    failures.push(`${path}: project license must be Apache-2.0`);
+}
 const nodeVersion = readFileSync(join(root, '.node-version'), 'utf8').trim();
 if (nodeVersion !== versions.node) {
   failures.push('.node-version must match tooling/versions.json');

@@ -9,10 +9,11 @@ tool (
 
 require (
 	github.com/BurntSushi/toml v1.6.0
+	github.com/coder/websocket v1.8.14
 	github.com/creack/pty v1.1.24
 	github.com/fxamacker/cbor/v2 v2.9.3
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/tailscale/tailcat v0.0.0
-	github.com/yeqown/go-qrcode/v2 v2.3.0
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
 	tailscale.com v1.103.0-pre.0.20260830144538-72780705eda8
@@ -24,11 +25,13 @@ require (
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
-	github.com/coder/websocket v1.8.14 // indirect
+	github.com/axiomhq/hyperloglog v0.0.0-20240319100328-84253e514e02 // indirect
 	github.com/creachadair/msync v0.8.1 // indirect
 	github.com/dblohm7/wingoes v0.0.0-20240119213807-a09d6be7affa // indirect
+	github.com/dgryski/go-metro v0.0.0-20180109044635-280f6062b5bc // indirect
 	github.com/gaissmai/bart v0.26.1 // indirect
 	github.com/go-json-experiment/json v0.0.0-20260623181947-01eb4420fa68 // indirect
+	github.com/go4org/hashtriemap v0.0.0-20260824042624-45fcf11fca0e // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/btree v1.1.3 // indirect
@@ -52,7 +55,6 @@ require (
 	github.com/tailscale/wireguard-go v0.0.0-20260821191448-23d18d66172c // indirect
 	github.com/u-root/u-root v0.14.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/yeqown/reedsolomon v1.0.0 // indirect
 	go4.org/mem v0.0.0-20240501181205-ae6ca9944745 // indirect
 	go4.org/netipx v0.0.0-20260823151212-3075585bcbeb // indirect
 	golang.org/x/crypto v0.55.0 // indirect

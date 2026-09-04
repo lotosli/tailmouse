@@ -15,20 +15,23 @@ import (
 	"time"
 
 	"github.com/fxamacker/cbor/v2"
-	qrcode "github.com/yeqown/go-qrcode/v2"
+	"github.com/skip2/go-qrcode"
 )
 
 const (
-	CardVersion        uint8  = 1
-	ProtocolVersion    uint16 = 1
-	VirtualPort        uint16 = 44321
-	MaxInvitationBytes        = 1400
-	quietZoneModules          = 4
-	minimumQRVersion          = 4 // QR version 4 is 33 by 33 modules.
+	CardVersion          uint8  = 1
+	ProtocolVersion      uint16 = 1
+	VirtualPort          uint16 = 44321
+	MaxInvitationBytes          = 1400
+	MaxCardBytes                = 1050
+	MaxExpiryUnixSeconds        = 9_007_199_254_740_991
+	quietZoneModules            = 4
+	minimumQRVersion            = 4 // QR version 4 is 33 by 33 modules.
 )
 
 var (
 	ErrInvalidCard    = errors.New("invalid MouseCard")
+	ErrExpired        = errors.New("MouseCard has expired")
 	ErrInvalidBaseURL = errors.New("invalid Web base URL")
 	ErrInvitationSize = errors.New("invitation exceeds the QR size limit")
 	ErrEncode         = errors.New("MouseCard encoding failed")
@@ -160,12 +163,12 @@ func (invitation *Invitation) Render(
 	); err != nil {
 		return ErrDisplay
 	}
-	rendered.WriteString("Treat this link like a password. Anyone with it can access this session until expiry.\n")
+	rendered.WriteString("Anyone with this link can access this session until it expires.\nTreat it like a password.\n")
 	if invitation.mode == ModeLeash {
 		if options.Readonly {
 			rendered.WriteString("Browser access is view-only.\n")
 		} else {
-			rendered.WriteString("Browser input has the authority of this terminal process.\n")
+			rendered.WriteString("This browser can type into the selected terminal process.\nRunning a shell grants shell-level access.\n")
 		}
 	}
 	rendered.WriteString("Open: ")
@@ -200,9 +203,9 @@ func validCard(card MouseCard) bool {
 		(card.Mode != ModeEscape && card.Mode != ModeLeash) ||
 		card.TailcatAddr == "" ||
 		card.Port != VirtualPort ||
-		card.ExpiresAt < 0 ||
+		card.ExpiresAt < 0 || card.ExpiresAt > MaxExpiryUnixSeconds ||
 		card.ProtocolMin != ProtocolVersion ||
-		card.ProtocolMax != ProtocolVersion {
+		card.ProtocolMax < card.ProtocolMin {
 		return false
 	}
 	return card.SessionID != [16]byte{}
@@ -222,31 +225,22 @@ func normalizedBaseURL(raw string) (string, error) {
 }
 
 func qrBitmap(source []byte) ([][]bool, error) {
-	code, err := qrcode.NewWith(
-		string(source),
-		qrcode.WithErrorCorrectionLevel(qrcode.ErrorCorrectionMedium),
-		qrcode.WithMinimumVersion(minimumQRVersion),
-	)
+	if len(source) == 0 || len(source) >= MaxInvitationBytes {
+		return nil, ErrQR
+	}
+	code, err := qrcode.New(string(source), qrcode.Medium)
 	if err != nil {
 		return nil, ErrQR
 	}
-	capture := &matrixWriter{}
-	if err := code.Save(capture); err != nil {
-		return nil, ErrQR
+	if code.VersionNumber < minimumQRVersion {
+		code, err = qrcode.NewWithForcedVersion(string(source), minimumQRVersion, qrcode.Medium)
+		if err != nil {
+			return nil, ErrQR
+		}
 	}
-	return capture.bitmap, nil
+	code.DisableBorder = true // The terminal renderer adds exactly one quiet zone.
+	return code.Bitmap(), nil
 }
-
-type matrixWriter struct {
-	bitmap [][]bool
-}
-
-func (writer *matrixWriter) Write(matrix qrcode.Matrix) error {
-	writer.bitmap = matrix.Bitmap()
-	return nil
-}
-
-func (*matrixWriter) Close() error { return nil }
 
 func addQuietZone(bitmap [][]bool) [][]bool {
 	dimension := len(bitmap)

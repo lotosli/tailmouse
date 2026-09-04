@@ -1,0 +1,7 @@
+**
+!apps/
+!apps/web/
+!apps/web/dist/
+!apps/web/dist/**
+!apps/web/nginx.conf
+!apps/web/Dockerfile

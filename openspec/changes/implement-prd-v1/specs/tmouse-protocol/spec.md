@@ -22,10 +22,23 @@ Each frame SHALL contain a four-byte unsigned big-endian length followed by one-
 - **WHEN** a receiver reads an oversized declared length
 - **THEN** it emits `FRAME_TOO_LARGE` when safely possible, allocates no declared-size buffer, and closes the session
 
-#### Scenario: Stream ends within a frame
+#### Scenario: Handshake stream ends within a frame
 
-- **WHEN** EOF occurs after a frame length but before the complete envelope arrives
+- **WHEN** EOF occurs within a frame before successful HELLO/WELCOME negotiation
 - **THEN** the receiver classifies `BAD_FRAME`, closes the session, and never dispatches partial payload
+
+#### Scenario: Established transport ends within a frame
+
+- **WHEN** an established connection encounters decoder-observed EOF or transport read failure before completing a frame header, envelope or payload, without an already detected framing, size, direction, state or capability violation
+- **THEN** the receiver discards the incomplete frame, closes the old stream and cancels its connection-local work as transport loss, without dispatching partial payload or accepting more input from that stream
+- **AND** the Host releases the old lease and applies the existing disconnect policy; only a valid replacement handshake within unchanged TTL and grace may reacquire authority
+- **AND** the browser may retain its invitation only in memory for an explicit user-initiated fresh-stream retry, discarding old input instead of replaying it or automatically reconnecting
+
+#### Scenario: Invalid input is not transport truncation
+
+- **WHEN** the receiver detects a complete malformed frame, invalid framing metadata, oversized declaration, illegal direction/state or unauthorized capability, or receives a terminal peer protocol error
+- **THEN** the existing terminal rejection and invitation-erasure policy remains unchanged, even if the stream subsequently ends
+- **AND** a peer error message or retry hint cannot authorize the local transport-truncation recovery path
 
 ### Requirement: Fixed v1 message registry
 
@@ -49,6 +62,12 @@ The first browser message MUST be `CLIENT_HELLO` containing protocol min/max, se
 
 - **WHEN** the client and host ranges have no common version
 - **THEN** the host returns `PROTOCOL_MISMATCH` and closes without allocating a player or starting a child
+
+#### Scenario: A compatible invitation includes unknown higher identifiers
+
+- **WHEN** a valid card includes version 1 and a higher advertised maximum
+- **THEN** the current browser still advertises only implemented identifier 1 in HELLO and accepts only version 1 in WELCOME
+- **AND** the wider card cannot enable an unknown field, message, codec or capability
 
 ### Requirement: Application-level latency measurement
 

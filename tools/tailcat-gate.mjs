@@ -16,7 +16,14 @@ import { run } from './process.mjs';
 const mode = process.argv[2] ?? 'full';
 const root = resolve(import.meta.dirname, '..');
 const tailcat = join(root, 'third_party', 'tailcat');
-const goEnv = { GOWORK: 'off' };
+const versions = JSON.parse(
+  readFileSync(join(root, 'tooling/versions.json'), 'utf8'),
+);
+if (typeof versions.go !== 'string' || !/^\d+\.\d+\.\d+$/.test(versions.go))
+  throw new Error('Tailcat build requires the pinned Go toolchain version.');
+// A submodule's go directive is a minimum, not the root toolchain pin.
+// Propagate the exact toolchain to upstream's nested Wasm build as well.
+const goEnv = { GOWORK: 'off', GOTOOLCHAIN: `go${versions.go}` };
 const supportedModes = new Set(['check', 'test', 'build', 'full']);
 
 if (!supportedModes.has(mode)) {
@@ -85,6 +92,10 @@ function verifyWasmArtifact(directory, revision) {
       'Tailcat Wasm manifest revision does not match the gitlink.',
     );
   }
+  if (manifest.goVersion !== goEnv.GOTOOLCHAIN)
+    throw new Error(
+      'Tailcat Wasm artifact does not use the pinned Go toolchain.',
+    );
   for (const name of ['tailcat-web.wasm', 'wasm_exec.js']) {
     const path = join(directory, name);
     if (!existsSync(path) || !statSync(path).isFile()) {
@@ -116,7 +127,7 @@ function buildWasmArtifact(revision) {
         '-web-dir',
         'web',
       ],
-      { cwd: tailcat, env: goEnv },
+      { cwd: tailcat, env: { ...goEnv, GOFLAGS: '-trimpath' } },
     );
     mkdirSync(artifactDirectory, { recursive: true });
     copyFileSync(

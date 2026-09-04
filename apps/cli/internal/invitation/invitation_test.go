@@ -7,14 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"reflect"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/fxamacker/cbor/v2"
-	qrcode "github.com/yeqown/go-qrcode/v2"
 )
 
 const syntheticAddress = "tcSyntheticFullConnBlobCredential"
@@ -119,7 +117,7 @@ func TestInvitationRejectsInvalidAndOversizedInputWithoutSecretErrors(t *testing
 		{name: "bad port", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.Port = 80 }), want: ErrInvalidCard},
 		{name: "zero session", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.SessionID = [16]byte{} }), want: ErrInvalidCard},
 		{name: "bad expiry", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ExpiresAt = -1 }), want: ErrInvalidCard},
-		{name: "bad protocol", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ProtocolMax = 2 }), want: ErrInvalidCard},
+		{name: "bad protocol", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ProtocolMin, value.ProtocolMax = 2, 2 }), want: ErrInvalidCard},
 		{name: "oversized", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.TailcatAddr = syntheticAddress + strings.Repeat("x", 1400) }), want: ErrInvitationSize},
 	}
 	for _, test := range tests {
@@ -145,21 +143,7 @@ func TestQRUsesLevelMMinimumDimensionAndQuietZone(t *testing.T) {
 		t.Fatalf("QR dimension = %dx%d, want at least 33x33", len(bitmap), len(bitmap[0]))
 	}
 
-	expectedCode, err := qrcode.NewWith(
-		string(invitation.url),
-		qrcode.WithErrorCorrectionLevel(qrcode.ErrorCorrectionMedium),
-		qrcode.WithMinimumVersion(minimumQRVersion),
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := &matrixWriter{}
-	if err := expectedCode.Save(expected); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(bitmap, expected.bitmap) {
-		t.Fatal("QR matrix does not match error correction level M")
-	}
+	assertQRFormatM(t, bitmap)
 
 	bordered := addQuietZone(bitmap)
 	if len(bordered) != len(bitmap)+8 {
@@ -177,6 +161,45 @@ func TestQRUsesLevelMMinimumDimensionAndQuietZone(t *testing.T) {
 	}
 }
 
+// Read the format bits rather than comparing two calls to the same encoder.
+// Level M has correction bits 00; the eight entries are its masked BCH words.
+func assertQRFormatM(t *testing.T, bitmap [][]bool) {
+	t.Helper()
+	positions := [][2]int{{8, 0}, {8, 1}, {8, 2}, {8, 3}, {8, 4}, {8, 5}, {8, 7}, {8, 8}, {7, 8}, {5, 8}, {4, 8}, {3, 8}, {2, 8}, {1, 8}, {0, 8}}
+	var format uint16
+	for bit, position := range positions {
+		if bitmap[position[1]][position[0]] {
+			format |= 1 << bit
+		}
+	}
+	if !slices.Contains([]uint16{0x5412, 0x5125, 0x5e7c, 0x5b4b, 0x45f9, 0x40ce, 0x4f97, 0x4aa0}, format) {
+		t.Fatalf("invalid level-M QR format word: %04x", format)
+	}
+}
+
+func TestQRPayloadBoundsAndMinimumVersion(t *testing.T) {
+	for _, size := range []int{1, 32, 128, 512, MaxInvitationBytes - 1} {
+		t.Run(fmt.Sprint(size), func(t *testing.T) {
+			bitmap, err := qrBitmap(bytes.Repeat([]byte("a"), size))
+			if err != nil || len(bitmap) < 33 || (len(bitmap)-17)%4 != 0 {
+				t.Fatal("valid bounded content did not produce a version-4-or-higher QR")
+			}
+			for _, row := range bitmap {
+				if len(row) != len(bitmap) {
+					t.Fatal("QR is not square")
+				}
+			}
+			assertQRFormatM(t, bitmap)
+		})
+	}
+	for _, size := range []int{0, MaxInvitationBytes, MaxInvitationBytes + 1} {
+		bitmap, err := qrBitmap(bytes.Repeat([]byte("a"), size))
+		if !errors.Is(err, ErrQR) || bitmap != nil {
+			t.Fatal("out-of-budget content did not fail before QR output")
+		}
+	}
+}
+
 func TestRenderShowsOnlyDeliberateURLAndRedactsFormatting(t *testing.T) {
 	for _, test := range []struct {
 		name     string
@@ -185,8 +208,8 @@ func TestRenderShowsOnlyDeliberateURLAndRedactsFormatting(t *testing.T) {
 		warning  string
 	}{
 		{name: "escape", mode: ModeEscape},
-		{name: "leash control", mode: ModeLeash, warning: "authority of this terminal process"},
-		{name: "leash readonly", mode: ModeLeash, readonly: true, warning: "view-only"},
+		{name: "leash control", mode: ModeLeash, warning: "This browser can type into the selected terminal process.\nRunning a shell grants shell-level access.\n"},
+		{name: "leash readonly", mode: ModeLeash, readonly: true, warning: "Browser access is view-only.\n"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			invitation := testInvitation(t, test.mode)
@@ -203,10 +226,16 @@ func TestRenderShowsOnlyDeliberateURLAndRedactsFormatting(t *testing.T) {
 			}
 			got := output.String()
 			if strings.Count(got, secretURL) != 1 ||
-				!strings.Contains(got, "Treat this link like a password") ||
+				!strings.Contains(got, "Anyone with this link can access this session until it expires.\nTreat it like a password.\n") ||
 				!strings.Contains(got, "Open: "+secretURL) ||
 				(test.warning != "" && !strings.Contains(got, test.warning)) {
 				t.Fatalf("unexpected invitation display: %q", got)
+			}
+			writable := test.mode == ModeLeash && !test.readonly
+			if strings.Contains(got, "This browser can type") != writable ||
+				strings.Contains(got, "Running a shell grants shell-level access.") != writable ||
+				strings.Contains(got, "Browser access is view-only.") != (test.mode == ModeLeash && test.readonly) {
+				t.Fatal("invitation warning does not match the selected mode and access policy")
 			}
 			for _, formatted := range []string{
 				fmt.Sprintf("%v", invitation),

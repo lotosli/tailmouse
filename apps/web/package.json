@@ -2,12 +2,13 @@
   "name": "@tailmouse/web",
   "version": "0.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "build": "node ../../tools/web-task.mjs build",
     "coverage": "node ../../tools/web-task.mjs coverage",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit --pretty false -p tsconfig.json"
+    "typecheck": "tsc --noEmit --pretty false -p tsconfig.json && tsc --noEmit --pretty false -p tsconfig.worker.json"
   },
   "dependencies": {
     "@xterm/addon-fit": "catalog:",
@@ -18,7 +19,9 @@
   "devDependencies": {
     "@preact/preset-vite": "catalog:",
     "@types/babel__core": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "playwright": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
   }

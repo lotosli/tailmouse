@@ -9,6 +9,11 @@
 - **WHEN** start policy is `connect-or-enter`
 - **THEN** TailMouse displays the invitation before allocating a PTY and starts exactly once after either a valid browser HELLO or local Enter
 
+#### Scenario: Browser displays the original command title
+
+- **WHEN** the host publishes a waiting, running, restarted or exited process
+- **THEN** its display-only title is the command basename or explicit `--title`, rendered as plain text from the immutable snapshot without exposing argv, cwd or environment
+
 ### Requirement: Cross-platform terminal process boundary
 
 macOS and Linux SHALL use a Unix PTY with an independent process group, raw local terminal, SIGWINCH handling, and whole-group signals. Windows 11 SHALL use ConPTY and a Job Object for the full child tree, preferring Ctrl+C/Ctrl+Break for interrupt. Both paths MUST use UTF-8, `TERM=xterm-256color`, initial 80 by 24 size, merged PTY output, and no application-specific screen parsing.
@@ -40,6 +45,17 @@ Local stdin and authorized browser input SHALL enter one serialized PTY writer p
 
 The browser SHALL provide xterm ANSI-256 rendering, fit/resize, cursor and alternate screen, touch scrolling, explicit copy/paste, mobile Esc/Tab/arrows, one-shot and lockable Ctrl/Alt, process/elapsed/RTT/connection status, and confirmed interrupt/restart/terminate controls. Readonly mode MUST hide and reject all input and process controls at the host.
 
+#### Scenario: User scrolls terminal history by touch
+
+- **WHEN** a single-finger vertical gesture moves over the normal terminal buffer
+- **THEN** the visible history scrolls locally without emitting terminal input or moving the page, including for readonly viewers
+- **AND** cancellation, a second finger, reset or disposal discards the gesture, pinch zoom remains available, and alternate-screen input is not synthesized from a history gesture
+
+#### Scenario: Terminal replies while a virtual modifier is armed
+
+- **WHEN** xterm emits a device/cursor response, focus report, paste, or composed text while virtual Ctrl or Alt is armed
+- **THEN** that data is sent unchanged without consuming the modifier, which applies only to key sequences, non-composing text input, and explicit shortcut buttons
+
 #### Scenario: User pastes more than 32 KiB
 
 - **WHEN** an explicit paste exceeds one terminal input frame
@@ -58,10 +74,22 @@ The raw-byte scrollback ring SHALL be configurable from 64 KiB through 16 MiB. A
 
 Interrupt SHALL signal the active process group using platform-native terminal semantics. Terminate SHALL attempt graceful whole-tree termination, wait at most five seconds, then force the Unix process group or Windows Job Object. Restart SHALL terminate any running generation, await tree exit, clear pending input, add a marker, recreate a PTY from the immutable snapshot, increment generation, and broadcast running state.
 
+#### Scenario: Interactive shell has a foreground job
+
+- **WHEN** a shell gives its PTY foreground to a separate job group
+- **THEN** Interrupt signals that foreground group, allowing the shell to collect the job's outcome without receiving an unintended shutdown
+- **AND** the operating system resolves the signal target through the owned PTY, without a userspace lookup-then-signal race against a reusable numeric process-group identifier
+
 #### Scenario: Restart request changes command data
 
 - **WHEN** a browser payload includes or implies new argv, cwd, or environment
 - **THEN** the host rejects it and may restart only the stored original snapshot
+
+#### Scenario: Starting and running each publish a reset
+
+- **WHEN** a connection receives another terminal reset, including a second snapshot in the same restarted generation
+- **THEN** the browser discards old queued input and waits for the new process state and an ordered post-state PONG before accepting input or controls again
+- **AND** a heartbeat preceding that reset cannot authorize the new snapshot
 
 ### Requirement: Local interrupt behavior
 
@@ -74,7 +102,19 @@ While waiting, local Ctrl+C SHALL close TailMouse. While a child runs, the first
 
 ### Requirement: Child lifecycle and exit result
 
-The host SHALL expose waiting, starting, running, interrupting, terminating, exited, restarting, failed, and closing states with generation, safe PID, start time, exit code, and signal. Browser disconnect MUST leave the child running by default; expiry MUST also leave it running unless the corresponding explicit kill flag is set. Final leash exit SHALL preserve the last child code.
+The host SHALL expose waiting, starting, running, interrupting, terminating, exited, restarting, failed, and closing states with generation, safe PID, start time, exit code, and signal. Browser disconnect MUST leave the child running by default; expiry MUST also leave it running unless the corresponding explicit kill flag is set. Final leash exit SHALL preserve the last child code unless TailMouse itself fails, in which case the applicable stable host error classification takes precedence.
+
+#### Scenario: Windows returns a full-width exit status
+
+- **WHEN** a terminated native process returns an unsigned 32-bit status, including a value above 255
+- **THEN** native state and browser presentation preserve that exact value without truncation or treating the status as malformed
+- **AND** the wire rejects negative, fractional and greater-than-32-bit exit values
+
+#### Scenario: Required cleanup fails after a nonzero child result
+
+- **WHEN** a child exits nonzero and required process, terminal, transport or final diagnostic cleanup fails
+- **THEN** the host reports its own stable failure code instead of misrepresenting the failure as only the child's outcome
+- **AND** cleanup or diagnostic failures do not replace an earlier protocol, transport or internal root failure
 
 #### Scenario: Child exits while browser is disconnected
 

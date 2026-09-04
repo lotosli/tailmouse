@@ -13,6 +13,13 @@ The repository SHALL maintain a machine-checkable or reviewable ledger mapping e
 
 Implementation SHALL progress through M0 transport, M1 session/protocol, M2 escape, M3 Unix leash, M4 Windows leash, and M5 release hardening. A later milestone MUST NOT hide a failing prerequisite or redefine an earlier acceptance outcome.
 
+#### Scenario: Clean-source verification needs an implementation revision
+
+- **WHEN** reviewed implementation has passed its full gate but clean-source artifact verification needs a committed source revision
+- **THEN** a local implementation checkpoint MAY precede the final conformance audit and change archival
+- **AND** only reviewed task paths are committed, unrelated owner changes remain untouched, and a clean verification checkout is used when necessary
+- **AND** the checkpoint does not complete any unproven software, platform or device requirement or authorize publication
+
 #### Scenario: Transport echo is not proven
 
 - **WHEN** M0 cannot establish bounded browser-to-host bidirectional bytes through Tailcat
@@ -29,7 +36,12 @@ The gate SHALL cover unit, Go/TypeScript protocol conformance, native integratio
 
 ### Requirement: Bounded resource behavior
 
-The implementation MUST keep all queues, rings, frames, samples, retries, timers, goroutines, browser subscriptions, and sessions within explicit limits. It SHALL target host idle memory below 150 MiB excluding the child, browser idle memory below 200 MiB, and average one-way Escape application payload below 20 KiB/s.
+The implementation MUST keep all queues, rings, frames, samples, retries, timers, goroutines, browser subscriptions, and sessions within explicit limits. It SHALL target host idle memory below 150 MiB excluding the child and average one-way Escape application payload below 20 KiB/s. Browser idle memory SHALL be measured and optimized on a best-effort basis. Per the owner's 2026-09-03 decision, the original 200 MiB browser target is an advisory reference, not a hard acceptance gate; accounting scope remains explicit and measurements MUST NOT be relabeled as meeting that target when they exceed it.
+
+#### Scenario: Browser idle memory exceeds the advisory reference
+
+- **WHEN** a valid browser idle measurement is at or above 200 MiB
+- **THEN** acceptance reports the measured value, accounting scope and exceeded advisory reference without failing solely for that value; host memory, startup, bounded resources and all other acceptance requirements remain unchanged
 
 #### Scenario: Slow browser consumes leash output
 

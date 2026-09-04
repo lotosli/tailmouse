@@ -27,6 +27,23 @@ The first connection completing a valid HELLO SHALL own the active slot. A concu
 - **WHEN** two replacement connections present the same bearer invitation
 - **THEN** at most one atomically acquires the slot and the other receives `SESSION_BUSY`
 
+### Requirement: Bounded peer liveness
+
+As confirmed in PRD section 7.4 on 2026-09-03, the Host SHALL detect an established connection with no valid PONG for 30 seconds using its existing one-hertz heartbeat and local monotonic time. Timing starts at successful handshake and refreshes only on a PONG matching an outstanding PING sequence and timestamp on that connection. At the deadline, the Host MUST close that stream, cancel its connection-local work, release the active lease and apply the existing disconnect/grace policy without waiting for underlying TCP failure. The deadline MUST NOT extend invitation TTL, an earlier session/mode deadline or an existing shutdown. Duplicate, stale, unmatched PONGs, other application data and another connection's messages MUST NOT refresh it.
+
+#### Scenario: Browser process crashes without closing the stream
+
+- **WHEN** the active browser is forcibly killed without sending CLOSE and no valid PONG arrives for 30 seconds
+- **THEN** the Host closes the old stream and frees its active slot before accepting a replacement during the existing reconnect grace
+- **AND** default Leash policy keeps the same child and local terminal alive, and the replacement receives reset/history/live output without restarting the child or replaying old input
+- **AND** an explicitly selected kill-on-disconnect policy still applies, while Escape input-silence and mode-completion rules remain unchanged
+
+#### Scenario: Valid heartbeat or unrelated traffic reaches the Host
+
+- **WHEN** a current connection's valid PONG arrives before its deadline
+- **THEN** its liveness time refreshes and missing-PONG detection cannot declare it lost before another 30 seconds without a valid PONG; independent expiry, shutdown and mode outcomes still apply
+- **AND** duplicate, stale or unmatched PONGs, non-PONG data and other peers' traffic cannot postpone that deadline
+
 ### Requirement: Capabilities are host-authoritative
 
 The host SHALL derive capabilities from mode and local flags, publish them in welcome, and check them again before every input, resize, control, or other side effect. Browser declarations and MouseCard fields MUST NOT grant authority.

@@ -1,0 +1,105 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
+
+export const securityHeaders = Object.freeze({
+  'Content-Security-Policy':
+    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+  'Referrer-Policy': 'no-referrer',
+  'Permissions-Policy':
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(self), gyroscope=(self), magnetometer=()',
+  'X-Content-Type-Options': 'nosniff',
+});
+
+export function digest(bytes: string | Uint8Array): string {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+export function verifyStaticReferences(
+  source: string,
+  kind: 'html' | 'css',
+): void {
+  const local = (value: string): void => {
+    // Build-owned URLs need neither HTML entities nor CSS escapes. Reject
+    // ambiguous references instead of partially decoding executable URLs.
+    if (
+      /[&\\]/u.test(value) ||
+      new URL(value, 'https://tailmouse.invalid/').origin !==
+        'https://tailmouse.invalid'
+    )
+      throw new Error(
+        'Web build contains an external or ambiguous resource URL.',
+      );
+  };
+  if (kind === 'html') {
+    if (
+      /<script\b[^>]*>\s*[^<\s]/iu.test(source) ||
+      /\son[a-z]+\s*=/iu.test(source)
+    )
+      throw new Error('Web build contains inline executable content.');
+    for (const match of source.matchAll(
+      /\b(?:src|href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/giu,
+    ))
+      local(match[1] ?? match[2] ?? match[3]!);
+  } else {
+    if (/@import\b/iu.test(source))
+      throw new Error('Web build contains an unbundled stylesheet import.');
+    for (const match of source.matchAll(
+      /url\(\s*['"]?([^)'"\s]+)['"]?\s*\)/giu,
+    ))
+      local(match[1]!);
+  }
+}
+
+export function tailcatAssets(
+  directory: string,
+  revision: string,
+  goVersion: string,
+) {
+  const manifest = JSON.parse(
+    readFileSync(join(directory, 'manifest.json'), 'utf8'),
+  ) as {
+    schemaVersion?: unknown;
+    tailcatRevision?: unknown;
+    goVersion?: unknown;
+    files?: Record<string, { bytes?: unknown; sha256?: unknown }>;
+  };
+  if (manifest.schemaVersion !== 1 || manifest.tailcatRevision !== revision)
+    throw new Error('Web and Wasm Tailcat revisions do not match.');
+  if (
+    typeof manifest.goVersion !== 'string' ||
+    !/^go\d+\.\d+\.\d+$/u.test(manifest.goVersion) ||
+    manifest.goVersion !== goVersion
+  )
+    throw new Error(
+      'Tailcat artifact does not match the pinned Go toolchain version.',
+    );
+  const files = ['wasm_exec.js', 'tailcat-web.wasm'].map((name) => {
+    const source = readFileSync(join(directory, name));
+    const sha256 = digest(source);
+    if (
+      manifest.files?.[name]?.sha256 !== sha256 ||
+      manifest.files[name]?.bytes !== source.byteLength
+    )
+      throw new Error('Tailcat artifact does not match its recorded checksum.');
+    const dot = name.lastIndexOf('.');
+    return {
+      fileName: `tailcat/${name.slice(0, dot)}-${sha256}${name.slice(dot)}`,
+      source,
+    };
+  });
+  return { goVersion: manifest.goVersion, files };
+}
+
+export function compressedAssets(fileName: string, source: Uint8Array) {
+  return [
+    { fileName: `${fileName}.gz`, source: gzipSync(source, { level: 9 }) },
+    {
+      fileName: `${fileName}.br`,
+      source: brotliCompressSync(source, {
+        params: { [constants.BROTLI_PARAM_QUALITY]: 9 },
+      }),
+    },
+  ];
+}

@@ -31,14 +31,36 @@ Native and Web artifacts MUST embed TailMouse build version, exact Tailcat gitli
 - **WHEN** release inspection finds different Tailcat gitlinks in the two artifact sets
 - **THEN** packaging fails before publication
 
+### Requirement: Initial and rolling protocol compatibility
+
+Wire identifier 1 SHALL denote the initial TMOUSE/1.0 contract. Browser releases SHALL support the latest two actually available same-major minor contracts, or the sole initial minor when no predecessor exists. Any later minor MUST have a documented wire identifier, explicit negotiation and cross-version conformance evidence before its identifier enters build metadata. The initial release SHALL declare only `1..1`; a wider invitation range MUST NOT imply implementation of another codec or relax strict decoding of the selected contract.
+
+#### Scenario: Initial release has no preceding minor
+
+- **WHEN** the first TMOUSE/1.0 candidate is verified
+- **THEN** both artifacts declare identifier 1, compatible wider invitations negotiate only identifier 1, and non-overlapping peers fail closed
+- **AND** no fictional second minor, speculative codec or fabricated backward-compatibility result is required
+
 ### Requirement: Notices and disclosures
 
-Release source and artifacts SHALL include the selected project license, required third-party license/notice material, and README disclosures that TailMouse is unofficial, invitation links are passwords, DERP observes metadata, browser transport is DERP-only, and leash does not stream native GUI windows.
+Release source and artifacts SHALL include the complete Apache-2.0 project license, TailMouse notice, required third-party license/notice material, and README disclosures that TailMouse is unofficial, invitation links are passwords, DERP observes metadata, browser transport is DERP-only, and leash does not stream native GUI windows.
 
 #### Scenario: License inventory is incomplete
 
 - **WHEN** a release lacks the project license or required Tailcat/Tailscale notices
 - **THEN** the delivery gate fails and no release is declared complete
+
+#### Scenario: Dependency notices drift after an update
+
+- **WHEN** an installed production dependency version, source notice or recorded Tailcat revision differs from the checked-in notice inventory
+- **THEN** notice verification fails until an explicit reviewed regeneration preserves the new source material
+- **AND** release verification rejects an artifact dependency absent from the inventory or archive/Web notice bytes that differ from the verified source text
+
+#### Scenario: A module contains separately attributed subcomponents
+
+- **WHEN** a selected dependency contains nested license, notice, copying, copyright, patent or author files
+- **THEN** the notice bundle preserves their source paths and original text without assigning the project's Apache-2.0 license to them
+- **AND** conservative inclusion of additional source-subtree notices is identified as such rather than claimed as proof of linked code
 
 ### Requirement: Demonstration and device evidence
 

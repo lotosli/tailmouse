@@ -1,5 +1,7 @@
 {
+  "cyclonedx": "0.33.1",
   "go": "1.27.1",
+  "goreleaser": "2.18.0",
   "githubActions": {
     "actions/checkout": {
       "revision": "3d3c42e5aac5ba805825da76410c181273ba90b1",

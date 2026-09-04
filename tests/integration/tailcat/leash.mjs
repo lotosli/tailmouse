@@ -1,0 +1,391 @@
+import { chromium, expect } from '@playwright/test';
+
+let stage = 'input';
+const measuredSizes = [];
+async function main() {
+  const chunks = [];
+  let length = 0;
+  for await (const chunk of process.stdin) {
+    length += chunk.length;
+    if (length > 32768) throw new Error('INPUT_LIMIT');
+    chunks.push(chunk);
+  }
+  const input = Buffer.concat(chunks);
+  for (const chunk of chunks) chunk.fill(0);
+  let request;
+  try {
+    request = JSON.parse(input.toString('utf8'));
+  } finally {
+    input.fill(0);
+  }
+  if (
+    typeof request?.baseURL !== 'string' ||
+    typeof request.fragment !== 'string' ||
+    !Number.isSafeInteger(request.hostPID) ||
+    request.hostPID <= 0 ||
+    !/^[A-Za-z0-9_-]{1,16384}$/.test(request.fragment) ||
+    ![
+      'cli',
+      'vim',
+      'shell',
+      'htop',
+      'reconnect',
+      'retained-exit',
+      'browser-crash',
+      'browser-crash-kill',
+    ].includes(request.scenario)
+  )
+    throw new Error('INPUT_INVALID');
+  const base = new URL(request.baseURL);
+  if (base.protocol !== 'http:' || base.hostname !== '127.0.0.1')
+    throw new Error('INPUT_INVALID');
+
+  stage = 'launch';
+  const launch = () =>
+    chromium.launchServer({
+      args: ['--ignore-certificate-errors'],
+      headless: true,
+      host: '127.0.0.1',
+      timeout: 10_000,
+    });
+  let server;
+  let failure;
+  try {
+    server = await launch();
+    let browser = await chromium.connect(server.wsEndpoint(), {
+      timeout: 10_000,
+    });
+    let context = await browser.newContext({
+      ignoreHTTPSErrors: true,
+      serviceWorkers: 'block',
+      viewport: { width: 900, height: 900 },
+    });
+    context.setDefaultTimeout(10_000);
+    let page = await context.newPage();
+    stage = 'connect';
+    await page.goto(`${request.baseURL}/#/v1/${request.fragment}`);
+    const reconnect = ['reconnect', 'retained-exit', 'browser-crash'].includes(
+      request.scenario,
+    );
+    const retainedExit = request.scenario === 'retained-exit';
+    const killOnDisconnect = request.scenario === 'browser-crash-kill';
+    // Only reconnect scenarios keep the externally supplied invitation in memory
+    // for a second explicit scan; the PWA never stores or recovers it.
+    if (!reconnect) request.fragment = '';
+    await expect(
+      page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+    ).toHaveText('Connected', { timeout: 30_000 });
+    if (page.url() !== `${request.baseURL}/`) throw new Error('URL_NOT_CLEAN');
+    let output = page.getByRole('region', { name: 'Terminal output' });
+    const title =
+      {
+        vim: 'Native Vim acceptance',
+        shell: 'Native Shell acceptance',
+        htop: 'Native htop acceptance',
+      }[request.scenario] ?? 'Native CLI acceptance';
+    await expect(page.getByText(title, { exact: true })).toBeVisible();
+    const support = page.getByRole('checkbox', {
+      name: 'Screen reader support',
+    });
+    await expect(support).not.toBeChecked();
+    await support.check();
+
+    const paste = async (text) => {
+      await page.getByRole('textbox', { name: 'Paste text' }).fill(text);
+      await page.getByRole('button', { name: 'Send paste' }).click();
+    };
+    const crash = async () => {
+      stage = 'native-browser-crash';
+      // Kill only this test's owned browser, without page unload, CLOSE,
+      // context.close() or a graceful application disconnect.
+      const crashed = server.process();
+      await server.kill();
+      if (crashed.signalCode !== 'SIGKILL')
+        throw new Error('BROWSER_DID_NOT_CRASH');
+      await expect.poll(() => browser.isConnected()).toBe(false);
+    };
+    if (killOnDisconnect) {
+      await expect(output).toContainText('child-ready');
+      await crash();
+      // The Go owner must now observe heartbeat loss and child exit 143.
+      // No browser shutdown or application CLOSE can trigger that policy.
+    } else if (request.scenario === 'htop') {
+      stage = 'htop-render';
+      const ownedPID = new RegExp(`\\b${request.hostPID}\\b`);
+      const screen = output.getByRole('list');
+      const rows = screen.getByRole('listitem');
+      await expect(screen).toContainText(ownedPID);
+      await expect(screen).toContainText('Command');
+      await expect(rows.last()).toContainText('Help');
+      const originalRows = await rows.count();
+      stage = 'htop-help';
+      await page.getByRole('button', { name: 'Open keyboard' }).click();
+      await page.keyboard.press('h');
+      await expect(screen).toContainText('CPU usage bar:');
+      stage = 'htop-resize';
+      await page.setViewportSize({ width: 620, height: 700 });
+      await expect(screen).toContainText('CPU usage bar:');
+      await page.getByRole('button', { name: 'Esc', exact: true }).click();
+      await expect(screen).not.toContainText('CPU usage bar:');
+      await expect.poll(() => rows.count()).not.toBe(originalRows);
+      await expect(screen).toContainText(ownedPID);
+      // htop must redraw its footer at the new PTY bottom, not leave an
+      // old screen or accessibility announcement satisfying the assertion.
+      await expect(rows.last()).toContainText('Help');
+      await page.screenshot({
+        path: '.artifacts/leash-browser-htop.png',
+        fullPage: true,
+      });
+      stage = 'htop-exit';
+      await page.getByRole('button', { name: 'Open keyboard' }).click();
+      await page.keyboard.press('q');
+      await expect(page.getByLabel('Process status')).toContainText('Exit 0');
+    } else if (request.scenario === 'shell') {
+      stage = 'shell-prompt';
+      await expect(output).toContainText('tailmouse-fixture>');
+      const pid = await page.getByText(/^PID \d+$/).innerText();
+      stage = 'shell-calculation';
+      await paste('printf "shell-%s\\n" "$((6 * 7))"\n');
+      await expect(output).toContainText('shell-42');
+      stage = 'shell-unicode';
+      await paste('printf "unicode:%s\\n" "🐈"\n');
+      await expect(output).toContainText('unicode:🐈');
+
+      stage = 'shell-foreground-task';
+      await paste('sh -c \'printf "long-task-%s\\n" ready; exec sleep 30\'\n');
+      await expect(output).toContainText('long-task-ready');
+      await page
+        .getByRole('button', { name: 'Interrupt', exact: true })
+        .click();
+      await page.getByRole('button', { name: 'Confirm interrupt' }).click();
+      stage = 'shell-after-interrupt';
+      await paste('printf "after-interrupt:%s\\n" "$?"\n');
+      await expect(output).toContainText('after-interrupt:130');
+      await expect(page.getByText(pid, { exact: true })).toBeVisible();
+      await page.screenshot({
+        path: '.artifacts/leash-browser-shell.png',
+        fullPage: true,
+      });
+      stage = 'shell-exit';
+      await paste('exit 19\n');
+      await expect(page.getByLabel('Process status')).toContainText('Exit 19');
+    } else if (request.scenario !== 'vim') {
+      stage = 'native-output';
+      await expect(output).toContainText('child-ready');
+      await paste('q🐈');
+      await expect(output).toContainText('q🐈');
+      if (reconnect) {
+        const pid = await page.getByText(/^PID \d+$/).innerText();
+        if (retainedExit) {
+          stage = 'native-retained-exit';
+          await paste('x');
+          await expect(page.getByLabel('Process status')).toContainText(
+            'Exit 37',
+          );
+        }
+        stage = 'native-disconnect';
+        if (request.scenario === 'browser-crash') {
+          await crash();
+          stage = 'native-local-input-after-crash';
+          // No browser is alive and no replacement handshake has started.
+          // The loopback fixture supplies only its fixed synthetic marker.
+          const localResponse = await fetch(
+            `${base.origin}/__test/local-after-crash`,
+            { method: 'POST', signal: AbortSignal.timeout(2000) },
+          );
+          if (localResponse.status !== 204)
+            throw new Error('LOCAL_INPUT_FAILED');
+          await expect
+            .poll(
+              async () => {
+                const response = await fetch(
+                  `${base.origin}/__test/local-after-crash`,
+                  { signal: AbortSignal.timeout(1000) },
+                );
+                if (![202, 204].includes(response.status))
+                  throw new Error('LOCAL_OUTPUT_CHECK_FAILED');
+                await response.arrayBuffer();
+                return response.status;
+              },
+              { timeout: 3000, intervals: [25, 100] },
+            )
+            .toBe(204);
+          server = await launch();
+          browser = await chromium.connect(server.wsEndpoint(), {
+            timeout: 10_000,
+          });
+        } else {
+          await page.getByRole('button', { name: 'Exit session' }).click();
+          await expect(
+            page.getByText('Session closed.', { exact: true }),
+          ).toBeVisible();
+          await expect(output).toHaveCount(0);
+          await context.close();
+        }
+        context = await browser.newContext({
+          ignoreHTTPSErrors: true,
+          serviceWorkers: 'block',
+          viewport: { width: 900, height: 900 },
+        });
+        context.setDefaultTimeout(10_000);
+        page = await context.newPage();
+        stage = 'native-reconnect';
+        await page.goto(`${request.baseURL}/#/v1/${request.fragment}`);
+        request.fragment = '';
+        await expect
+          .poll(
+            async () => {
+              const region = page.getByRole('region', { name: 'Connection' });
+              if (await region.getByRole('alert').count()) {
+                const busy = await region
+                  .getByText('Another browser is controlling this session.', {
+                    exact: true,
+                  })
+                  .count();
+                stage = busy
+                  ? 'native-reconnect-busy'
+                  : 'native-reconnect-error';
+                if (busy && request.scenario === 'browser-crash') {
+                  // A crashed TCP peer need not be detected before the first
+                  // replacement HELLO. Use the explicit UI retry only within
+                  // this assertion's fixed recovery budget.
+                  await page
+                    .getByRole('button', { name: 'Retry connection' })
+                    .click();
+                  return 'Retrying';
+                }
+                throw new Error('RECONNECT_REJECTED');
+              }
+              return region.getByRole('status').innerText();
+            },
+            {
+              // The accepted 30-second loss detector precedes reconnect. Allow
+              // bounded teardown, UI retry and handshake time separately;
+              // native virtual-time tests enforce the exact loss boundary.
+              timeout: request.scenario === 'browser-crash' ? 40_000 : 30_000,
+              intervals: [250, 500, 1000],
+            },
+          )
+          .toBe('Connected');
+        stage = 'native-reconnect-history';
+        if (page.url() !== `${request.baseURL}/`)
+          throw new Error('URL_NOT_CLEAN');
+        await expect(page.getByText(pid, { exact: true })).toBeVisible();
+        await page
+          .getByRole('checkbox', { name: 'Screen reader support' })
+          .check();
+        output = page.getByRole('region', { name: 'Terminal output' });
+        await expect(output).toContainText('q🐈');
+        if (request.scenario === 'browser-crash')
+          await expect(output).toContainText('local-alive🐈');
+        await expect(output).not.toContainText('restarted process');
+        if (retainedExit) {
+          stage = 'native-retained-restart';
+          await expect(page.getByLabel('Process status')).toContainText(
+            'Exit 37',
+          );
+          await expect(
+            page.getByRole('button', { name: 'Open keyboard' }),
+          ).toBeDisabled();
+          await page
+            .getByRole('button', { name: 'Restart', exact: true })
+            .click();
+          await page.getByRole('button', { name: 'Confirm restart' }).click();
+          await expect(output).toContainText(
+            'TailMouse restarted process · generation 2',
+          );
+          await expect(output).toContainText('child-ready');
+          await expect(page.getByText(pid, { exact: true })).toHaveCount(0);
+          await expect(
+            page.getByRole('button', { name: 'Open keyboard' }),
+          ).toBeEnabled();
+        }
+        await paste('r🐈');
+        await expect(output).toContainText('r🐈');
+      }
+      stage = 'native-initial-size';
+      let sizeSample = 0;
+      const size = async () => {
+        const sample = ++sizeSample;
+        const pattern = new RegExp(`size (\\d+x\\d+) sample ${sample}\\b`);
+        await paste('s');
+        await expect(output).toContainText(pattern);
+        const value = (await output.innerText()).match(pattern)[1];
+        measuredSizes.push(value);
+        if (measuredSizes.length > 8) measuredSizes.shift();
+        return value;
+      };
+      const original = await size();
+      await page.setViewportSize({ width: 420, height: 800 });
+      stage = 'native-resized-size';
+      await expect
+        .poll(size, { intervals: [100], timeout: 5000 })
+        .not.toBe(original);
+      stage = 'native-restart';
+      await page.getByRole('button', { name: 'Restart', exact: true }).click();
+      await page.getByRole('button', { name: 'Confirm restart' }).click();
+      await expect(output).toContainText(
+        `TailMouse restarted process · generation ${retainedExit ? 3 : 2}`,
+      );
+      await expect(output).toContainText('child-ready');
+      await expect(page.getByText(title, { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Open keyboard' }),
+      ).toBeEnabled();
+      stage = 'native-exit';
+      await paste('x');
+      await expect(page.getByLabel('Process status')).toContainText('Exit 37');
+    } else {
+      stage = 'vim-render';
+      await expect(output).toContainText('Native Vim fixture 🐈');
+      await page.setViewportSize({ width: 620, height: 850 });
+      await expect(output).toContainText('Second fixture line');
+      stage = 'vim-edit';
+      await support.uncheck();
+      await page.getByRole('button', { name: 'Open keyboard' }).click();
+      await page.keyboard.press('i');
+      await page.keyboard.insertText('Browser edit 🐈 ');
+      await support.check();
+      await expect(output).toContainText('Browser edit 🐈');
+      await page.screenshot({
+        path: '.artifacts/leash-browser-vim.png',
+        fullPage: true,
+      });
+      await page.getByRole('button', { name: 'Esc', exact: true }).click();
+      await page.getByRole('button', { name: 'Open keyboard' }).click();
+      stage = 'vim-exit';
+      await page.keyboard.type(':q!');
+      await page.keyboard.press('Enter');
+      await expect(page.getByLabel('Process status')).toContainText('Exit 0');
+    }
+    if (!killOnDisconnect) {
+      stage = 'retention-close';
+      await expect(
+        page.getByText('Session closed.', { exact: true }),
+      ).toBeVisible({ timeout: retainedExit ? 8_000 : 5_000 });
+      await context.close();
+    }
+  } catch (error) {
+    failure = error;
+  }
+  request.fragment = '';
+  if (server !== undefined) {
+    if (failure === undefined) stage = 'browser-cleanup';
+    try {
+      await server.close();
+    } catch (error) {
+      failure ??= error;
+    }
+  }
+  if (failure !== undefined) throw failure;
+  process.stdout.write(
+    `leash browser acceptance passed: ${request.scenario}\n`,
+  );
+}
+
+main().catch(() => {
+  process.stderr.write(
+    `leash browser acceptance failed at ${stage}; measured sizes: ${JSON.stringify(measuredSizes)}\n`,
+  );
+  process.exitCode = 1;
+});

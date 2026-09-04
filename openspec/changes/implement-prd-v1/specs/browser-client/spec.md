@@ -22,6 +22,12 @@ The client SHALL load locally hosted `wasm_exec.js` and Tailcat Wasm from the re
 
 The production client SHALL target less than 3 seconds from warm cache to usable UI, less than 15 seconds on ordinary 4G from cold cache, and a compressed Wasm target below 8 MiB, and SHALL report measured regressions in release evidence.
 
+#### Scenario: Invitation starts a cold connection
+
+- **WHEN** a valid invitation starts the locally hosted Wasm download and connection
+- **THEN** the UI displays actual Wasm download percentage, a combined `Connecting to relay / Meow handshake` stage, the separately observed session-handshake stage, and the usable mode UI in that order
+- **AND** relay connection and Meow/Meowed are not presented as independently observed events; the owner-approved PRD 13.4 correction preserves the 60-second connection bound and stage-specific safe errors without modifying Tailcat
+
 #### Scenario: Performance target is exceeded
 
 - **WHEN** a release measurement exceeds a cold-start or compressed-size target
@@ -62,3 +68,9 @@ Controls SHALL expose accessible names, visible focus, sufficient touch targets,
 
 - **WHEN** focus moves through the active mode controls
 - **THEN** order, labels, state, confirmation, and disabled behavior remain perceivable and operable
+
+#### Scenario: Terminal text input and screen-reader support
+
+- **WHEN** a Leash view opens
+- **THEN** Unicode text input uses xterm's default input behavior, and an explicitly labeled connection-local Screen reader support control allows assistive-technology users to enable xterm's accessibility mode without changing host permissions or persisting terminal data
+- **AND** readonly viewers can enable the same output accessibility support without gaining input capability

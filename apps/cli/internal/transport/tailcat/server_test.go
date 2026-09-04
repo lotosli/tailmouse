@@ -3,7 +3,9 @@ package tailcat
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
+	"net/http"
 	"strings"
 	"sync"
 	"testing"
@@ -116,6 +118,54 @@ func TestNewBackendUsesCustomMap(t *testing.T) {
 	}
 }
 
+func TestCustomRegionUsesLabelsAndEmbedsConnectionPorts(t *testing.T) {
+	created, relay, err := newBackend(Config{
+		DERPHosts: []string{"relay.example.com"}, DERPRegion: 999,
+		DERPPort: 8443, STUNPort: 5349, RegionCode: "private", RegionName: "Private DERP",
+		OnConnection: discardConnection,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := upstream.NewPrivateKey()
+	configured := created.(*realBackend).server.Region
+	if configured.RegionID != 999 || configured.RegionCode != "private" || configured.RegionName != "Private DERP" ||
+		relay.RegionID != 999 || relay.RegionCode != "private" || relay.RegionName != "Private DERP" {
+		t.Fatal("custom region labels were not applied to the host")
+	}
+	key.Public.Region = []*tailcfg.DERPRegion{configured}
+	decoded, err := upstream.ParseConnBlob(key.Public.ConnBlob())
+	if err != nil || len(decoded.Region) != 1 {
+		t.Fatal("custom region did not round-trip")
+	}
+	region := decoded.Region[0]
+	// Tailcat deliberately strips cosmetic IDs/labels. The browser needs the
+	// complete connection fields, not matching local display identifiers.
+	if len(region.Nodes) != 1 || region.Nodes[0].DERPPort != 8443 || region.Nodes[0].STUNPort != 5349 ||
+		region.Nodes[0].HostName != "relay.example.com" {
+		t.Fatal("custom connection ports or hostname were lost")
+	}
+}
+
+func TestCustomRegionRejectsInvalidPortsAndLabels(t *testing.T) {
+	for _, invalid := range []func(*Config){
+		func(c *Config) { c.DERPPort = -1 },
+		func(c *Config) { c.DERPPort = 65536 },
+		func(c *Config) { c.STUNPort = -1 },
+		func(c *Config) { c.STUNPort = 65536 },
+		func(c *Config) { c.RegionCode = strings.Repeat("x", 33) },
+		func(c *Config) { c.RegionName = strings.Repeat("x", 129) },
+		func(c *Config) { c.RegionName = "invalid\nlabel" },
+		func(c *Config) { c.RegionCode = string([]byte{0xff}) },
+	} {
+		config := Config{DERPHosts: []string{"relay.example.com"}, OnConnection: discardConnection}
+		invalid(&config)
+		if _, _, err := newBackend(config); !errors.Is(err, ErrInvalidConfig) {
+			t.Fatal("invalid custom region was accepted")
+		}
+	}
+}
+
 func TestRelayConfigurationRejectsInvalidInput(t *testing.T) {
 	longLabel := strings.Repeat("a", 64) + ".example"
 	tests := []struct {
@@ -207,6 +257,8 @@ func TestStartFailuresAreRedactedAndClosed(t *testing.T) {
 		want     error
 	}{
 		{name: "upstream start", startErr: errors.New("dial " + secret), want: ErrStart},
+		{name: "upstream cancellation", startErr: errors.Join(errors.New(secret), context.Canceled), want: context.Canceled},
+		{name: "upstream deadline", startErr: errors.Join(errors.New(secret), context.DeadlineExceeded), want: context.DeadlineExceeded},
 		{name: "bad credential", address: secret, want: ErrCredential},
 	}
 	for _, test := range tests {
@@ -248,6 +300,77 @@ func TestStartHonorsCancellationWithoutLeakingBackend(t *testing.T) {
 	})
 	if !errors.Is(err, context.Canceled) || fake.closeCalls != 1 {
 		t.Fatalf("canceled start = %v, close calls = %d", err, fake.closeCalls)
+	}
+}
+
+func TestRealStartupCancelsInFlightMapHeadersAndBody(t *testing.T) {
+	for _, phase := range []string{"headers", "body"} {
+		for _, deadline := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/deadline=%v", phase, deadline), func(t *testing.T) {
+				requested := make(chan bool, 1)
+				requestDone := make(chan struct{})
+				mapServer := newMapTLSServer(t, func(writer http.ResponseWriter, request *http.Request) {
+					requested <- request.Header.Get("Tailcat-Mode") == "server"
+					if phase == "body" {
+						_, _ = writer.Write([]byte(`{"Regions":`))
+						writer.(http.Flusher).Flush()
+					}
+					<-request.Context().Done()
+					close(requestDone)
+				})
+				defer mapServer.Close()
+				timeout := time.Minute
+				if deadline {
+					timeout = time.Second
+				}
+				ctx, cancel := context.WithTimeout(context.Background(), timeout)
+				defer cancel()
+				finished := make(chan error, 1)
+				go func() {
+					_, err := start(ctx, Config{OnConnection: discardConnection}, func(config Config) (backend, Relay, error) {
+						created, relay, err := newBackend(config)
+						if err != nil {
+							return nil, Relay{}, err
+						}
+						// Trust only this fixture's certificate in this backend instance.
+						real := created.(*realBackend)
+						real.server.DERPMapURL = mapServer.URL + "/tcSyntheticMapSecret"
+						real.mapTransport = mapServer.Client().Transport
+						return created, relay, nil
+					})
+					finished <- err
+				}()
+				select {
+				case serverMode := <-requested:
+					if !serverMode {
+						t.Error("map selection lost the upstream server-mode header")
+					}
+				case <-time.After(2 * time.Second):
+					cancel()
+					t.Fatal("map request did not start")
+				}
+				if !deadline {
+					cancel()
+				}
+				select {
+				case err := <-finished:
+					want := context.Canceled
+					if deadline {
+						want = context.DeadlineExceeded
+					}
+					if !errors.Is(err, want) || strings.Contains(err.Error(), mapServer.URL) || strings.Contains(err.Error(), "tcSyntheticMapSecret") {
+						t.Fatal("in-flight startup lost cancellation or disclosed map data")
+					}
+				case <-time.After(2 * time.Second):
+					t.Fatal("startup did not honor cancellation within the caller bound")
+				}
+				select {
+				case <-requestDone:
+				case <-time.After(time.Second):
+					t.Fatal("canceled startup retained its HTTP request")
+				}
+			})
+		}
 	}
 }
 
@@ -330,8 +453,14 @@ func TestCloseUsesEarlierCallerDeadline(t *testing.T) {
 	if time.Since(started) > time.Second {
 		t.Fatal("close ignored the caller deadline")
 	}
-	if !errors.Is(err, ErrDrain) {
-		t.Fatalf("close error = %v, want ErrDrain", err)
+	if !errors.Is(err, ErrDrain) || !errors.Is(err, context.DeadlineExceeded) || errors.Is(err, ErrClose) {
+		t.Fatalf("close error = %v, want bounded drain without close failure", err)
+	}
+	if fake.closeCalls != 1 {
+		t.Fatal("bounded drain did not force-close the backend")
+	}
+	if _, err := server.CopyAddress(); !errors.Is(err, ErrClosed) {
+		t.Fatal("bounded drain left the invitation address available")
 	}
 }
 
@@ -383,7 +512,7 @@ type fakeBackend struct {
 	closeCalls int
 }
 
-func (f *fakeBackend) Start() error {
+func (f *fakeBackend) Start(context.Context) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.startCalls++

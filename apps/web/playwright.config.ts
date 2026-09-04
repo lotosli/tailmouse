@@ -4,6 +4,7 @@ export default defineConfig({
   ...(process.env.CI ? { workers: 1 } : {}),
   forbidOnly: Boolean(process.env.CI),
   fullyParallel: true,
+  maxFailures: 1,
   outputDir: '../../test-results/playwright',
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
@@ -13,12 +14,12 @@ export default defineConfig({
     { name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
   ],
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
-  retries: process.env.CI ? 2 : 0,
+  retries: 0,
   testDir: '../../tests/e2e',
   use: {
     baseURL: 'http://127.0.0.1:4173',
     serviceWorkers: 'block',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
   },
   webServer: {
     command: 'pnpm exec vite preview --host 127.0.0.1 --port 4173 --strictPort',

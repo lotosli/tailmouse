@@ -1,0 +1,55 @@
+version: 2
+project_name: tailmouse
+dist: .artifacts/release
+
+before:
+  hooks:
+    - node tools/release-licenses.mjs check
+    - node tools/release-native.mjs check {{ .Version }} {{ .IsSnapshot }}
+
+builds:
+  - id: tailmouse
+    main: ./apps/cli/cmd/tailmouse
+    binary: tailmouse
+    env:
+      - CGO_ENABLED=0
+      - GOWORK=off
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    goamd64: [v1]
+    goarm64: [v8.0]
+    flags: [-trimpath, -mod=readonly, -buildvcs=true]
+    ldflags:
+      - -s -w -X main.buildVersion={{ .Version }} -X main.tailcatRevision={{ .Env.TAILMOUSE_TAILCAT_REVISION }}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    hooks:
+      post:
+        - cmd: node tools/release-native.mjs verify "{{ .Path }}" {{ .Os }} {{ .Arch }} {{ .Version }} {{ .IsSnapshot }}
+          output: true
+
+archives:
+  - id: native
+    ids: [tailmouse]
+    name_template: 'tailmouse_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - NOTICE
+      - THIRD_PARTY_NOTICES.txt
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: '{{ .Env.TAILMOUSE_BUILD_VERSION }}'
+
+changelog:
+  disable: true
+
+release:
+  disable: true

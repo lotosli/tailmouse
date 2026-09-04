@@ -9,6 +9,11 @@ The native adapter SHALL create and own a Tailcat server, expose only a TailMous
 - **WHEN** valid official or custom relay configuration is supplied
 - **THEN** the adapter returns a safe address value and relay description, dispatches only accepted application connections, and keeps keys and upstream types private
 
+#### Scenario: User cancels during relay selection
+
+- **WHEN** cancellation or the caller's deadline occurs while an official/custom map is being fetched or its region is being selected
+- **THEN** the adapter cancels Tailcat's public context-aware selection call, returns a redacted cancellation category, creates no session credential, and performs no concurrent upstream Start/Close or detached startup work
+
 ### Requirement: Browser Tailcat byte-stream adapter
 
 The browser adapter SHALL be the only code that calls the upstream Wasm bridge. It MUST validate bridge readiness and returned shape and expose bounded asynchronous read, write, and close operations using TailMouse-owned types.

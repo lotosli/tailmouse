@@ -15,6 +15,9 @@ catalogs:
     '@types/babel__core':
       specifier: 7.20.5
       version: 7.20.5
+    '@vitest/browser-playwright':
+      specifier: 4.1.11
+      version: 4.1.11
     '@vitest/coverage-v8':
       specifier: 4.1.11
       version: 4.1.11
@@ -27,6 +30,9 @@ catalogs:
     cborg:
       specifier: 6.1.2
       version: 6.1.2
+    playwright:
+      specifier: 1.62.1
+      version: 1.62.1
     preact:
       specifier: 10.29.8
       version: 10.29.8
@@ -84,15 +90,21 @@ importers:
       '@types/babel__core':
         specifier: 'catalog:'
         version: 7.20.5
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 4.1.11(playwright@1.62.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))(vitest@4.1.11)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 4.1.11(vitest@4.1.11)
+        version: 4.1.11(@vitest/browser@4.1.11)(vitest@4.1.11)
+      playwright:
+        specifier: 'catalog:'
+        version: 1.62.1
       vite:
         specifier: 'catalog:'
         version: 8.2.2(@types/node@26.4.1)(yaml@2.9.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.11(@types/node@26.4.1)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
+        version: 4.1.11(@types/node@26.4.1)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
 
 packages:
 
@@ -192,6 +204,9 @@ packages:
   '@bcoe/v8-coverage@1.0.2':
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
+
+  '@blazediff/core@1.9.1':
+    resolution: {integrity: sha512-ehg3jIkYKulZh+8om/O25vkvSsXXwC+skXmyA87FFx6A/45eqOkZsBltMw/TVteb0mloiGT8oGRTcjRAz66zaA==}
 
   '@fission-ai/openspec@1.11.0':
     resolution: {integrity: sha512-P9h8H4Snit8I7tHmCopjg3QDwBllIlObxb+/DebvBwhWTj6YEPPYRYkC4n5GqG4PdQnKMA6E1AlEOI9FT4G7FA==}
@@ -529,6 +544,9 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
+  '@polka/url@1.0.0-next.29':
+    resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
+
   '@preact/preset-vite@2.10.6':
     resolution: {integrity: sha512-ZZ5RIT2ZVXg8UxRA8VZpoT8CdpDG7RFIqOT4bELqNBp85+HKvQBbgmh3gsoW1UOQXx26TLe+ZRNKI7q281Kckw==}
     peerDependencies:
@@ -810,6 +828,17 @@ packages:
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [win32]
+
+  '@vitest/browser-playwright@4.1.11':
+    resolution: {integrity: sha512-riLBxPqwnJ0lWs2DN2WeUfYeKLoAjbP2Xx8cLQdSddzMi20sksIa6K2mPz79DyMZKKVKH2ksOC2yJvtNcZg8cg==}
+    peerDependencies:
+      playwright: '*'
+      vitest: 4.1.11
+
+  '@vitest/browser@4.1.11':
+    resolution: {integrity: sha512-bwMovvAeuTFOK5kIFevw4VEf+1gVEICv4SYK4k3knJOxl6b1zEWud8mYKD73e1B0odAn174h1MofURy2TPWf3w==}
+    peerDependencies:
+      vitest: 4.1.11
 
   '@vitest/coverage-v8@4.1.11':
     resolution: {integrity: sha512-8MVGEFnJIcdGjcbfKmeq8z0pZHH0JlVtoVZH9Q/qwUp6wyFnEJUBMrw9DCaj+ra3vShGmhavjalMIhPNxZAUcw==}
@@ -1213,6 +1242,10 @@ packages:
     resolution: {integrity: sha512-VP79XUPxV2CigYP3jWwAUFSku2aKqBH7uTAapFWCBqutsbmDo96KY5o8uh6U+/YSIn5OxJnXp73beVkpqMIGhA==}
     engines: {node: '>=18'}
 
+  mrmime@2.0.1:
+    resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
+    engines: {node: '>=10'}
+
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
@@ -1292,6 +1325,10 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
+  pngjs@7.0.0:
+    resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
+    engines: {node: '>=14.19.0'}
+
   postcss@8.5.26:
     resolution: {integrity: sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==}
     engines: {node: ^10 || ^12 || >=14}
@@ -1358,6 +1395,10 @@ packages:
   simple-code-frame@1.3.0:
     resolution: {integrity: sha512-MB4pQmETUBlNs62BBeRjIFGeuy/x6gGKh7+eRUemn1rCFhqo7K+4slPqsyizCbcbYLnaYqaoZ2FWsZ/jN06D8w==}
 
+  sirv@3.0.2:
+    resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
+    engines: {node: '>=18'}
+
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
@@ -1410,6 +1451,10 @@ packages:
   to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
+
+  totalist@3.0.1:
+    resolution: {integrity: sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ==}
+    engines: {node: '>=6'}
 
   typescript@7.0.2:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
@@ -1523,6 +1568,18 @@ packages:
     resolution: {integrity: sha512-hUrmaWBdVDcxvYqnyh09zunKzROWjbZTiNy8dBEjkS7ehEDQibXJ7XvlmtbwuTclUiIyN+CyXQD4Vmko8fNm8w==}
     engines: {node: '>=8'}
     hasBin: true
+
+  ws@8.21.3:
+    resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
 
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
@@ -1674,6 +1731,8 @@ snapshots:
       '@babel/helper-validator-identifier': 7.29.7
 
   '@bcoe/v8-coverage@1.0.2': {}
+
+  '@blazediff/core@1.9.1': {}
 
   '@fission-ai/openspec@1.11.0(@types/node@26.4.1)':
     dependencies:
@@ -1933,6 +1992,8 @@ snapshots:
     dependencies:
       playwright: 1.62.1
 
+  '@polka/url@1.0.0-next.29': {}
+
   '@preact/preset-vite@2.10.6(@babel/core@7.29.7(supports-color@7.2.0))(preact@10.29.8)(supports-color@7.2.0)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))':
     dependencies:
       '@babel/core': 7.29.7(supports-color@7.2.0)
@@ -2126,7 +2187,37 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@vitest/coverage-v8@4.1.11(vitest@4.1.11)':
+  '@vitest/browser-playwright@4.1.11(playwright@1.62.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))(vitest@4.1.11)':
+    dependencies:
+      '@vitest/browser': 4.1.11(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))(vitest@4.1.11)
+      '@vitest/mocker': 4.1.11(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
+      playwright: 1.62.1
+      tinyrainbow: 3.1.1
+      vitest: 4.1.11(@types/node@26.4.1)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
+    transitivePeerDependencies:
+      - bufferutil
+      - msw
+      - utf-8-validate
+      - vite
+
+  '@vitest/browser@4.1.11(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))(vitest@4.1.11)':
+    dependencies:
+      '@blazediff/core': 1.9.1
+      '@vitest/mocker': 4.1.11(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
+      '@vitest/utils': 4.1.11
+      magic-string: 0.30.21
+      pngjs: 7.0.0
+      sirv: 3.0.2
+      tinyrainbow: 3.1.1
+      vitest: 4.1.11(@types/node@26.4.1)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
+      ws: 8.21.3
+    transitivePeerDependencies:
+      - bufferutil
+      - msw
+      - utf-8-validate
+      - vite
+
+  '@vitest/coverage-v8@4.1.11(@vitest/browser@4.1.11)(vitest@4.1.11)':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
       '@vitest/utils': 4.1.11
@@ -2138,7 +2229,9 @@ snapshots:
       obug: 2.1.4
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 4.1.11(@types/node@26.4.1)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
+      vitest: 4.1.11(@types/node@26.4.1)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
+    optionalDependencies:
+      '@vitest/browser': 4.1.11(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))(vitest@4.1.11)
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -2469,6 +2562,8 @@ snapshots:
 
   mimic-function@5.0.1: {}
 
+  mrmime@2.0.1: {}
+
   ms@2.1.3: {}
 
   mute-stream@3.0.0: {}
@@ -2553,6 +2648,8 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.2
 
+  pngjs@7.0.0: {}
+
   postcss@8.5.26:
     dependencies:
       nanoid: 3.3.18
@@ -2617,6 +2714,12 @@ snapshots:
     dependencies:
       kolorist: 1.8.0
 
+  sirv@3.0.2:
+    dependencies:
+      '@polka/url': 1.0.0-next.29
+      mrmime: 2.0.1
+      totalist: 3.0.1
+
   source-map-js@1.2.1: {}
 
   source-map@0.7.6: {}
@@ -2656,6 +2759,8 @@ snapshots:
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
+
+  totalist@3.0.1: {}
 
   typescript@7.0.2:
     optionalDependencies:
@@ -2710,7 +2815,7 @@ snapshots:
       fsevents: 2.3.3
       yaml: 2.9.0
 
-  vitest@4.1.11(@types/node@26.4.1)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)):
+  vitest@4.1.11(@types/node@26.4.1)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.11
       '@vitest/mocker': 4.1.11(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))
@@ -2734,7 +2839,8 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 26.4.1
-      '@vitest/coverage-v8': 4.1.11(vitest@4.1.11)
+      '@vitest/browser-playwright': 4.1.11(playwright@1.62.1)(vite@8.2.2(@types/node@26.4.1)(yaml@2.9.0))(vitest@4.1.11)
+      '@vitest/coverage-v8': 4.1.11(@vitest/browser@4.1.11)(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
 
@@ -2746,6 +2852,8 @@ snapshots:
     dependencies:
       siginfo: 2.0.0
       stackback: 0.0.2
+
+  ws@8.21.3: {}
 
   yallist@3.1.1: {}
 

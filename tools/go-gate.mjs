@@ -124,6 +124,25 @@ if (mode === 'coverage' || mode === 'full') {
 }
 
 if (mode === 'release' || mode === 'full') {
-  run('go', ['test', '-race', './...'], { cwd: root, env: goEnv });
+  const target = run('go', ['env', 'GOOS', 'GOARCH'], {
+    capture: true,
+    cwd: root,
+    env: goEnv,
+  })
+    .stdout.trim()
+    .split(/\r?\n/);
+  if (
+    target.length !== 2 ||
+    target.some((value) => !/^[a-z0-9]+$/.test(value))
+  ) {
+    throw new Error('Could not read the Go test target.');
+  }
+  if (target[0] === 'windows' && target[1] === 'arm64') {
+    process.stdout.write(
+      '[go:race] skipped: Go 1.27.1 does not support the race detector on windows/arm64. Native tests, coverage and vulnerability checks remain required.\n',
+    );
+  } else {
+    run('go', ['test', '-race', './...'], { cwd: root, env: goEnv });
+  }
   run('go', ['tool', 'govulncheck', './...'], { cwd: root, env: goEnv });
 }

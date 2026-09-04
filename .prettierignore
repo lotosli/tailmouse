@@ -6,5 +6,6 @@ dist/
 node_modules/
 playwright-report/
 pnpm-lock.yaml
+tooling/third-party-licenses.json
 test-results/
 third_party/tailcat/

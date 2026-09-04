@@ -2,11 +2,20 @@
 
 ## Commands
 
-- `pnpm gate:quick`: architecture, OpenSpec, format, lint, typecheck, Go static checks, unit tests, Web/Go coverage, build, and browser end-to-end tests.
-- `pnpm gate`: the delivery gate; adds Go race and govulncheck after the quick sequence.
+- `pnpm gate:quick`: architecture, OpenSpec, format, lint, tooling tests, typecheck, Go/Tailcat static checks, unit tests, Web/Go coverage, native/Wasm/Web builds, dependency notice verification, native QR decoding on macOS, hermetic transport and Unix Leash acceptance, Escape impairment smoke, and browser end-to-end tests.
+- `pnpm gate`: the delivery gate; adds real Firefox/WebKit transport acceptance, Go race, govulncheck, the complete real Go/Wasm Escape impairment suite and, on Unix, the complete Leash impairment matrix after the quick sequence.
+- `pnpm test:leash`: rebuilds the recorded Wasm and production Web assets, then exercises eight cases through the real CLI owner, Unix PTY, loopback DERP and Chromium: native CLI, isolated Vim, interactive Shell/foreground task, running-child reconnect, retained-exit restart, real browser SIGKILL recovery, explicit kill-on-disconnect and one Leash weak-network smoke profile. The smoke uses 150 ms RTT, 30 ms jitter, 1% loss and 256 Kbit/s; it checks ordered multi-frame UTF-8 input, 300 ms/3 s outages, fresh-stream modifier reset and 4 MiB of nonblocking local output before restoring a blocked link. It is not the complete PRD impairment matrix or a race-instrumented throughput benchmark. Requires macOS/Linux, `/usr/bin/vi`, `/bin/sh`, the C.UTF-8 fixture locale and matching Playwright Chromium. The three-minute command fails on a missing prerequisite; Windows is not claimed by this Unix check. Invitations travel only through memory/stdin, and synthetic screenshots stay under ignored `.artifacts/`.
+- `pnpm test:transport`: verifies official construction, real custom-host/custom-map browser connections, token/mode/busy failures and bounded close. It also dials a native TTL-expired Host using an unexpired invitation, requiring EXPIRED without admission, startup or retry controls. The controlled transport stays available through that denial to distinguish Host authority from browser-side invitation expiry or an unreachable process. Client-verification acceptance uses upstream DERP's actual `--verify-clients` settings with an owned Unix-socket membership fixture: an allowed native control exchanges bytes, while the real Wasm browser is denied before application admission and shows a safe failure. It never queries a personal tailscaled instance. The suite budget is five minutes to include that additional, unchanged 60-second browser dial deadline; fail-fast behavior remains enabled.
+- `pnpm test:leash-network`: rebuilds the recorded Wasm/Web assets and runs all 108 PRD 17.5 Leash profiles: RTT 20/80/150/300 ms, jitter 0/20/60 ms, loss 0/1/5%, and bandwidth 64/256/1024 Kbit/s. Each isolated profile reuses the smoke's ordered-input, outage, fresh-stream modifier reset, nonblocking local output and recovery assertions, including its unchanged 90-second native fixture deadline. The three-hour aggregate bound covers the sequential matrix, not a longer product or individual-case timeout. It stops at the first failure and uses only owned loopback infrastructure. This is Unix PTY acceptance, not Windows ConPTY, physical-device or public-relay evidence. Run it separately from resource benchmarks.
+- `pnpm test:escape-network`: builds the recorded Wasm/Web assets, checks the impairment scheduler, and runs all 108 PRD latency/jitter/loss/bandwidth combinations plus the explicit 150/30 profile, outages, fresh-stream reconnect and actual DERP transport closure. The closure case shuts both the native HTTP-upgrade connection and browser WebSocket, requires new relay connections and fresh input, and is also in the quick smoke stage. It uses random loopback ports and no public relay or host-wide network settings; the full suite is bounded to 35 minutes and stops at the first failure.
 - `pnpm coverage`: reruns workspace and Go coverage only.
 - `pnpm fuzz:smoke`: runs bounded Go fuzz smoke tests.
 - `pnpm tailcat:check`: verifies the clean Tailcat submodule and runs its module, format, vet, test, native-build, and WebAssembly-build checks.
+- `pnpm release:snapshot`: validates the pinned GoReleaser configuration and builds six local native snapshot archives, without signing or publication. See Native snapshot builds below.
+- `pnpm check:licenses`: re-derives the source notice inventory after the Native/Wasm/Web build and fails on a changed version, grant, notice or hash. This also runs after the build in both gates and before native packaging.
+- `pnpm release:notices`: explicitly regenerates `THIRD_PARTY_NOTICES.txt` and `tooling/third-party-licenses.json` after a reviewed dependency update and rebuilt Wasm/Web inputs. Review the generated diff; ordinary checks never update it.
+- `pnpm release:sbom`: verifies existing native/Web build outputs, then stages a portable distribution with seven CycloneDX SBOMs and complete checksums. Requires the pinned CycloneDX CLI; refuses an existing distribution directory.
+- `pnpm release:verify`: re-reads the staged distribution and original build evidence, validates all SBOMs, and rejects missing, unexpected or changed artifacts. It performs no writes or publication.
 
 ## Ordered pipeline
 
@@ -14,16 +23,120 @@
 2. Strict OpenSpec and schema validation.
 3. Formatting.
 4. Type-aware lint.
-5. Strict typecheck.
-6. Go module verification, tidy diff, formatting, vet, and staticcheck.
-7. Tailcat module integrity, formatting, and vet without modifying upstream source.
-8. Unit tests, including Tailcat's upstream Go suite.
-9. Web and TailMouse-owned Go coverage.
-10. Product builds plus Tailcat native and WebAssembly builds.
-11. Playwright user-visible browser tests against the built application.
-12. TailMouse-owned Go race and vulnerability checks in the delivery gate.
+5. Go gate target/first-failure tests, build identity, native release identity/matrix rejection, source notice preservation/drift, static assets, SBOM/checksums and acceptance-tool credential/cleanup tests.
+6. Strict typecheck.
+7. Go module verification, tidy diff, formatting, vet, and staticcheck.
+8. Tailcat module integrity, formatting, and vet without modifying upstream source.
+9. Unit tests, including Tailcat's upstream Go suite.
+10. Web and TailMouse-owned Go coverage.
+11. Product builds plus Tailcat native and WebAssembly builds, followed by read-only source notice verification.
+12. Native browser QR decoding on macOS, then controlled local DERP integration between the native host and browser Wasm, followed on macOS/Linux by real CLI/Vim Leash browser acceptance. Windows explicitly reports that the Unix check is not applicable; this is not ConPTY evidence.
+13. Playwright user-visible browser tests against the built application.
+14. TailMouse-owned Go race and vulnerability checks in the delivery gate. Only the Go-unsupported Windows ARM64 race detector is explicitly inapplicable; its ordinary tests, coverage and vulnerability checks remain mandatory.
+15. Complete Escape impairment acceptance in the delivery gate. The quick gate includes scheduler checks and the real 150 ms RTT / 30 ms jitter smoke profile after the transport build.
+16. Complete 108-profile Unix Leash impairment acceptance in the delivery gate. The quick gate retains its eight-case CLI/browser suite with one network smoke profile. Both modes use the same impairment fixture, without replacing either mode's application assertions with the other's.
 
-The orchestrator runs synchronously and propagates the first non-zero status. It does not auto-format, update the lockfile, edit specs, or continue into noisy secondary failures.
+The orchestrator runs synchronously and propagates the first non-zero status. It does not auto-format, update the lockfile, edit specs, or continue into noisy secondary failures. Playwright stops scheduling tests after its first failure, does not automatically rerun failed cases locally or in CI, and retains failure traces from synthetic fixtures. A test explicitly clicking the product's visible Retry control within an asserted recovery budget is application-behavior coverage, not a rerun of a failed test.
+
+Leash's fresh-stream probe records visible `SESSION_BUSY` and locally classified `HANDSHAKE_TIMEOUT` retries separately, retaining its original 40-second total recovery window and the product's ten-second handshake bound. It must still prove the same child, ordered history/input, cleared modifiers, bounded local output and normal exit. Malformed or terminal protocol failures remain immediate failures. A timeout observation is reported even when an explicit retry subsequently succeeds; source-level cause and broader reliability are not inferred from that recovery.
+
+The named htop acceptance is separate from the eight-case gate. After building the recorded Wasm/Web assets with `pnpm test:leash`, put a verified htop binary on PATH and run `go test -tags=tailcatintegration -count=1 -failfast -timeout=2m -run='^TestHermeticLeashHtop$' ./apps/cli/cmd/tailmouse`. A missing htop fails rather than skips. This fixture shows only its owned test PID, enables htop's readonly mode and uses a temporary configuration. It verifies help/keyboard input, current-screen redraw at a changed PTY row count, and normal q/exit propagation; it adds no production dependency or host installation.
+
+The real CLI subprocess configuration test has a ten-second correctness deadline per command and a one-second canceled-I/O wait bound. It includes the first launch of a freshly linked executable, performs no warmup or retry, and reports only timing, status and output byte counts on failure. This is not a CLI startup-performance threshold; release performance evidence remains separate.
+
+The separate startup/memory probe runs against existing recorded Wasm and production Web assets: `go test -tags=tailcatintegration -count=1 -failfast -timeout=2m -run='^TestHermeticLeashStartup$' -v ./apps/cli/cmd/tailmouse`. Run it without concurrent builds or benchmarks. It measures actual connected input/output through the macOS/Linux CLI/PTY, loopback DERP and full Chromium, with a 9 Mbit/s aggregate static link and 60 ms response latency. Idle samples follow a 35-second settle; private page-only CDP pipes leave workers undebugged, and no baseline subtraction or forced GC is used. Per the owner's accepted policy, browser idle memory is advisory: its total and the exceeded original 200 MiB reference are reported without failing solely for that value. Missing measurements, host memory at or above 150 MiB excluding the child, cold startup at or above 15 seconds, warm startup at or above three seconds, and functional failures still fail. This separate probe is not physical-device, production-relay, Escape-idle or slow-consumer evidence; current results are in `docs/evidence/prd-conformance.md`.
+
+Two further opt-in probes reuse that fixture and numeric sampler, without adding them to the ordinary functional gate. After building the recorded Wasm/Web assets, run separately without concurrent builds or benchmarks:
+
+```sh
+go test -tags=tailcatintegration -count=1 -failfast -timeout=2m -run='^TestHermeticEscapeIdleMemory$' -v ./apps/cli/cmd/tailmouse
+go test -tags=tailcatintegration -count=1 -failfast -timeout=2m -run='^TestHermeticLeashSlowConsumerMemory$' -v ./apps/cli/cmd/tailmouse
+```
+
+Escape idle means a connected retained result with `--once=false`, normal PWA caching, 35 seconds of natural settling and five one-second samples. The full-Chromium inspector attaches only to the page, checks target/process ownership and requires explicit browser exit followed by natural Host completion with code 0. Host idle remains below 150 MiB; the complete browser's original 200 MiB reference is advisory. The Host includes the Go test/relay fixture and has no child.
+
+The slow-consumer probe preserves the existing 150/30-ms, 1%-loss, 256-Kbit/s Leash case. Five one-second samples must fit after four MiB finishes locally and before the original 15-second outage ends. It still requires drop reporting, same-PID output recovery, cleared modifiers, child exit 37 and normal retention cleanup. Host accounting includes the test/relay and bounded output capture, excluding the child. Browser accounting is the complete owned Chromium headless shell with service workers blocked, not full-Chromium PWA idle. These loaded samples add no new idle-memory gate and are not directly comparable with the full-browser idle totals. Existing ring/queue/drop assertions prove bounded storage; five samples alone cannot prove absence of a leak. Both probes report RSS and, on macOS, approximate physical footprint without subtracting a blank baseline or forcing GC. Native evidence currently covers macOS only.
+
+## CI delivery checks
+
+The additional full-gate browser-engine stage runs the same owned native Host/DERP probe in Firefox and WebKit: real Wasm handshake and game traffic, busy and mode rejection, explicit close, the unchanged 60-second incorrect-token deadline, and bounded native drain. The stage has a four-minute aggregate budget for both sequential engines, not a longer per-connection timeout. Its selector rejects unknown values before launching a browser. The existing Chromium custom-host/custom-map stage remains in the quick sequence. After building the recorded Wasm and Web assets, run the additional stage independently with:
+
+```sh
+go test -tags=tailcatintegration -count=1 -failfast -timeout=4m -run='^TestHermeticTailcatBrowserEngines$' ./apps/cli/internal/transport/tailcat
+```
+
+These are the locked Playwright engines, not branded Safari/Edge, both latest stable majors, or physical mobile devices. The private test contexts permit the owned relay's self-signed certificate; no system trust store or production security policy is changed.
+
+For an explicitly provisioned Chrome stable installation, the same assertions can run through Playwright's `chrome` channel:
+
+```sh
+go test -tags=tailcatintegration -count=1 -failfast -timeout=2m -run='^TestHermeticTailcatChromeStable$' -v ./apps/cli/internal/transport/tailcat
+```
+
+The test launches an isolated profile and reports the actual numeric browser version, not just the Playwright package version. It fails when Chrome is absent; it never installs/updates a browser, attaches to a personal session or silently substitutes Chromium. This opt-in platform acceptance is not a default gate prerequisite. All transport probes now validate runtime-version output separately from their exact stage trace. One passing installed version does not establish the complete current/previous-major matrix.
+
+The Linux matrix job continues only after its complete `pnpm gate` succeeds: install verified release tools, run `pnpm release:snapshot`, generate SBOMs with `pnpm release:sbom`, independently run `pnpm release:verify`, and verify every distribution checksum. All matrix jobs finish by checking both the root checkout and Tailcat submodule for unexpected changes. Fuzz smoke runs after the matrix succeeds on both pull requests and pushes to `main`.
+
+The two release tools use the exact versions in `tooling/versions.json`. Their Linux x64 downloads are bounded by size/time and checked against repository-pinned SHA-256 values before extraction or execution. Version upgrades require reviewing the corresponding hashes in `.github/workflows/gate.yml`; a mismatch fails closed. The asset identities were verified against the official [GoReleaser release](https://github.com/goreleaser/goreleaser/releases/tag/v2.18.0) and [CycloneDX CLI release](https://github.com/CycloneDX/cyclonedx-cli/releases/tag/v0.33.1) on 2026-09-03.
+
+The workflow retains read-only repository permissions, does not persist checkout credentials, and does not upload, sign or publish distributions. Packaging cross-builds six targets; its version command executes only on the matching runner architecture. Successful packaging does not establish other native runtime, physical-device or release-approval evidence. Source notice verification is required but is not a legal certification. The gate matrix has a 270-minute aggregate job limit: its prior 90-minute allowance plus the new Leash matrix's three-hour command bound. No existing product, per-case or release-step deadline is extended. Fuzz retains 30 minutes and release steps retain their own smaller limits. Remote execution evidence remains separate from this checked-in workflow.
+
+**Observed, 2026-09-04:** The matrix includes `windows-latest` (x64) and `windows-11-arm` in addition to Linux and macOS. The ARM64 job verifies native Node and Go architectures before installation/testing so emulated x64 host tests cannot be mislabeled ARM64 evidence. GitHub lists these Windows labels in its [runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). The x64 hosted image is Windows Server, not proof of Windows 11 desktop behavior. Repository access, runner execution and complete Windows Leash acceptance still require separate evidence.
+
+Go 1.27.1 rejects `-race` on `windows/arm64` before compilation, consistent with the [Go race detector requirements](https://go.dev/doc/articles/race_detector). The gate reads Go's actual target and reports this one exception; it never turns a failed race run into a skip. Malformed target output and supported-platform race failures stop before vulnerability checks. `tools/go-gate.test.ts` exercises the real gate script with isolated command stubs; it proves dispatch and fail-fast behavior, not native Windows execution. Recheck this platform exception when upgrading Go.
+
+The locked Playwright 1.62.1 platform resolver selects its `win64`/`win-x64` browser downloads on Windows, including ARM64. Browser checks remain enabled on the Windows ARM64 job; that job's Go binary is native ARM64, but the downloaded browser runs through Windows x64 emulation. Do not report those checks as native ARM64-browser or physical-mobile acceptance, and do not skip a browser installation or execution failure.
+
+## Build identity
+
+`pnpm build` produces the native executable at `.artifacts/native/tailmouse` (`tailmouse.exe` on Windows) and the Web application at `apps/web/dist`. Both builds use `tools/build-identity.ts` to verify the recorded Tailcat gitlink against the initialized, clean submodule. The Web build also requires its Wasm manifest to match that revision. The native builder executes `version` and checks the stamped version, protocol range and Tailcat revision.
+
+Development versions include the root revision and a dirty marker when applicable. For a release build, set `TAILMOUSE_BUILD_VERSION` to the intended bounded semantic version before `pnpm build`; an explicit release version requires a clean root checkout. Both native `version` and browser About report the same build identity. This command builds for the current host; the complete release platform matrix remains a separate acceptance task.
+
+The host builder sets `CGO_ENABLED=0`, matching the archive builder instead of inheriting a local C compiler/SDK target. The pinned Go 1.27 internal linker selects macOS 13 as its default minimum, consistent with the PRD; see the [Go linker release notes](https://go.dev/doc/go1.27#linker). Load-command inspection verifies build metadata, not actual execution on the minimum OS. Go race tests retain their separate Cgo requirement and are not disabled by this artifact-only setting.
+
+Tailcat checks and builds explicitly select the Go toolchain in `tooling/versions.json`, including the upstream builder's nested Wasm command. The submodule's `go` directive is not a toolchain pin. The build also fixes `GOFLAGS=-trimpath` so the nested compiler does not embed machine-specific source paths. The Web build rejects an artifact manifest with a different Go version or compiled Wasm without `-trimpath=true`, even when its gitlink and file checksums match. These checks also apply when generating or verifying the Web SBOM.
+
+The Web manifest records bundled npm identities, embedded Wasm Go modules/checksums, the exact clean Tailcat revision, and Go/Vite/Rolldown toolchain versions. Bundler-injected Vite runtime helpers count as shipped code; unused lockfile tools do not. Missing, duplicate, unknown or mismatched build identities fail before distribution. This metadata is SBOM input, not a complete SBOM or license inventory.
+
+## Native snapshot builds
+
+PRD 18.1 requires GoReleaser. The repository pins [GoReleaser 2.18.0](https://github.com/goreleaser/goreleaser/releases/tag/v2.18.0), verified as the latest stable release on 2026-09-03, in `tooling/versions.json`. Install that official binary on PATH and verify it against the release checksums; no GoReleaser module is added to the product dependency graph. `.goreleaser.yaml` uses its standard Go builder and archive support, not a second packaging framework.
+
+`pnpm release:snapshot` requires the recorded Node/Go/GoReleaser versions, built Wasm/Web notice inputs and a clean, initialized Tailcat submodule. It emits macOS/Linux amd64/arm64 `.tar.gz` archives and Windows amd64/arm64 `.zip` archives under `.artifacts/release`. Each contains one `tailmouse` executable (`tailmouse.exe` on Windows), README, `LICENSE`, `NOTICE` and `THIRD_PARTY_NOTICES.txt`. Go builds use `CGO_ENABLED=0`, readonly modules, trimmed paths and stamped source/dependency identity. Linux executables are static; the supported Linux acceptance target remains glibc distributions. Dirty TailMouse sources are explicitly marked in the development version. Existing output is never automatically deleted: move it aside before another run. A build failure leaves its output for inspection and stops the pipeline.
+
+The before hook rechecks the actual gitlink rather than trusting an environment-provided revision. Each built executable is inspected for its Go version, target, local Tailcat module replacement, source revision and embedded version strings. On the matching host architecture, the hook also executes `version` with a ten-second deadline and checks exact build, Tailcat and TMOUSE output. Other targets report static inspection only, not native runtime acceptance. The final manifest must contain exactly six unique binaries and six platform-correct, single-executable archives. GoReleaser also generates a SHA-256 manifest.
+
+This is a local snapshot command, not release approval. Complete per-artifact SBOMs, selected project/third-party notices, clean-source release verification, all required native/device evidence and publication configuration are separate release requirements. The configuration disables publication, and the command always uses snapshot mode, a fifteen-minute deadline and one build at a time. Snapshot mode does not weaken TailMouse's own identity checks.
+
+## Distribution SBOMs and integrity
+
+The release verifier emits [CycloneDX 1.7](https://cyclonedx.org/specification/overview/) using the compiled native modules, bundled npm modules and embedded Wasm modules. [CycloneDX CLI 0.33.1](https://github.com/CycloneDX/cyclonedx-cli/releases/tag/v0.33.1), verified on 2026-09-03 and pinned in `tooling/versions.json`, independently validates each document with its bundled schemas. Install the official platform binary on PATH after checking the release asset checksum. This is a release-only tool, not a shipped application dependency.
+
+Run after `pnpm build` and `pnpm release:snapshot`:
+
+```sh
+pnpm release:sbom
+pnpm release:verify
+cd .artifacts/distribution
+shasum -a 256 -c checksums.txt
+```
+
+`.artifacts/distribution` contains the six native archives, the complete static `web/` directory, one `.cdx.json` per native archive plus one Web SBOM, and `checksums.txt` covering every other file, including the SBOMs themselves. Its checksum paths are relative to this directory. Generation fails before creating output when an input check fails, and never overwrites prior output; move an old distribution aside deliberately before regenerating. An I/O failure during staging leaves partial output for inspection. Verification requires the original `.artifacts/release` binaries/metadata and matching source/dependency checkout, but does not change them. The standalone checksum command needs only the distribution directory.
+
+Every native archive is read with Go's standard TAR/ZIP readers without extraction. Entry count, paths and decompressed bytes are bounded; duplicate names, links, corrupt checksums and unsafe entries fail. Archive contents must match the actual inspected executable, README and all three verified notice files. Every target gets its own compiled dependency inventory, with immutable versions/sums checked against `go.sum`; the local Tailcat replacement is bound to the clean gitlink and resolved Wasm main-module version. Native Go metadata and embedded stamps must match the intended source, target and build identity. Non-host inspection is not native execution.
+
+For Web, the verifier checks exact manifest/file coverage and hashes, compression round trips, installed npm identities, compiler identities and actual embedded Wasm module records. Each SBOM records contained-file SHA-256 hashes, component identities, source/Tailcat revisions and protocol compatibility. A Go `h1` module sum is retained as a module-content property, not mislabeled as an archive SHA-256. Only verified component relationships are emitted; internal library edges remain explicitly incomplete, following [CycloneDX dependency semantics](https://cyclonedx.org/use-cases/software-dependencies/). This is a component inventory, not a fabricated complete call graph.
+
+The verifier scans built plaintext/binaries and SBOM JSON for recognizable invitation, ConnBlob and private-key forms without echoing matches. Compressed content is tied to scanned raw bytes. These pattern checks complement build-owned input restrictions; they do not prove that arbitrary concealed secrets are impossible. SBOM comparisons reject missing/extra components, files, dependencies and identity/hash changes even when the JSON schema remains valid. Only valid generation timestamps and unique UUIDs may differ from freshly derived documents.
+
+Passing these commands completes integrity, SBOM and source notice verification, not release approval. Clean-source release evidence, native/device tests, signatures and publication configuration remain separate mandatory requirements. No account, upload, signing service or upstream source change is involved.
+
+## Source notice verification
+
+The source-controlled notice bundle includes the union of production Go dependencies resolved for the six native targets and Wasm, the Web bundler's npm identities, Go's own notices, and separately identified source-only OpenSpec skill attribution. Each original root/nested license, copying, copyright, patent, notice and author file retains its source path, text and SHA-256 identity. This conservatively includes some unused source-subtree notices; it does not claim that every subcomponent is linked. No third-party code is assigned the project's Apache-2.0 terms. Git preserves the generated text's original line endings, and formatting does not rewrite its inventory.
+
+The Web build emits the three notices as ordinary static files with manifest hashes, without precaching or loading them into the application. Distribution verification compares the union of actual SBOM dependencies with the recorded distribution identities, including Tailcat's revision, and checks archive/Web notice bytes against verified source. A missing grant, stale inventory or changed file stops packaging. Automated preservation is not a legal certification: ambiguous grants and special source attribution still require review when dependencies change.
 
 ## Coverage policy
 
@@ -36,7 +149,13 @@ The orchestrator runs synchronously and propagates the first non-zero status. It
 
 A workspace with no coverable production source explicitly reports a skip. The first production source activates the hard coverage gate. Go module verification and tidy checks run even before the first Go source file exists.
 
+Web tests use two inline Vitest projects: ordinary adjacent test/spec files run in Node; `*.browser.test.tsx` (or the corresponding `.ts`/`.spec` spelling) runs in headless Chromium through the official Playwright provider. Both contribute to the same V8 coverage report and four unchanged thresholds. Canvas pixels, native DOM interactions and optional browser capabilities are exercised in the real browser; no DOM emulator is installed. Browser failure screenshots and attachments stay under ignored `test-results/components/`. The five-profile Playwright stage remains separate and tests built assets. Install the matching Playwright browsers before either browser-aware stage.
+
 ## CI policy
+
+The component browser context enables native touch capability alongside keyboard and mouse support. Leash also has one Chromium mobile-profile test using native CDP touch injection; other projects explicitly mark that injection-specific case inapplicable. This checks terminal history movement, unchanged page position and zero emitted input. It does not replace physical iPhone/Android acceptance.
+
+The sound component test selects Chromium's native silent audio sink and asserts that selection. Its actual audio clock, oscillators, ended events and context closure still execute, without depending on an available host speaker device. Production audio retains its default output. Physical-device sound is separate acceptance evidence; the test neither mocks the audio engine nor claims speaker output.
 
 The workflow uses exact Node, pnpm, Go, and action revisions on Linux, macOS, and Windows. Checkout initializes the recorded Tailcat gitlink; no CI step follows the remote branch. It installs from the frozen lockfile, installs the matching Playwright browsers, and runs the delivery gate. Matrix failure cancels remaining matrix work, and fuzzing runs only after the main matrix succeeds. Each fuzz target runs separately because Go fuzz mode accepts one package and one matching target per invocation. Branch protection requires the complete matrix.
 

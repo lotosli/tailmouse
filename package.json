@@ -2,6 +2,7 @@
   "name": "tailmouse-monorepo",
   "version": "0.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "TailMouse polyglot monorepo and spec-driven development harness",
   "type": "module",
   "engines": {
@@ -9,9 +10,10 @@
   },
   "packageManager": "pnpm@11.25.0",
   "scripts": {
-    "build": "pnpm --recursive --if-present run build",
+    "build": "node tools/build-native.mjs && pnpm --recursive --if-present run build",
     "check:architecture": "node tools/check-architecture.mjs",
     "check:format": "prettier --check . --ignore-unknown",
+    "check:licenses": "node tools/release-licenses.mjs check",
     "check:open-spec": "openspec validate --all --strict --no-interactive && openspec schema validate tailmouse-sdd",
     "coverage": "pnpm --recursive --if-present run coverage && node tools/go-gate.mjs coverage",
     "e2e": "node tools/web-task.mjs e2e",
@@ -23,8 +25,17 @@
     "go:full": "node tools/go-gate.mjs full",
     "lint": "oxlint --type-aware --deny-warnings --ignore-pattern third_party/tailcat .",
     "openspec": "openspec",
+    "release:snapshot": "node tools/release-native.mjs",
+    "release:notices": "node tools/release-licenses.mjs generate",
+    "release:sbom": "node tools/release-sbom.mjs generate",
+    "release:verify": "node tools/release-sbom.mjs verify",
     "tailcat:check": "node tools/tailcat-gate.mjs full",
+    "test:m0-acceptance": "node tools/m0-acceptance.mjs",
+    "test:leash": "node tools/leash-acceptance.mjs",
+    "test:leash-network": "node tools/leash-acceptance.mjs --network-matrix",
+    "test:escape-network": "node tools/tailcat-gate.mjs build && pnpm --filter @tailmouse/web build && go test -tags=tailcatintegration -count=1 -failfast -timeout=35m -run=\"TestImpairment|TestEscapeNetwork\" ./apps/cli/internal/transport/tailcat",
     "test": "pnpm --recursive --if-present run test",
+    "test:transport": "node tools/tailcat-gate.mjs build && pnpm --filter @tailmouse/web build && go test -tags=tailcatintegration -count=1 -failfast -timeout=5m -run=\"^TestHermeticTailcat(Transport|ExpiredHost|ClientVerification)$\" ./apps/cli/internal/transport/tailcat",
     "typecheck": "pnpm --recursive --if-present run typecheck"
   },
   "devDependencies": {

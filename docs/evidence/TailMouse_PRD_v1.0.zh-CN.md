@@ -7,6 +7,7 @@
 > 文档状态：可开发  
 > 文档版本：v1.0  
 > 基线日期：2026-09-01  
+> 补充确认：2026-09-03（§7.4：30 秒无有效 PONG 的失联判定）  
 > Tailcat 依赖基线：v0.4.0（必须固定版本或 commit，不跟随 `main` 浮动）  
 > 项目属性：非商业、开源、非官方社区伴生项目  
 > 建议许可证：BSD-3-Clause 或 Apache-2.0  
@@ -474,6 +475,24 @@ v0.1 默认一个活动浏览器：
 - 因链接本身是 bearer capability，重连不提供强设备身份保证；
 - v0.1 不承诺抵抗“链接泄露后抢占连接”，README 必须明确。
 
+## 7.4 半开连接与心跳失联判定
+
+**2026-09-03 用户确认补充：** 浏览器崩溃或网络中断后，底层连接可能未立即报告断开，不能因此长期占用唯一活动连接名额。
+
+- Host 复用现有每秒一次的 `PING/PONG`，对已完成握手的活动连接进行存活检测。
+- 从握手成功开始计时；收到与该连接未完成 `PING` 的 sequence、timestamp 相匹配的有效 `PONG` 后，重置失联计时。使用 Host 本地单调时钟，不依赖浏览器时钟同步。
+- 连续 **30 秒未收到有效 `PONG`**，Host 判定旧连接失联，关闭该连接、取消其连接级工作并释放活动名额，随后进入现有 reconnect grace 流程；不等待底层 TCP 自行超时。
+- 重复、过期、不匹配的 `PONG`、普通业务数据或其他连接的消息，均不得刷新旧连接的失联计时。
+- 失联检测的 30 秒与断开后默认 30 秒的重连宽限是两个不同阶段；不修改原始分享 TTL，不延长已有的过期或模式结束期限。
+- `leash` 默认保留同一子进程、PTY 和有界 scrollback，本机终端继续可用；重连不得自动重启子进程。显式设置的 `--kill-on-disconnect` 仍按既有规则生效。
+- 新连接仍需完成邀请与协议校验并竞争唯一活动名额；旧连接尚未失联时仍返回 `SESSION_BUSY`。`escape` 的输入衰减、暂停和结束规则保持不变。
+
+验收补充：
+
+- 强制结束真实浏览器进程，不发送正常关闭消息；确认旧名额在失联判定后释放，新浏览器可在重连宽限内恢复同一运行中的 Leash 子进程及其历史/实时输出。
+- 正常有效 `PONG` 持续刷新存活时间；重复、过期、不匹配 `PONG` 不能延长连接寿命，30 秒边界前不提前判定失联。
+- 分别验证默认子进程存活与显式 `--kill-on-disconnect`，并确认旧连接排队输入不会在重连后重放。
+
 ---
 
 # 8. Feature A：`tailmouse escape`
@@ -598,6 +617,8 @@ target_time = now - clamp(rtt_ewma, 40ms, 250ms)
 - RTT 越高，尾巴越长；
 - jitter 高时气味点间距更不均；
 - 高延迟不能让猫无限变弱，因此使用上面的速度补偿。
+
+Display detail (2026-09-04): both views select dots from observed mouse-position history over twice the clamped delay, an 80-500 ms window. Alternating sample gaps are `50 ms +/- min(jitter / 2, 25 ms)`, quantized to available samples and terminal cells. Points are never randomly displaced; stationary motion does not fabricate a longer path. The terminal reuses its simulation history. The browser keeps at most 16 actually rendered positions, sampled no faster than 30 Hz; this visual prediction history is not authoritative state or a new wire payload. Browser history clears on a new round, pause/countdown/stop, a render gap above 100 ms, or a displayed jump above one cell. Cat pursuit, speed and outcomes are unchanged.
 
 ## 8.6 控制方式
 
@@ -1700,11 +1721,12 @@ frame-ancestors 'none'
 ```text
 1. Parse invite
 2. Loading Tailcat Wasm: xx%
-3. Connecting to relay
-4. Meow / Meowed
-5. Establishing encrypted session
-6. Launch mode UI
+3. Connecting to relay / Meow handshake
+4. Establishing encrypted session
+5. Launch mode UI
 ```
+
+**Owner-approved correction, 2026-09-04:** Relay connection and the Meow/Meowed exchange share one displayed stage because the selected Tailcat Wasm bridge exposes a final dial result, not independent handshake-progress events. Display actual Wasm download progress; do not invent intermediate handshake events. This presentation correction does not change Tailcat source, encryption, the 60-second connection limit, stage-specific errors, or the performance targets below.
 
 目标：
 
@@ -2053,6 +2075,8 @@ Build version
 - Browser 支持最近两个 TMOUSE minor；
 - Host 不支持时返回 `PROTOCOL_MISMATCH`；
 - Tailcat revision 不要求完全相同，但官方 release 构建必须使用同一 tag。
+
+Initial-release detail (2026-09-04): wire identifier `1` denotes TMOUSE/1.0. The rolling two-minor policy counts actually available same-major contracts; the initial candidate has only one. Later minor identifiers require documented negotiation and cross-version tests before being advertised. Both current artifacts declare `1..1`. A canonical MouseCard may advertise an ordered unsigned 16-bit range containing identifier 1, such as `1..2`; it remains metadata, and the browser advertises only its implemented `1..1` in HELLO. Non-overlapping, reversed, zero, out-of-range and wrong-type ranges fail before transport. Unknown fields/types remain strict for the negotiated contract. No hypothetical second codec is implemented. The existing owner-selected exact gitlink remains the shared native/Wasm build input.
 
 ---
 

@@ -36,6 +36,22 @@ Every host simulation tick SHALL append a bounded timestamped mouse scent point,
 - **WHEN** the delayed target timestamp lies between two retained scent points
 - **THEN** the host linearly interpolates a legal target without reading future or discarded points
 
+### Requirement: Bounded RTT-shaped scent presentation
+
+Both Escape views SHALL show scent dots on their existing mouse-position history, with a visible age window of twice RTT EWMA clamped to 40-250 ms. Display sampling SHALL alternate gaps of `50 ms +/- min(jitter / 2, 25 ms)` without random displacement, future points or changes to cat pursuit. Dots MAY be quantized or overlap at the available sample/cell resolution. The browser SHALL retain at most 16 rendered positions at no more than 30 Hz; these are visual prediction history, not authoritative game state. No additional protocol payload is required.
+
+#### Scenario: Latency and jitter change during movement
+
+- **WHEN** the same sufficiently sampled moving path is rendered with a higher RTT within the clamp
+- **THEN** the selected history extends farther back without exceeding 500 ms or 16 points
+- **AND** nonzero jitter produces alternating longer/shorter sample gaps rather than changing any recorded position
+
+#### Scenario: Display history is no longer continuous
+
+- **WHEN** a new round starts, gameplay stops/pauses/counts down, rendering resumes after more than 100 ms, or the displayed mouse jumps more than one cell
+- **THEN** browser scent history clears before recording the new displayed path
+- **AND** teardown cannot retain history for another connection
+
 ### Requirement: Touch and tilt input details
 
 Touch input SHALL use a gesture-centered joystick, dead zone 0.08, maximum radius 18% of the viewport short side, normalized magnitude from zero through one, and zero movement on touch end or cancellation. Tilt SHALL require a user gesture, permission, one-second calibration, beta/gamma filtering, and automatic touch fallback.
@@ -54,6 +70,39 @@ The browser SHALL render the full map, mouse, cat, cheeses, exit state, joystick
 - **WHEN** the host configuration disables phone rendering
 - **THEN** the session retains control and accessible state feedback without claiming the standard visual game experience
 
+#### Scenario: Host presentation policy reaches the browser
+
+- **WHEN** a game initializes with the PRD control, phone-render and network-HUD flags
+- **THEN** its strict initialization payload carries those three settings and the browser applies them without treating them as capability grants
+- **AND** selecting tilt still requires a user gesture, with touch available before permission or after refusal
+
+#### Scenario: Retained round restarts from the local terminal
+
+- **WHEN** the local user presses `r` after a result in an unexpired `--once=false` session
+- **THEN** exactly one new round uses the same selected configuration and original session expiry
+- **AND** old connection input cannot cross the restart boundary, initialization precedes the new snapshots, and both views leave the previous result
+
+#### Scenario: Terminal rendering or output is unavailable
+
+- **WHEN** terminal rendering is disabled or stdout is redirected
+- **THEN** the CLI does not emit an ANSI animation stream, still reports the authoritative result, and retains local session revocation
+
+### Requirement: Local mouse prediction and correction
+
+The browser SHALL predict mouse movement immediately from local intent without waiting for a network round trip. Every fresh authoritative snapshot SHALL reconcile error below 0.25 cell within 100 ms, error from 0.25 through 1.0 cell within 200 ms, and larger error by immediate snap with visible dust feedback. Snapshots whose sequence is not newer MUST NOT affect prediction. Prediction MUST NOT collect cheese, unlock the exit, move the cat or decide an outcome.
+
+#### Scenario: An authoritative correction arrives during local movement
+
+- **WHEN** a fresh snapshot differs from the predicted mouse position
+- **THEN** the browser applies the matching correction band while continuing immediate current-intent feedback
+- **AND** all game outcomes and non-mouse state remain the host's unchanged state
+
+#### Scenario: Rendering resumes after suspension
+
+- **WHEN** the animation loop resumes after a gap above 100 ms
+- **THEN** elapsed movement is discarded instead of replayed in a burst
+- **AND** a new round or connection starts from its own authoritative state
+
 ### Requirement: Result summary
 
 Every completed round SHALL produce exactly one authoritative result showing outcome, elapsed time, relay, RTT p50/p95, jitter when available, and the PRD result message without leaking invitation data.
@@ -71,3 +120,9 @@ At simulated 150 ms RTT and 30 ms jitter, browser movement SHALL remain immediat
 
 - **WHEN** the standard latency/jitter profile runs against an active round
 - **THEN** prediction, latest-only input, host authority, RTT display, and bounded payload measurements all remain within their specified behavior
+
+#### Scenario: Reliable transport delivers a stale input backlog
+
+- **WHEN** an active input stream resumes after a gap longer than 150 ms
+- **THEN** the host drains old movement through a validated post-gap PING/PONG boundary before accepting fresh input
+- **AND** old dash requests are explicitly rejected, and neither stale input nor the barrier PONG resets the stop, pause or grace deadlines

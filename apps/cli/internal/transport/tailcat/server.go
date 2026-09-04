@@ -8,12 +8,15 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"net/netip"
 	"net/url"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	upstream "github.com/tailscale/tailcat"
 	"tailscale.com/tailcfg"
@@ -70,6 +73,10 @@ type Config struct {
 	DERPHosts    []string
 	DERPMapURL   string
 	DERPRegion   int
+	DERPPort     int
+	STUNPort     int
+	RegionCode   string
+	RegionName   string
 	OnConnection func(ByteStream)
 }
 
@@ -88,17 +95,59 @@ type Server struct {
 }
 
 type backend interface {
-	Start() error
+	Start(context.Context) error
 	ConnBlob() string
 	DrainTCP(context.Context) error
 	Close() error
 }
 
 type realBackend struct {
-	server *upstream.Server
+	server       *upstream.Server
+	mapTransport http.RoundTripper
 }
 
-func (b *realBackend) Start() error                       { return b.server.Start() }
+func (b *realBackend) Start(ctx context.Context) error {
+	if err := b.selectRegion(ctx); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return b.server.Start()
+}
+
+func (b *realBackend) selectRegion(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if b.server.Region != nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(ctx, relayMapTimeout)
+	defer cancel()
+	source := b.server.DERPMapURL
+	if source == "" {
+		source = upstream.DefaultDERPMapURL
+	}
+	relayMap, err := fetchRelayMap(ctx, source, b.mapTransport)
+	if err != nil {
+		return err
+	}
+	// Tailcat still owns selection. Supplying the complete validated map
+	// prevents its fetcher from following insecure redirects or stale data.
+	info := upstream.ConnInfo{RegionID: -1}
+	if err := info.Expand(ctx, relayMap, upstream.ExpandForServer); err != nil {
+		return err
+	}
+	if len(info.Region) != 1 || info.Region[0] == nil {
+		return ErrCredential
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	b.server.Region = info.Region[0]
+	return nil
+}
 func (b *realBackend) ConnBlob() string                   { return string(b.server.ConnBlob()) }
 func (b *realBackend) DrainTCP(ctx context.Context) error { return b.server.DrainTCP(ctx) }
 func (b *realBackend) Close() error                       { return b.server.Close() }
@@ -119,9 +168,15 @@ func start(ctx context.Context, config Config, factory backendFactory) (*Server,
 	if err != nil {
 		return nil, err
 	}
-	if err := configured.Start(); err != nil {
+	if err := configured.Start(ctx); err != nil {
 		_ = configured.Close()
-		return nil, fmt.Errorf("start transport: %w", ErrStart)
+		category := ErrStart
+		if errors.Is(err, context.Canceled) {
+			category = context.Canceled
+		} else if errors.Is(err, context.DeadlineExceeded) {
+			category = context.DeadlineExceeded
+		}
+		return nil, fmt.Errorf("start transport: %w", category)
 	}
 	if err := ctx.Err(); err != nil {
 		_ = configured.Close()
@@ -217,6 +272,26 @@ func normalizeRelay(config Config) (Relay, *tailcfg.DERPRegion, string, error) {
 			ErrInvalidConfig,
 		)
 	}
+	derpPort, stunPort := config.DERPPort, config.STUNPort
+	if derpPort == 0 {
+		derpPort = 443
+	}
+	if stunPort == 0 {
+		stunPort = 3478
+	}
+	if derpPort < 1 || derpPort > 65535 || stunPort < 1 || stunPort > 65535 {
+		return Relay{}, nil, "", fmt.Errorf("configure relay: %w: invalid custom port", ErrInvalidConfig)
+	}
+	code, name := config.RegionCode, config.RegionName
+	if code == "" {
+		code = defaultCustomRegionCode
+	}
+	if name == "" {
+		name = defaultCustomRegionName
+	}
+	if !validRegionLabel(code, 32) || !validRegionLabel(name, 128) {
+		return Relay{}, nil, "", fmt.Errorf("configure relay: %w: invalid custom region label", ErrInvalidConfig)
+	}
 	hosts := make([]string, 0, len(config.DERPHosts))
 	seen := make(map[string]struct{}, len(config.DERPHosts))
 	for _, value := range config.DERPHosts {
@@ -239,25 +314,29 @@ func normalizeRelay(config Config) (Relay, *tailcfg.DERPRegion, string, error) {
 	slices.Sort(hosts)
 	region := &tailcfg.DERPRegion{
 		RegionID:   tailcfg.DERPRegionID(regionID),
-		RegionCode: defaultCustomRegionCode,
-		RegionName: defaultCustomRegionName,
+		RegionCode: code,
+		RegionName: name,
 	}
 	for index, host := range hosts {
 		region.Nodes = append(region.Nodes, &tailcfg.DERPNode{
 			Name:     fmt.Sprintf("mouse-%d", index+1),
 			RegionID: tailcfg.DERPRegionID(regionID),
 			HostName: host,
-			DERPPort: 443,
-			STUNPort: 3478,
+			DERPPort: derpPort,
+			STUNPort: stunPort,
 		})
 	}
 	return Relay{
 		Mode:       RelayCustomHost,
 		RegionID:   regionID,
-		RegionCode: defaultCustomRegionCode,
-		RegionName: defaultCustomRegionName,
+		RegionCode: code,
+		RegionName: name,
 		Host:       hosts[0],
 	}, region, "", nil
+}
+
+func validRegionLabel(value string, maximum int) bool {
+	return len(value) <= maximum && utf8.ValidString(value) && !strings.ContainsFunc(value, unicode.IsControl)
 }
 
 func normalizeHostname(value string) (string, error) {
@@ -328,6 +407,11 @@ func (s *Server) Close(ctx context.Context) error {
 		var failures []error
 		if err := s.backend.DrainTCP(drainContext); err != nil {
 			failures = append(failures, ErrDrain)
+			if errors.Is(err, context.DeadlineExceeded) && errors.Is(drainContext.Err(), context.DeadlineExceeded) {
+				// Preserve only the safe timeout classification. A gone peer
+				// cannot acknowledge FIN; force-close still runs below.
+				failures = append(failures, context.DeadlineExceeded)
+			}
 		}
 		if err := s.backend.Close(); err != nil {
 			failures = append(failures, ErrClose)
