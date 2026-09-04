@@ -548,7 +548,15 @@ describe('Leash terminal in a real browser', () => {
           .payload,
       ),
     ).toEqual({ generation: 1, action: 'interrupt' });
+    await f.state({ state: 'running' });
+    await expect
+      .element(page.getByRole('button', { name: 'Interrupt', exact: true }))
+      .toBeDisabled();
     await f.state({ state: 'interrupting' });
+    await f.state({ state: 'running' });
+    await expect
+      .element(page.getByRole('button', { name: 'Interrupt', exact: true }))
+      .toBeEnabled();
     await page.getByRole('button', { name: 'Lock Ctrl' }).click();
     await page
       .getByRole('textbox', { name: 'Paste text' })

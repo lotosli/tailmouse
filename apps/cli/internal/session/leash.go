@@ -24,6 +24,7 @@ type leashTerminal struct {
 	subscription      *leash.Subscription
 	history           []byte
 	reset, stateDirty bool
+	interruptAck      *protocol.ProcessState
 	dropped, reported uint64
 	live              []byte
 	barrier           bool
@@ -81,6 +82,13 @@ func (host *Host) PublishLeash(state protocol.ProcessState, pump *leash.Pump) er
 	restart := state.Generation != terminal.state.Generation || terminal.pump != nil && pump != terminal.pump
 	if changed {
 		terminal.dropped = 0
+		terminal.interruptAck = nil
+	} else if terminal.connection != nil && terminal.interruptAck == nil && terminal.stateDirty && terminal.state.State == "interrupting" && state.State == "running" {
+		// Running may replace ordinary state, but cannot erase the reply that
+		// releases the browser's pending control. Selected frames already have
+		// their order guaranteed by the sole sender, so retain only unsent state.
+		ack := terminal.state
+		terminal.interruptAck = &ack
 	}
 	terminal.state, terminal.pump, terminal.stateDirty = state, pump, true
 	if changed && terminal.connection != nil {
@@ -105,6 +113,7 @@ func (terminal *leashTerminal) snapshotLocked() {
 		terminal.dropped = max(terminal.dropped, snapshot.Dropped)
 	}
 	terminal.reset, terminal.stateDirty = true, true
+	terminal.interruptAck = nil
 	terminal.barrierPing = nil
 }
 
@@ -130,6 +139,7 @@ func (terminal *leashTerminal) detach(connection *hostConnection) {
 	terminal.connection, terminal.subscription, terminal.history, terminal.live = nil, nil, nil, nil
 	terminal.barrier, terminal.barrierPing = false, nil
 	terminal.control = nil
+	terminal.interruptAck = nil
 }
 
 func (terminal *leashTerminal) wakeLocked() {
@@ -183,6 +193,11 @@ func (terminal *leashTerminal) next(connection *hostConnection) (frame protocol.
 	if terminal.dropped != terminal.reported {
 		terminal.reported = terminal.dropped
 		frame, err = protocol.OutputDroppedFrame(protocol.OutputDropped{Generation: terminal.state.Generation, Bytes: terminal.dropped})
+		return frame, true, err
+	}
+	if terminal.interruptAck != nil {
+		frame, err = protocol.ProcessStateFrame(*terminal.interruptAck)
+		terminal.interruptAck = nil
 		return frame, true, err
 	}
 	if terminal.stateDirty {
@@ -306,8 +321,8 @@ func (terminal *leashTerminal) input(connection *hostConnection, frame protocol.
 
 func (host *Host) LeashControls() <-chan struct{} { return host.terminal.controls }
 
-// TakeLeashControl rechecks the lease and generation immediately before the
-// CLI performs a process operation. A disconnected peer leaves no delayed work.
+// TakeLeashControl rechecks lease, generation and process state immediately
+// before a platform effect. A disconnected peer leaves no delayed work.
 func (host *Host) TakeLeashControl() (LeashControl, bool) {
 	terminal := host.terminal
 	terminal.mu.Lock()
@@ -315,6 +330,9 @@ func (host *Host) TakeLeashControl() (LeashControl, bool) {
 	request := terminal.control
 	terminal.control = nil
 	if request == nil || request.Generation != terminal.state.Generation || terminal.host.Authority.Authorize(request.lease, request.Action, time.Now()) != nil {
+		return LeashControl{}, false
+	}
+	if terminal.state.State != "running" && terminal.state.State != "interrupting" && !(request.Action == "restart" && terminal.state.State == "exited") {
 		return LeashControl{}, false
 	}
 	switch request.Action {
@@ -380,7 +398,7 @@ func (host *Host) AcceptLeashSize(size LeashSize) bool {
 func (terminal *leashTerminal) ping(connection *hostConnection, frame protocol.Frame) {
 	terminal.mu.Lock()
 	defer terminal.mu.Unlock()
-	if terminal.connection != connection || !terminal.barrier || terminal.reset || len(terminal.history) > 0 || terminal.stateDirty {
+	if terminal.connection != connection || !terminal.barrier || terminal.reset || len(terminal.history) > 0 || terminal.interruptAck != nil || terminal.stateDirty {
 		return
 	}
 	if terminal.barrierPing == nil || time.Since(terminal.barrierAt) > 5*time.Second {

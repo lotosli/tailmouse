@@ -45,6 +45,14 @@ func TestConPTYChild(t *testing.T) {
 	}
 	watchdog := time.AfterFunc(15*time.Second, func() { os.Exit(124) })
 	defer watchdog.Stop()
+	if strings.HasPrefix(mode, "terminate-") {
+		conPTYTerminateChild(mode)
+		os.Exit(125)
+	}
+	if strings.HasPrefix(mode, "interrupt-") {
+		conPTYInterruptChild(mode)
+		os.Exit(125)
+	}
 	if strings.HasPrefix(mode, "exit:") {
 		code, err := strconv.ParseUint(strings.TrimPrefix(mode, "exit:"), 10, 32)
 		if err != nil {

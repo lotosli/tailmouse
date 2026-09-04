@@ -1,18 +1,12 @@
-//go:build darwin || linux
-
 package main
 
 import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
-	"syscall"
 	"time"
-
-	"golang.org/x/sys/unix"
 
 	"tailmouse/apps/cli/internal/config"
 	"tailmouse/apps/cli/internal/leash"
@@ -53,6 +47,17 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 	var pendingLocal []byte
 	var retryInput *time.Timer
 	var retryInputTick <-chan time.Time
+	localResize := leashResizeEvents(console)
+	requestLocalResize := func() error {
+		cols, rows, err := console.Size()
+		if err != nil {
+			return err
+		}
+		if cols < 20 || cols > 500 || rows < 5 || rows > 200 {
+			return nil
+		}
+		return host.ResizeLeash(cols, rows, time.Now())
+	}
 
 	inputReader := readLeashInput(ctx, console)
 	local := inputReader.values
@@ -263,10 +268,7 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 			}
 			state.State, state.ExitCode = "exited", &childResult.ExitCode
 			if childResult.Signal != 0 {
-				name := unix.SignalName(syscall.Signal(childResult.Signal))
-				if name == "" {
-					name = fmt.Sprintf("SIGNAL_%d", childResult.Signal)
-				}
+				name := leashSignalName(childResult.Signal)
 				state.Signal = &name
 			}
 			if err := publish(); err != nil {
@@ -293,16 +295,14 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 				}
 			case shutdownSignal(value):
 				return revoke()
-			case value == syscall.SIGWINCH:
-				cols, rows, err := console.Size()
-				if err != nil {
+			case leashResizeSignal(value):
+				if err := requestLocalResize(); err != nil {
 					return exitInternal, session.InternalFailure
 				}
-				if cols >= 20 && cols <= 500 && rows >= 5 && rows <= 200 {
-					if err := host.ResizeLeash(cols, rows, time.Now()); err != nil {
-						return exitInternal, session.InternalFailure
-					}
-				}
+			}
+		case <-localResize:
+			if err := requestLocalResize(); err != nil {
+				return exitInternal, session.InternalFailure
 			}
 		case <-firstHello:
 			firstHello = nil
@@ -485,6 +485,10 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 					return exitInternal, session.InternalFailure
 				}
 				state.State = "interrupting"
+				if err := publish(); err != nil {
+					return exitInternal, session.InternalFailure
+				}
+				state.State = "running"
 				if err := publish(); err != nil {
 					return exitInternal, session.InternalFailure
 				}

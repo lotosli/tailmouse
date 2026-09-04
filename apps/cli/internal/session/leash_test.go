@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -249,6 +250,142 @@ func TestLeashResetSnapshotAndGenerationBarrier(t *testing.T) {
 		t.Fatal("detached reader retained output")
 	}
 	assertTerminalCode(t, host.terminal.input(connection, input), protocol.CodeUnauthorized)
+}
+
+func terminalStates(t *testing.T, host *Host, connection *hostConnection) []protocol.ProcessState {
+	t.Helper()
+	var states []protocol.ProcessState
+	for range 8 {
+		frame, ok, err := host.terminal.next(connection)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			return states
+		}
+		if frame.Type == protocol.TypeProcessState {
+			state, err := protocol.DecodeProcessState(frame)
+			if err != nil {
+				t.Fatal(err)
+			}
+			states = append(states, state)
+		}
+	}
+	t.Fatal("small terminal fixture exceeded its bounded frame sequence")
+	return nil
+}
+
+func TestLeashInterruptAcknowledgmentSurvivesCoalescedRunningState(t *testing.T) {
+	for _, drainFirst := range []bool{false, true} {
+		t.Run(fmt.Sprintf("drainFirst=%t", drainFirst), func(t *testing.T) {
+			host, connection, pump := terminalFixture(t, Config{}, nil)
+			terminalStates(t, host, connection)
+			control, err := protocol.ProcessControlFrame(protocol.ProcessControl{Generation: 1, Action: "interrupt"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := host.terminal.input(connection, control); err != nil {
+				t.Fatal("fixture could not request interrupt", err)
+			}
+			if _, ok := host.TakeLeashControl(); !ok {
+				t.Fatal("authorized interrupt did not reach the owner")
+			}
+			var states []protocol.ProcessState
+			if drainFirst {
+				states = terminalStates(t, host, connection)
+			}
+			if err := host.PublishLeash(protocol.ProcessState{Generation: 1, State: "running"}, pump); err != nil {
+				t.Fatal(err)
+			}
+			states = append(states, terminalStates(t, host, connection)...)
+			var names []string
+			for _, state := range states {
+				if state.Generation != 1 {
+					t.Fatal("interrupt changed generation")
+				}
+				names = append(names, state.State)
+			}
+			if !slices.Equal(names, []string{"interrupting", "running"}) {
+				t.Fatalf("interrupt acknowledgment was lost or repeated: %v", names)
+			}
+			if err := host.terminal.input(connection, protocol.Frame{Type: protocol.TypeTermInput, Payload: []byte("q")}); err != nil || pump.PendingInput() != 1 {
+				t.Fatal("running child did not accept input after acknowledgment", err)
+			}
+		})
+	}
+}
+
+func TestLeashInterruptAcknowledgmentDoesNotSurviveSnapshotReplacement(t *testing.T) {
+	for _, replacement := range []string{"generation", "pump", "stream", "detach"} {
+		t.Run(replacement, func(t *testing.T) {
+			host, connection, pump := terminalFixture(t, Config{}, nil)
+			terminalStates(t, host, connection)
+			if err := host.PublishLeash(protocol.ProcessState{Generation: 1, State: "interrupting"}, pump); err != nil {
+				t.Fatal(err)
+			}
+			for range 3 {
+				if err := host.PublishLeash(protocol.ProcessState{Generation: 1, State: "running"}, pump); err != nil {
+					t.Fatal(err)
+				}
+			}
+			generation := uint32(1)
+			switch replacement {
+			case "generation":
+				generation = 2
+				if err := host.PublishLeash(protocol.ProcessState{Generation: generation, State: "running"}, pump); err != nil {
+					t.Fatal(err)
+				}
+			case "pump":
+				if err := host.PublishLeash(protocol.ProcessState{Generation: 1, State: "running"}, nil); err != nil {
+					t.Fatal(err)
+				}
+			case "stream", "detach":
+				previous := connection
+				host.Authority.Disconnect(previous.lease, time.Now())
+				lease, err := host.Authority.Acquire(testHostID, "leash", time.Now())
+				if err != nil {
+					t.Fatal(err)
+				}
+				if replacement == "detach" {
+					host.terminal.detach(previous)
+				}
+				connection = &hostConnection{host: host, ctx: t.Context(), lease: lease, leashWake: make(chan struct{}, 1)}
+				host.terminal.attach(connection)
+				t.Cleanup(func() { host.terminal.detach(connection) })
+				if _, ok, err := host.terminal.next(previous); ok || err != nil {
+					t.Fatal("old stream received a replacement's frame", err)
+				}
+			}
+			states := terminalStates(t, host, connection)
+			if len(states) != 1 || states[0].State != "running" || states[0].Generation != generation {
+				t.Fatalf("replacement replayed an old interrupt acknowledgment: %+v", states)
+			}
+		})
+	}
+}
+
+func TestLeashQueuedControlRechecksProcessStateBeforeEffect(t *testing.T) {
+	for _, state := range []string{"exited", "failed", "waiting"} {
+		for _, action := range []string{"interrupt", "terminate", "restart"} {
+			t.Run(state+"/"+action, func(t *testing.T) {
+				host, connection, pump := terminalFixture(t, Config{}, nil)
+				frame, err := protocol.ProcessControlFrame(protocol.ProcessControl{Generation: 1, Action: action})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := host.terminal.input(connection, frame); err != nil {
+					t.Fatal(err)
+				}
+				if err := host.PublishLeash(protocol.ProcessState{Generation: 1, State: state}, pump); err != nil {
+					t.Fatal(err)
+				}
+				_, ok := host.TakeLeashControl()
+				if want := state == "exited" && action == "restart"; ok != want {
+					t.Fatalf("queued %s reached %s process: effect=%t, want=%t", action, state, ok, want)
+				}
+			})
+		}
+	}
 }
 
 func TestLeashConfigurationAndResizeAreFailClosed(t *testing.T) {

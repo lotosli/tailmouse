@@ -9,6 +9,7 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+	"golang.org/x/term"
 )
 
 type consolePlatform struct {
@@ -17,7 +18,7 @@ type consolePlatform struct {
 }
 
 func (console *nativeConsole) prepare() error {
-	if console.input != nil {
+	if console.input != nil && term.IsTerminal(console.inputFD) {
 		handle := windows.Handle(console.inputFD)
 		var mode uint32
 		if err := windows.GetConsoleMode(handle, &mode); err != nil {
@@ -29,7 +30,7 @@ func (console *nativeConsole) prepare() error {
 			return err
 		}
 	}
-	if console.output != nil {
+	if console.output != nil && term.IsTerminal(console.outputFD) {
 		handle := windows.Handle(console.outputFD)
 		if err := windows.GetConsoleMode(handle, &console.platform.outputMode); err != nil {
 			return err

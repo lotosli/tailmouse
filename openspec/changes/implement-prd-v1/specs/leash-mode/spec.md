@@ -41,6 +41,15 @@ Local stdin and authorized browser input SHALL enter one serialized PTY writer p
 - **WHEN** both inputs are accepted during the same scheduling interval
 - **THEN** each accepted byte sequence is written atomically in one deterministic queue order without concurrent PTY writes
 
+#### Scenario: Windows local console input and redirected streams
+
+- **WHEN** Windows Leash reads local keyboard or buffer-size events
+- **THEN** native key values, Unicode units, modifiers and repeats reach the owned ConPTY without application-specific translation, while local Ctrl+C and Enter retain the existing owner policy
+- **AND** resize uses the current viewport and existing debounce, not an independent polling worker
+- **WHEN** local input or output is redirected to a file or pipe
+- **THEN** bytes are preserved, cancellation joins the local I/O operation, and cleanup leaves the caller's original handles usable
+- **AND** cleanup restores changed console modes and releases private handles without allowing a late cancellation callback to affect another operation
+
 ### Requirement: Browser terminal controls
 
 The browser SHALL provide xterm ANSI-256 rendering, fit/resize, cursor and alternate screen, touch scrolling, explicit copy/paste, mobile Esc/Tab/arrows, one-shot and lockable Ctrl/Alt, process/elapsed/RTT/connection status, and confirmed interrupt/restart/terminate controls. Readonly mode MUST hide and reject all input and process controls at the host.
@@ -79,6 +88,33 @@ Interrupt SHALL signal the active process group using platform-native terminal s
 - **WHEN** a shell gives its PTY foreground to a separate job group
 - **THEN** Interrupt signals that foreground group, allowing the shell to collect the job's outcome without receiving an unintended shutdown
 - **AND** the operating system resolves the signal target through the owned PTY, without a userspace lookup-then-signal race against a reusable numeric process-group identifier
+
+#### Scenario: Explicit interrupt leaves the process running
+
+- **WHEN** an authorized explicit interrupt is delivered successfully and the child continues running
+- **THEN** the browser receives the interrupting acknowledgment before the subsequent running state, even if the owner publishes both before the sender drains its next state
+- **AND** the browser may accept input again without mistaking a pre-request running frame for the acknowledgment
+- **AND** a reconnect or new generation receives only its current snapshot, not an old stream's retained acknowledgment
+
+#### Scenario: Child exits after a control was queued
+
+- **WHEN** a control is accepted while running but the generation exits before the process owner consumes it
+- **THEN** the owner rechecks process state, lease and generation and performs no stale Interrupt or Terminate effect
+- **AND** an explicitly authorized Restart remains valid from exited, while failed or waiting states do not accept delayed process controls
+
+#### Scenario: Windows explicit interrupt reaches a raw-mode child
+
+- **WHEN** the user confirms Interrupt for a Windows ConPTY whose child disables processed input
+- **THEN** the host delivers native Ctrl+Break semantics through that owned console without changing the host's own console attachment or selecting a reusable PID
+- **AND** the fixed control sequence cannot interleave with an accepted input chunk, cancellation releases queued writers, and delivery failure is reported within two seconds without automatic termination or retry
+- **AND** ordinary local Ctrl+C remains child input, and a child that handles and ignores the explicit event may continue running
+
+#### Scenario: Windows graceful termination retains whole-job ownership
+
+- **WHEN** Terminate requests console closure for a running Windows generation
+- **THEN** attached clients receive the native close event while terminal output continues draining independently
+- **AND** a still-running job member, including a descendant that detached from the console or outlived the root, is forcibly terminated after at most five seconds
+- **AND** cancellation shortens the grace period without skipping bounded cleanup, repeated or concurrent cleanup joins the same owned workers, and the original root exit status is preserved
 
 #### Scenario: Restart request changes command data
 

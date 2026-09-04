@@ -484,7 +484,7 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 			t.Fatal("network probe omitted bounded explicit reconnect counts")
 		}
 		t.Logf("native Leash weak network: %d ordered input bytes; %d output bytes finished locally in %.1f ms before restoring a 15-second blocked link; fresh-stream modifiers cleared; output recovery: %s", evidence.InputBytes, evidence.BulkBytes, evidence.BulkMS, evidence.OutputRecovery)
-		t.Logf("fresh-stream manual retries within the original 40-second recovery window: busy %d, handshake timeout %d", evidence.ReconnectRetries.Busy, evidence.ReconnectRetries.HandshakeTimeout)
+		t.Logf("fresh-stream manual retries within the bounded 60-second recovery window: busy %d, handshake timeout %d", evidence.ReconnectRetries.Busy, evidence.ReconnectRetries.HandshakeTimeout)
 		if scenario == "network-memory" {
 			memory := evidence.Memory
 			if memory == nil || memory.Samples != 5 || memory.ElapsedMS < 5000 || memory.ElapsedMS >= 15000 || memory.HostRSSBytes <= 0 || memory.BrowserRSSBytes <= 0 {

@@ -168,9 +168,36 @@ async function main() {
           }
           return region.getByRole('status').innerText();
         },
-        { timeout: 40_000, intervals: [500, 1000] },
+        // A lost close can require the Host's 30-second peer-liveness bound
+        // before a fresh 10-second handshake can begin. Keep enough bounded
+        // time for impaired transport setup without changing either runtime
+        // deadline or retrying terminal input.
+        { timeout: 60_000, intervals: [500, 1000] },
       )
-      .toBe('Connected');
+      .toBe('Connected')
+      .catch(async () => {
+        const region = page.getByRole('region', { name: 'Connection' });
+        const alert = region.getByRole('alert');
+        const status = region.getByRole('status');
+        let visible = 'MISSING';
+        if (await alert.count()) {
+          visible = `alert:${failureCodes.get(await alert.textContent()) ?? 'UNKNOWN'}`;
+        } else if (await status.count()) {
+          const detail = await status.textContent();
+          visible = [
+            'Loading Tailcat WebAssembly',
+            'Connecting to relay / Meow handshake',
+            'Establishing encrypted session',
+            'Connected',
+          ].includes(detail ?? '')
+            ? `status:${detail}`
+            : 'status:UNKNOWN';
+        }
+        process.stderr.write(
+          `reconnect observation: ${JSON.stringify({ retries: reconnectRetries, visible })}\n`,
+        );
+        throw new AcceptanceError('RECONNECT_TIMEOUT');
+      });
     check(page.url() === `${base.origin}/`, 'RECONNECT_INVITATION_NOT_REMOVED');
     await expect(page.getByText(pid, { exact: true })).toBeVisible();
     for (const name of ['Lock Ctrl', 'Lock Alt']) {
@@ -184,10 +211,22 @@ async function main() {
     await page.getByRole('checkbox', { name: 'Screen reader support' }).check();
     output = page.getByRole('region', { name: 'Terminal output' });
     await expect(output).toContainText('ordered-input-ok');
+    const keyboard = page.getByRole('button', { name: 'Open keyboard' });
+    stage = 'fresh-input-ready';
+    await expect(keyboard)
+      .toBeEnabled({ timeout: 30_000 })
+      .catch(() => {
+        throw new AcceptanceError('FRESH_INPUT_NOT_READY');
+      });
     stage = 'fresh-keys';
-    await page.getByRole('button', { name: 'Open keyboard' }).click();
+    await keyboard.click();
     await page.keyboard.type('az');
-    await expect(output).toContainText('fresh-keys-ok');
+    stage = 'fresh-key-output';
+    await expect(output)
+      .toContainText('fresh-keys-ok', { timeout: 30_000 })
+      .catch(() => {
+        throw new AcceptanceError('FRESH_KEYS_MISSING');
+      });
 
     stage = 'slow-consumer';
     const before = await fixture('network');

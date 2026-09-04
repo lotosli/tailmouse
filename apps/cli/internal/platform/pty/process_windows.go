@@ -18,7 +18,7 @@ import (
 )
 
 // Process owns one ConPTY, its two channels, and the child's complete job.
-// The existing pump supplies the sole reader and serialized input writer.
+// The pump supplies the sole reader; pump and control writes are serialized.
 // Browser cancellation does not own the process lifetime; Close does.
 type Process struct {
 	input, output *os.File
@@ -33,6 +33,9 @@ type Process struct {
 	ioCancel      context.CancelFunc
 	mu            sync.RWMutex
 	consoleMu     sync.Mutex
+	consoleOnce   sync.Once
+	consoleClosed chan struct{}
+	writeGate     chan struct{}
 	started       bool
 	closed        bool
 	closeErr      error
@@ -52,7 +55,10 @@ func Start(ctx context.Context, snapshot *leash.Command) (_ *Process, failure er
 		return nil, err
 	}
 	ioCtx, ioCancel := context.WithCancel(context.Background())
-	process := &Process{done: make(chan struct{}), released: make(chan struct{}), ioCtx: ioCtx, ioCancel: ioCancel}
+	process := &Process{
+		done: make(chan struct{}), released: make(chan struct{}), consoleClosed: make(chan struct{}),
+		ioCtx: ioCtx, ioCancel: ioCancel, writeGate: make(chan struct{}, 1),
+	}
 	defer func() {
 		if failure != nil {
 			cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -163,20 +169,27 @@ func (process *Process) wait(handle windows.Handle) {
 	close(process.done)
 	// HPCON itself keeps the session open. Root exit is not enough: a shell
 	// or launcher may leave attached descendants running in the owned job.
-	process.releaseErr = process.waitForEmptyJob()
-	process.closeConsole()
+	process.mu.RLock()
+	process.releaseErr = waitForEmptyJob(process.ioCtx, process.job)
+	if errors.Is(process.releaseErr, context.Canceled) {
+		// Final Close canceled observation and now owns forced job cleanup.
+		process.releaseErr = nil
+	}
+	process.mu.RUnlock()
+	process.requestConsoleClose()
+	<-process.consoleClosed
 	close(process.released)
 }
 
-func (process *Process) waitForEmptyJob() error {
+// The caller retains the job handle under the resource lock until return.
+func waitForEmptyJob(ctx context.Context, job windows.Handle) error {
 	ticker := time.NewTicker(20 * time.Millisecond)
 	defer ticker.Stop()
 	for {
-		// This short guard also excludes CloseHandle(job). It never covers a
-		// console close, which may need the independent reader to keep draining.
-		process.mu.RLock()
-		if process.ioCtx.Err() != nil || process.job == 0 {
-			process.mu.RUnlock()
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if job == 0 {
 			return nil
 		}
 		// JOBOBJECT_BASIC_ACCOUNTING_INFORMATION, public Win32 layout.
@@ -184,27 +197,35 @@ func (process *Process) waitForEmptyJob() error {
 			UserTime, KernelTime, PeriodUserTime, PeriodKernelTime int64
 			PageFaults, Total, Active, Terminated                  uint32
 		}
-		err := windows.QueryInformationJobObject(process.job, windows.JobObjectBasicAccountingInformation,
+		err := windows.QueryInformationJobObject(job, windows.JobObjectBasicAccountingInformation,
 			uintptr(unsafe.Pointer(&accounting)), uint32(unsafe.Sizeof(accounting)), nil)
-		process.mu.RUnlock()
 		if err != nil || accounting.Active == 0 {
 			return err
 		}
 		select {
-		case <-process.ioCtx.Done():
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		case <-ticker.C:
 		}
 	}
 }
 
-func (process *Process) closeConsole() {
-	process.consoleMu.Lock()
-	defer process.consoleMu.Unlock()
-	if process.console != 0 {
-		windows.ClosePseudoConsole(process.console)
+func (process *Process) requestConsoleClose() {
+	process.consoleOnce.Do(func() {
+		process.consoleMu.Lock()
+		handle := process.console
 		process.console = 0
-	}
+		process.consoleMu.Unlock()
+		// Before Windows 11 24H2 this can wait for clients or output drain.
+		// Do not hold a resource lock or block the grace-period owner here.
+		// The process waiter and final Close join this one owned worker.
+		go func() {
+			if handle != 0 {
+				windows.ClosePseudoConsole(handle)
+			}
+			close(process.consoleClosed)
+		}()
+	})
 }
 
 func (process *Process) PID() int              { return process.pid }
@@ -253,6 +274,19 @@ func (process *Process) Read(ctx context.Context, data []byte) (int, error) {
 }
 
 func (process *Process) Write(ctx context.Context, data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	// Interrupt also writes this channel. Admit one complete input/control
+	// chunk at a time without trapping queued callers behind canceled I/O.
+	select {
+	case process.writeGate <- struct{}{}:
+		defer func() { <-process.writeGate }()
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-process.ioCtx.Done():
+		return os.ErrClosed
+	}
 	process.mu.RLock()
 	defer process.mu.RUnlock()
 	for len(data) > 0 {
@@ -295,6 +329,51 @@ func (process *Process) Resize(ctx context.Context, cols, rows int) error {
 	return windows.ResizePseudoConsole(process.console, windows.Coord{X: int16(cols), Y: int16(rows)})
 }
 
+// Interrupt uses ConPTY's native keyboard-event input, not a broadcast from
+// TailMouse's own console. Ctrl+Break remains a signal with processed input off;
+// ordinary local Ctrl+C still travels as raw input through the pump.
+func (process *Process) Interrupt(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if process.ioCtx.Err() != nil {
+		return os.ErrClosed
+	}
+	select {
+	case <-process.released:
+		return errors.Join(process.waitErr, process.releaseErr)
+	default:
+	}
+	// CSI Vk;Sc;Uc;Kd;Cs;Rc _: Ctrl down, Break down/up, Ctrl up.
+	// VK_CANCEL=3, VK_CONTROL=17, LEFT_CTRL_PRESSED=8. No parser or mode
+	// negotiation is needed when the destination is our own Windows ConPTY.
+	const controlBreak = "\x1b[17;29;0;1;8;1_\x1b[3;70;0;1;8;1_\x1b[3;70;0;0;8;1_\x1b[17;29;0;0;0;1_"
+	return process.Write(ctx, []byte(controlBreak))
+}
+
+// Terminate permits native console-close handlers to clean up while the sole
+// reader drains output. Detached console clients remain owned by the job.
+// Cancellation shortens the grace period, never skips forceful cleanup.
+func (process *Process) Terminate(ctx context.Context) error {
+	grace, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	process.requestConsoleClose()
+	select {
+	case <-process.released:
+		if process.ioCtx.Err() == nil {
+			return errors.Join(process.waitErr, process.releaseErr, ctx.Err())
+		}
+		// A concurrent Close may have canceled job observation. Join its
+		// forced cleanup rather than mistaking waiter release for job exit.
+	case <-grace.Done():
+	}
+	cleanup, finish := context.WithTimeout(context.Background(), time.Second)
+	defer finish()
+	return errors.Join(ctx.Err(), process.Close(cleanup))
+}
+
 // Close is final forceful cleanup, not the five-second graceful user action.
 // Cancel and join channel operations before releasing any reusable handles.
 func (process *Process) Close(ctx context.Context) error {
@@ -311,6 +390,9 @@ func (process *Process) Close(ctx context.Context) error {
 			_, waitErr := process.Wait(ctx)
 			process.closeErr = errors.Join(process.closeErr, waitErr)
 		}
+		// Job termination is asynchronous; root exit alone does not prove
+		// every descendant has exited. Retain the job handle until observed.
+		process.closeErr = errors.Join(process.closeErr, waitForEmptyJob(ctx, process.job))
 		if process.input != nil {
 			process.closeErr = errors.Join(process.closeErr, process.input.Close())
 		}
@@ -324,17 +406,19 @@ func (process *Process) Close(ctx context.Context) error {
 		process.closed = true
 		if !process.started {
 			close(process.done)
-			process.closeConsole()
+			process.requestConsoleClose()
 			close(process.released)
 		}
 	}
 	err := process.closeErr
 	process.mu.Unlock()
 	_, waitErr := process.Wait(ctx)
-	select {
-	case <-process.released:
-		return errors.Join(err, waitErr, process.releaseErr)
-	case <-ctx.Done():
-		return errors.Join(err, waitErr, ctx.Err())
+	for _, done := range []<-chan struct{}{process.released, process.consoleClosed} {
+		select {
+		case <-done:
+		case <-ctx.Done():
+			return errors.Join(err, waitErr, ctx.Err())
+		}
 	}
+	return errors.Join(err, waitErr, process.releaseErr)
 }

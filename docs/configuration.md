@@ -74,4 +74,4 @@ Leash's default start policy is `connect-or-enter`; `connect` waits for an accep
 | 126  | Command is not executable           |
 | 127  | Command was not found               |
 
-An otherwise normal Leash completion returns the last child's exit status. A child can itself return a number in this table; inspect the redacted host diagnostic to distinguish it from a TailMouse failure. A required host cleanup failure takes precedence over a child result, without replacing an earlier host root cause. Native Windows result fields preserve unsigned 32-bit values; this is not a claim that Windows Leash is currently usable.
+An otherwise normal Leash completion returns the last child's exit status. A child can itself return a number in this table; inspect the redacted host diagnostic to distinguish it from a TailMouse failure. A required host cleanup failure takes precedence over a child result, without replacing an earlier host root cause. Native Windows result fields preserve unsigned 32-bit values; cross-compilation is not native Windows execution evidence.

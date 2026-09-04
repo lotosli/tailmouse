@@ -282,6 +282,27 @@ describe('Connection-local Leash state and bounded I/O', () => {
     });
   });
 
+  it('requires an interrupt acknowledgment before accepting the return to running', async () => {
+    const f = setup();
+    await f.ready();
+    expect(f.client.control('interrupt')).toBe(true);
+    await vi.waitFor(() => expect(f.sent).toHaveLength(1));
+    await f.client.receive(state('running'));
+    expect(f.client.inspect().pendingControl).toBe('interrupt');
+    expect(f.client.canInput()).toBe(false);
+    await f.client.receive(state('interrupting'));
+    expect(f.client.inspect().pendingControl).toBeUndefined();
+    await f.client.receive(state('running'));
+    expect(f.client.inspect().process?.state).toBe('running');
+    expect(f.client.input(Uint8Array.of(113))).toBe(true);
+    await vi.waitFor(() => expect(f.sent).toHaveLength(2));
+    expect(f.sent[1]).toEqual({
+      type: Message.TERM_INPUT,
+      payload: Uint8Array.of(113),
+    });
+    expect(f.client.canControl('interrupt')).toBe(true);
+  });
+
   it('coalesces resize, validates bounds and sends one authorized control with the current generation', async () => {
     const blocked = deferred(),
       f = setup({ send: () => blocked.promise });

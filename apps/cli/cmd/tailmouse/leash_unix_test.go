@@ -636,10 +636,10 @@ func TestLeashCLIBrowserInterruptKeepsAcknowledgedStateForSurvivingChild(t *test
 	browser := fixture.connect(t)
 	waitLeashRunning(t, fixture, browser, 1)
 	sendLeashControl(t, fixture, browser, "interrupt", 1)
-	latest := "running"
-	// The next ordered heartbeat follows any coalesced state publication. A
-	// surviving child must not lose the observable interrupt acknowledgment.
-	for {
+	acknowledged, runningAfterAck, heartbeats := false, false, 0
+	// Preserve the acknowledgment, then require PRD 9.11's return to running.
+	// Two ordinary heartbeats bound observation without changing product time.
+	for heartbeats < 2 && !runningAfterAck {
 		frame, err := protocol.ReadFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateActiveLeash)
 		if err != nil {
 			t.Fatal(err)
@@ -649,17 +649,22 @@ func TestLeashCLIBrowserInterruptKeepsAcknowledgedStateForSurvivingChild(t *test
 			if err != nil {
 				t.Fatal(err)
 			}
-			latest = state.State
+			if state.State == "interrupting" {
+				acknowledged = true
+			}
+			if state.State == "running" && acknowledged {
+				runningAfterAck = true
+			}
 		}
 		if frame.Type == protocol.TypePing {
 			if err := protocol.WriteFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateActiveLeash, protocol.Frame{Type: protocol.TypePong, Payload: frame.Payload}); err != nil {
 				t.Fatal(err)
 			}
-			break
+			heartbeats++
 		}
 	}
-	if latest != "interrupting" {
-		t.Fatalf("surviving child state = %q, want interrupting", latest)
+	if !acknowledged || !runningAfterAck {
+		t.Fatalf("surviving child did not acknowledge then resume running: acknowledgment=%t running=%t", acknowledged, runningAfterAck)
 	}
 	if err := protocol.WriteFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateActiveLeash, protocol.Frame{Type: protocol.TypeTermInput, Payload: []byte("qx")}); err != nil {
 		t.Fatal(err)
