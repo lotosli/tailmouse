@@ -24,6 +24,10 @@ docker run --rm --read-only --tmpfs /tmp --cap-drop ALL \
   --security-opt no-new-privileges -p 127.0.0.1:8080:8080 tailmouse-web:local
 ```
 
+The image runs as the unprivileged `nginx` user. Its PID and all Nginx temporary
+paths use the command's `/tmp` tmpfs, so the image root remains read-only; omit
+neither `--read-only` nor `--tmpfs /tmp` when using this example.
+
 Use `http://localhost:8080` for a local secure-context test. Public deployment
 needs operator-configured HTTPS. Setting a production domain, certificates or
 publishing this image remains an operator action. Configure native `--web-base-url`

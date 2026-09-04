@@ -88,6 +88,26 @@ test('gzip and Brotli artifacts are deterministic and preserve original bytes', 
   assert.ok(first.every((item) => item.source.length < source.length));
 });
 
+test('the non-root read-only Nginx image keeps every temporary path on tmpfs', () => {
+  const config = readFileSync('apps/web/nginx.conf', 'utf8');
+  for (const [directive, directory] of [
+    ['client_body', 'client-body'],
+    ['proxy', 'proxy'],
+    ['fastcgi', 'fastcgi'],
+    ['uwsgi', 'uwsgi'],
+    ['scgi', 'scgi'],
+  ]) {
+    assert.match(
+      config,
+      new RegExp(
+        `^\\s*${directive}_temp_path /tmp/tailmouse-${directory};$`,
+        'mu',
+      ),
+    );
+  }
+  assert.match(readFileSync('apps/web/Dockerfile', 'utf8'), /^USER nginx$/mu);
+});
+
 test('static inspection rejects external and inline executable resources', () => {
   verifyStaticReferences(
     '<script type="module" src="./assets/app-12345678.js"></script><link href="./assets/app-12345678.css">',
