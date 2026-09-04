@@ -104,3 +104,56 @@ test('race failures and invalid target output stop before vulnerability checks',
     assert.doesNotMatch(result.stdout, /skipped/);
   }
 });
+
+test('CI keeps the complete fail-fast matrix ahead of packaging and fuzzing', () => {
+  const workflow = readFileSync(
+    new URL('../.github/workflows/gate.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(workflow, /permissions:\n  contents: read/u);
+  assert.match(workflow, /strategy:\n      fail-fast: true/u);
+  assert.match(
+    workflow,
+    /os: \[ubuntu-latest, macos-latest, windows-latest, windows-11-arm\]/u,
+  );
+  assert.equal(workflow.match(/submodules: true/gu)?.length, 2);
+  assert.equal(workflow.match(/persist-credentials: false/gu)?.length, 2);
+  assert.equal(workflow.match(/pnpm install --frozen-lockfile/gu)?.length, 2);
+  assert.doesNotMatch(workflow, /continue-on-error:/u);
+
+  const fuzzBoundary = '\n  fuzz:\n';
+  assert.equal(workflow.split(fuzzBoundary).length, 2);
+  const [matrixJob, fuzzJob] = workflow.split(fuzzBoundary);
+  const requiredMatrixOrder = [
+    'run: pnpm gate',
+    'name: Install verified release tools',
+    'run: pnpm release:snapshot',
+    'run: pnpm release:sbom',
+    'pnpm release:verify',
+    'sha256sum --check --strict checksums.txt',
+    'name: Check source and submodule cleanliness',
+  ];
+  let preceding = -1;
+  for (const step of requiredMatrixOrder) {
+    const index = matrixJob.indexOf(step);
+    assert.ok(index > preceding, `${step} is missing or out of order`);
+    preceding = index;
+  }
+  assert.match(fuzzJob, /^    name: Go fuzz smoke\n    needs: gate/mu);
+  assert.match(fuzzJob, /run: pnpm fuzz:smoke/u);
+
+  const gate = readFileSync(new URL('./gate.mjs', import.meta.url), 'utf8');
+  for (const phase of [
+    'hermetic transport integration',
+    'Unix Leash native/browser acceptance',
+    'Escape impairment smoke',
+    'browser end-to-end tests',
+    'Firefox and WebKit real transport acceptance',
+    'Go race and vulnerability checks',
+    'Escape complete network matrix and outages',
+    'Unix Leash complete network matrix',
+  ]) {
+    assert.match(gate, new RegExp(`'${phase.replace('/', '\\/')}'`, 'u'));
+  }
+  assert.match(gate, /tools\/release-licenses\.mjs', 'check'/u);
+});
