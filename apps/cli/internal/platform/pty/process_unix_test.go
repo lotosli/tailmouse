@@ -94,15 +94,18 @@ func TestPTYChild(t *testing.T) {
 		}
 		fmt.Printf("line:%q\n", value)
 		os.Exit(0)
-	case "echo", "idle", "ignore-term":
+	case "echo", "idle", "ignore-term", "ignore-term-hup":
 		if _, err := term.MakeRaw(0); err != nil {
 			os.Exit(125)
 		}
-		if mode == "ignore-term" {
+		if mode == "ignore-term" || mode == "ignore-term-hup" {
 			signal.Ignore(syscall.SIGTERM)
 		}
+		if mode == "ignore-term-hup" {
+			signal.Ignore(syscall.SIGHUP)
+		}
 		fmt.Println("ready")
-		if mode == "idle" || mode == "ignore-term" {
+		if mode == "idle" || mode == "ignore-term" || mode == "ignore-term-hup" {
 			select {}
 		}
 		data := make([]byte, 18)
@@ -201,6 +204,95 @@ func TestProcessTerminateGraceAndForcedDeadline(t *testing.T) {
 				t.Fatal("repeated termination failed", err)
 			}
 		})
+	}
+}
+
+func TestTerminateKillsInteractiveShellForegroundGroup(t *testing.T) {
+	binary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, action := range []string{"terminate", "close"} {
+		t.Run(action, func(t *testing.T) {
+			directory := t.TempDir()
+			environment := []string{"PATH=/usr/bin:/bin", "HOME=" + directory, "ENV=", "PS1=", "PS2="}
+			if coverage := os.Getenv("GOCOVERDIR"); coverage != "" {
+				environment = append(environment, "GOCOVERDIR="+coverage)
+			}
+			command, err := leash.NewCommand([]string{"/bin/sh", "-i"}, directory, "Interactive shell termination test", environment, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			process := startChild(t, command)
+			reader := terminalReader(t, process)
+			quotedBinary := "'" + strings.ReplaceAll(binary, "'", "'\"'\"'") + "'"
+			script := "TAILMOUSE_PTY_TEST_CHILD=ignore-term-hup " + quotedBinary + " -test.run='^TestPTYChild$'\n"
+			if err := process.Write(t.Context(), []byte(script)); err != nil {
+				t.Fatal(err)
+			}
+			for line(t, reader) != "ready" {
+			}
+			foreground, err := unix.IoctlGetInt(process.fd, unix.TIOCGPGRP)
+			if err != nil || foreground <= 1 || foreground == process.PID() {
+				t.Fatal("interactive shell did not create a separate foreground group")
+			}
+			t.Cleanup(func() {
+				if err := unix.Kill(-foreground, 0); err == nil {
+					_ = unix.Kill(-foreground, unix.SIGKILL)
+				}
+			})
+			started := time.Now()
+			if action == "terminate" {
+				err = process.Terminate(t.Context())
+			} else {
+				err = process.Close(t.Context())
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			elapsed := time.Since(started)
+			if action == "terminate" && (elapsed < 5*time.Second || elapsed > 6*time.Second) {
+				t.Fatalf("foreground forceful termination after %s", elapsed)
+			}
+			if action == "close" && elapsed > time.Second {
+				t.Fatalf("forced foreground cleanup took %s", elapsed)
+			}
+			if err := unix.Kill(-foreground, 0); !errors.Is(err, unix.ESRCH) {
+				t.Fatalf("foreground process group survived %s: %v", action, err)
+			}
+			if err := unix.Kill(-process.PID(), 0); !errors.Is(err, unix.ESRCH) {
+				t.Fatalf("shell process group survived %s: %v", action, err)
+			}
+			result, err := process.Wait(t.Context())
+			if err != nil || result.Signal != int(unix.SIGKILL) {
+				t.Fatalf("shell outcome after %s = %+v, %v", action, result, err)
+			}
+		})
+	}
+}
+
+func TestProcessGroupIdentityRejectsAnotherSession(t *testing.T) {
+	process := startChild(t, childCommand(t, "idle"))
+	if line(t, terminalReader(t, process)) != "ready" {
+		t.Fatal("child not ready")
+	}
+	exists, err := processGroupExists(process.PID(), process.PID())
+	if err != nil || !exists {
+		t.Fatalf("owned process group was not found: %v", err)
+	}
+	foreignSession, err := unix.Getsid(0)
+	if err != nil || foreignSession == process.PID() {
+		t.Fatal("test process did not have a separate session")
+	}
+	exists, err = processGroupExists(process.PID(), foreignSession)
+	if err != nil || exists {
+		t.Fatalf("process group was accepted for another session: %v", err)
+	}
+	if err := signalProcessGroup(process.PID(), foreignSession, unix.SIGKILL); err != nil {
+		t.Fatal(err)
+	}
+	if err := unix.Kill(process.PID(), 0); err != nil {
+		t.Fatal("session mismatch signaled the child")
 	}
 }
 

@@ -26,17 +26,19 @@ import (
 // Start's context bounds startup only; browser/session cancellation must not
 // silently terminate a child. The owner explicitly closes the process.
 type Process struct {
-	command  *exec.Cmd
-	master   *os.File
-	fd       int
-	done     chan struct{}
-	result   Result
-	waitErr  error
-	ioCtx    context.Context
-	ioCancel context.CancelFunc
-	ioMu     sync.RWMutex
-	closed   bool
-	closeErr error
+	command   *exec.Cmd
+	master    *os.File
+	fd        int
+	done      chan struct{}
+	result    Result
+	waitErr   error
+	ioCtx     context.Context
+	ioCancel  context.CancelFunc
+	ioMu      sync.RWMutex
+	groupMu   sync.Mutex
+	jobGroups []int
+	closed    bool
+	closeErr  error
 }
 
 func Start(ctx context.Context, snapshot *leash.Command) (*Process, error) {
@@ -299,31 +301,131 @@ func (process *Process) Interrupt(ctx context.Context) error {
 	if process.closed {
 		return os.ErrClosed
 	}
-	// Validate a current job, but do not use its numeric group as a signal
-	// target: that group can exit and its ID can be reused after this query.
-	group, err := unix.IoctlGetInt(process.fd, unix.TIOCGPGRP)
-	if err != nil || group <= 1 {
-		select {
-		case <-process.done:
-			return nil // The foreground job has already finished.
-		default:
-		}
-		if err != nil {
-			return err
-		}
-		return errors.New("terminal foreground process group is unavailable")
+	// Remember this validated job for later whole-generation cleanup, but do
+	// not use its numeric group as the Interrupt target: it can exit and its ID
+	// can be reused after this query.
+	group, err := process.rememberForegroundGroup()
+	if err != nil || group == 0 {
+		return err
 	}
 	// Both kernels resolve and retain the foreground group through the PTY.
 	// Unlike writing VINTR, this also interrupts applications with ISIG off.
 	return unix.IoctlSetInt(process.fd, unix.TIOCSIG, int(unix.SIGINT))
 }
 
-func (process *Process) signalGroup(signal unix.Signal) error {
-	err := unix.Kill(-process.PID(), signal)
+func processGroupExists(group, session int) (bool, error) {
+	currentSession, err := unix.Getsid(group)
+	if err == nil {
+		return currentSession == session, nil
+	}
+	if !errors.Is(err, unix.ESRCH) {
+		return false, err
+	}
+	// A group can outlive its leader. If a group with this ID still exists
+	// while no process has the leader PID, the ID has not been reusable.
+	err = unix.Kill(-group, 0)
+	if err == nil || errors.Is(err, unix.EPERM) {
+		return true, nil
+	}
+	if errors.Is(err, unix.ESRCH) {
+		return false, nil
+	}
+	return false, err
+}
+
+func signalProcessGroup(group, session int, signal unix.Signal) error {
+	exists, err := processGroupExists(group, session)
+	if err != nil || !exists {
+		return err
+	}
+	err = unix.Kill(-group, signal)
 	if errors.Is(err, unix.ESRCH) {
 		return nil
 	}
 	return err
+}
+
+// rememberForegroundGroup is called with the PTY resource lock held. The
+// controlling terminal supplies the current job group; its leader must still
+// belong to the session created for this Process before its reusable numeric
+// identifier is retained for graceful and forced cleanup.
+func (process *Process) rememberForegroundGroup() (int, error) {
+	group, err := unix.IoctlGetInt(process.fd, unix.TIOCGPGRP)
+	if err != nil || group <= 1 {
+		select {
+		case <-process.done:
+			return 0, nil
+		default:
+		}
+		if err != nil {
+			return 0, err
+		}
+		return 0, errors.New("terminal foreground process group is unavailable")
+	}
+	if group == process.PID() {
+		return group, nil
+	}
+	session, err := unix.Getsid(group)
+	if err != nil {
+		return 0, err
+	}
+	if session != process.PID() {
+		return 0, errors.New("terminal foreground process group belongs to another session")
+	}
+	process.groupMu.Lock()
+	defer process.groupMu.Unlock()
+	for _, remembered := range process.jobGroups {
+		if remembered == group {
+			return group, nil
+		}
+	}
+	process.jobGroups = append(process.jobGroups, group)
+	return group, nil
+}
+
+func (process *Process) ownedGroups() []int {
+	process.groupMu.Lock()
+	defer process.groupMu.Unlock()
+	groups := make([]int, 0, len(process.jobGroups)+1)
+	groups = append(groups, process.jobGroups...)
+	return append(groups, process.PID())
+}
+
+func signalProcessGroups(groups []int, session int, signal unix.Signal) error {
+	var result error
+	for _, group := range groups {
+		result = errors.Join(result, signalProcessGroup(group, session, signal))
+	}
+	return result
+}
+
+func processGroupsExited(groups []int, session int) (bool, error) {
+	for _, group := range groups {
+		exists, err := processGroupExists(group, session)
+		if err != nil {
+			return false, err
+		}
+		if exists {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func waitForProcessGroups(ctx context.Context, groups []int, session int) error {
+	ticker := time.NewTicker(20 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		exited, err := processGroupsExited(groups, session)
+		if err != nil || exited {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+	}
 }
 
 // Terminate gives the entire process group at most five seconds before final
@@ -334,27 +436,27 @@ func (process *Process) Terminate(ctx context.Context) error {
 		process.ioMu.RUnlock()
 		return process.Close(ctx)
 	}
-	err := process.signalGroup(unix.SIGTERM)
+	_, captureErr := process.rememberForegroundGroup()
+	groups := process.ownedGroups()
+	err := signalProcessGroups(groups, process.PID(), unix.SIGTERM)
 	process.ioMu.RUnlock()
-	if err != nil {
-		return err
+	if failure := errors.Join(captureErr, err); failure != nil {
+		cleanup, finish := context.WithTimeout(context.Background(), time.Second)
+		defer finish()
+		return errors.Join(failure, process.Close(cleanup))
 	}
 	grace, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	ticker := time.NewTicker(20 * time.Millisecond)
-	defer ticker.Stop()
-	for {
-		if errors.Is(unix.Kill(-process.PID(), 0), unix.ESRCH) {
-			return nil
-		}
-		select {
-		case <-grace.Done():
-			cleanup, finish := context.WithTimeout(context.Background(), time.Second)
-			defer finish()
-			return process.Close(cleanup)
-		case <-ticker.C:
-		}
+	graceErr := waitForProcessGroups(grace, groups, process.PID())
+	if graceErr == nil {
+		return nil
 	}
+	cleanup, finish := context.WithTimeout(context.Background(), time.Second)
+	defer finish()
+	if errors.Is(graceErr, context.Canceled) || errors.Is(graceErr, context.DeadlineExceeded) {
+		graceErr = nil
+	}
+	return errors.Join(ctx.Err(), graceErr, process.Close(cleanup))
 }
 
 // Close is final, forceful resource cleanup, not the user's graceful Terminate
@@ -365,13 +467,16 @@ func (process *Process) Close(ctx context.Context) error {
 	process.ioCancel()
 	process.ioMu.Lock()
 	if !process.closed {
-		process.closeErr = process.signalGroup(unix.SIGKILL)
-		// SIGKILL is asynchronous. Closing the master before the child has
-		// exited can deliver SIGHUP first and corrupt the forced-exit result.
-		// I/O is canceled and joined above; the independent waiter needs no
-		// terminal operation to reap a killed child. Still close on timeout.
+		_, captureErr := process.rememberForegroundGroup()
+		groups := process.ownedGroups()
+		process.closeErr = errors.Join(captureErr, signalProcessGroups(groups, process.PID(), unix.SIGKILL))
+		// SIGKILL is asynchronous. Closing the master before the child and
+		// every remembered foreground group have exited can deliver SIGHUP first
+		// or leave a shell job behind. I/O is canceled and joined above; the
+		// independent waiter needs no terminal operation to reap the child.
 		_, waitErr := process.Wait(ctx)
-		process.closeErr = errors.Join(process.closeErr, waitErr, process.master.Close())
+		groupErr := waitForProcessGroups(ctx, groups, process.PID())
+		process.closeErr = errors.Join(process.closeErr, waitErr, groupErr, process.master.Close())
 		process.closed = true
 	}
 	err := process.closeErr

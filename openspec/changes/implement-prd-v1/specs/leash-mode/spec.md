@@ -81,13 +81,21 @@ The raw-byte scrollback ring SHALL be configurable from 64 KiB through 16 MiB. A
 
 ### Requirement: Process control semantics
 
-Interrupt SHALL signal the active process group using platform-native terminal semantics. Terminate SHALL attempt graceful whole-tree termination, wait at most five seconds, then force the Unix process group or Windows Job Object. Restart SHALL terminate any running generation, await tree exit, clear pending input, add a marker, recreate a PTY from the immutable snapshot, increment generation, and broadcast running state.
+Interrupt SHALL signal the active process group using platform-native terminal semantics. Terminate SHALL attempt graceful whole-tree termination, wait at most five seconds, then force the owned Unix job-control groups or Windows Job Object. Restart SHALL terminate any running generation, await tree exit, clear pending input, add a marker, recreate a PTY from the immutable snapshot, increment generation, and broadcast running state.
 
 #### Scenario: Interactive shell has a foreground job
 
 - **WHEN** a shell gives its PTY foreground to a separate job group
 - **THEN** Interrupt signals that foreground group, allowing the shell to collect the job's outcome without receiving an unintended shutdown
 - **AND** the operating system resolves the signal target through the owned PTY, without a userspace lookup-then-signal race against a reusable numeric process-group identifier
+
+#### Scenario: Unix termination includes a separate foreground job
+
+- **WHEN** an interactive Unix shell has transferred its controlling PTY to a separate foreground job group when Terminate or final cleanup begins
+- **THEN** the owner validates that group against the generation's session, retains it with any previously observed foreground groups, and signals those groups before the original session-leader group
+- **AND** graceful completion requires every retained group to disappear within five seconds; otherwise final cleanup sends SIGKILL and observes both the original child outcome and all retained groups before releasing the PTY
+- **AND** a retained group that outlives its leader remains owned, while a reused numeric identifier belonging to another session is never signaled
+- **AND** a descendant that deliberately creates an unrelated session is outside this portable PTY/process-group ownership boundary
 
 #### Scenario: Explicit interrupt leaves the process running
 
