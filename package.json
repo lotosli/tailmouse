@@ -10,7 +10,7 @@
   },
   "packageManager": "pnpm@11.25.0",
   "scripts": {
-    "build": "node tools/build-native.mjs && pnpm --recursive --if-present run build",
+    "build": "node tools/tailcat-gate.mjs build && node tools/build-native.mjs && pnpm --recursive --if-present run build",
     "check:architecture": "node tools/check-architecture.mjs",
     "check:format": "prettier --check . --ignore-unknown",
     "check:licenses": "node tools/release-licenses.mjs check",

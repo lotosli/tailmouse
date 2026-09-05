@@ -157,3 +157,13 @@ test('CI keeps the complete fail-fast matrix ahead of packaging and fuzzing', ()
   }
   assert.match(gate, /tools\/release-licenses\.mjs', 'check'/u);
 });
+
+test('root build prepares Tailcat artifacts before Native and Web builds', () => {
+  const packageJson = JSON.parse(
+    readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+  ) as { scripts?: { build?: string } };
+  assert.equal(
+    packageJson.scripts?.build,
+    'node tools/tailcat-gate.mjs build && node tools/build-native.mjs && pnpm --recursive --if-present run build',
+  );
+});
