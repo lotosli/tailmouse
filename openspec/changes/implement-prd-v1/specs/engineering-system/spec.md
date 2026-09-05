@@ -34,6 +34,12 @@ The gate SHALL cover unit, Go/TypeScript protocol conformance, native integratio
 - **WHEN** Unix PTY or Windows ConPTY behavior changes
 - **THEN** the corresponding native integration and OS CI evidence are required in addition to portable unit tests
 
+#### Scenario: Owner defers a native platform environment
+
+- **WHEN** the owner explicitly defers Linux or Windows native execution until a matching environment is available
+- **THEN** current acceptance records that platform as `deferred / not verified` and may use cross-compilation, static analysis, packaging, and platform-specific test compilation as implementation evidence
+- **AND** the missing native execution does not block the explicitly macOS-scoped development cycle, but no release or support claim may describe that platform as runtime-verified
+
 ### Requirement: Bounded resource behavior
 
 The implementation MUST keep all queues, rings, frames, samples, retries, timers, goroutines, browser subscriptions, and sessions within explicit limits. It SHALL target host idle memory below 150 MiB excluding the child and average one-way Escape application payload below 20 KiB/s. Browser idle memory SHALL be measured and optimized on a best-effort basis. Per the owner's 2026-09-03 decision, the original 200 MiB browser target is an advisory reference, not a hard acceptance gate; accounting scope remains explicit and measurements MUST NOT be relabeled as meeting that target when they exceed it.
@@ -65,3 +71,12 @@ Build and contract tests MUST prove Tailcat API changes at compile time and veri
 
 - **WHEN** an explicitly updated Tailcat commit changes the browser connection object
 - **THEN** only the browser Tailcat adapter and its contract tests require product changes, or the update is rejected
+
+### Requirement: Isolated upstream compatibility monitor
+
+A scheduled and manually dispatchable CI workflow SHALL test the current Tailcat `main` in a disposable checkout without updating the recorded parent gitlink. It MUST fail fast through upstream module verification, vet, tests, native and Web/Wasm builds, then derive disposable candidate module metadata from the tracked files and compile the TailMouse CLI package tree against that candidate in readonly mode. The tracked module files MUST remain unchanged. The workflow MUST retain readonly repository permissions and MUST NOT commit, push, publish, open a change, or alter the ordinary exact-gitlink release gate.
+
+#### Scenario: Current Tailcat main is incompatible
+
+- **WHEN** the upstream candidate changes an API, dependency, native build or Wasm distribution contract used by TailMouse
+- **THEN** the isolated workflow fails with the first build or test error while the parent gitlink and ordinary builds remain unchanged until an explicit reviewed dependency update

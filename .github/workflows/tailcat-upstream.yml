@@ -1,0 +1,65 @@
+name: tailcat-upstream-compatibility
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.1
+      - name: Select the current upstream candidate without changing the parent gitlink
+        shell: bash
+        run: |
+          set -euo pipefail
+          pinned_revision="$(git -C third_party/tailcat rev-parse HEAD)"
+          git -C third_party/tailcat fetch --depth=1 origin main
+          candidate_revision="$(git -C third_party/tailcat rev-parse FETCH_HEAD)"
+          git -C third_party/tailcat checkout --detach "$candidate_revision"
+          printf 'Pinned Tailcat: %s\nCandidate Tailcat: %s\n' "$pinned_revision" "$candidate_revision"
+      - name: Test and build the upstream candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate_artifacts="$(mktemp -d "$RUNNER_TEMP/tailcat-candidate.XXXXXX")"
+          trap 'rm -rf -- "$candidate_artifacts"' EXIT
+          export GOWORK=off
+          export GOTOOLCHAIN=go1.27.1
+          export GOFLAGS=-trimpath
+          go -C third_party/tailcat mod verify
+          go -C third_party/tailcat mod tidy -diff
+          go -C third_party/tailcat vet ./...
+          go -C third_party/tailcat test -count=1 -timeout=10m ./...
+          go -C third_party/tailcat build ./...
+          (
+            cd third_party/tailcat
+            go run ./cmd/tailcat-webdist -o "$candidate_artifacts" -web-dir web
+          )
+          test -s "$candidate_artifacts/main.wasm"
+          test -s "$candidate_artifacts/wasm_exec.js"
+      - name: Compile TailMouse against the upstream candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate_module_dir="$(mktemp -d "$RUNNER_TEMP/tailmouse-module.XXXXXX")"
+          trap 'rm -rf -- "$candidate_module_dir"' EXIT
+          candidate_modfile="$candidate_module_dir/go.mod"
+          cp go.mod "$candidate_modfile"
+          cp go.sum "$candidate_module_dir/go.sum"
+          export GOWORK=off
+          export GOTOOLCHAIN=go1.27.1
+          go mod tidy -modfile="$candidate_modfile"
+          go test -run '^$' -mod=readonly -modfile="$candidate_modfile" ./apps/cli/...
+          git diff --exit-code -- go.mod go.sum

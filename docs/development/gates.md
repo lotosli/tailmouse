@@ -1,5 +1,9 @@
 # TailMouse fail-fast quality gates
 
+Native macOS is the current host-runtime acceptance scope. Linux and Windows cross-compilation, static analysis, packaging and platform-test compilation remain required implementation checks, but native execution is owner-deferred until matching environments are provided. Report those native legs as `deferred / not verified`; their absence does not fail the macOS-scoped development cycle and must never be reported as a platform runtime pass.
+
+`.github/workflows/tailcat-upstream.yml` runs weekly and on manual dispatch in a disposable Linux checkout. It fetches Tailcat `main`, detaches only that CI submodule checkout, runs upstream verification/tests/native and Wasm builds, then derives a temporary module-file copy for the candidate and compiles all TailMouse CLI packages with that copy in readonly mode. The tracked `go.mod`, `go.sum` and parent gitlink must remain unchanged. A failure is an upstream-compatibility maintenance signal. The workflow has read-only repository permissions and cannot update the recorded gitlink, open a change, publish an artifact, or make a runtime-support claim.
+
 ## Commands
 
 - `pnpm gate:quick`: architecture, OpenSpec, format, lint, tooling tests, typecheck, Go/Tailcat static checks, unit tests, Web/Go coverage, native/Wasm/Web builds, dependency notice verification, native QR decoding on macOS, hermetic transport and Unix Leash acceptance, Escape impairment smoke, and browser end-to-end tests.

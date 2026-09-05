@@ -158,6 +158,51 @@ test('CI keeps the complete fail-fast matrix ahead of packaging and fuzzing', ()
   assert.match(gate, /tools\/release-licenses\.mjs', 'check'/u);
 });
 
+test('CI checks current Tailcat main without updating the recorded gitlink', () => {
+  const workflow = readFileSync(
+    new URL('../.github/workflows/tailcat-upstream.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(workflow, /schedule:\n    - cron: '17 4 \* \* 1'/u);
+  assert.match(workflow, /workflow_dispatch:/u);
+  assert.match(workflow, /permissions:\n  contents: read/u);
+  assert.match(
+    workflow,
+    /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1/u,
+  );
+  assert.match(workflow, /submodules: true/u);
+  assert.match(workflow, /persist-credentials: false/u);
+  assert.match(
+    workflow,
+    /git -C third_party\/tailcat fetch --depth=1 origin main/u,
+  );
+  assert.match(
+    workflow,
+    /git -C third_party\/tailcat checkout --detach "\$candidate_revision"/u,
+  );
+  for (const command of [
+    'go -C third_party/tailcat mod verify',
+    'go -C third_party/tailcat mod tidy -diff',
+    'go -C third_party/tailcat vet ./...',
+    'go -C third_party/tailcat test -count=1 -timeout=10m ./...',
+    'go -C third_party/tailcat build ./...',
+    'go run ./cmd/tailcat-webdist',
+    `go test -run '^$' -mod=readonly -modfile="$candidate_modfile" ./apps/cli/...`,
+  ]) {
+    assert.ok(workflow.includes(command), `${command} is missing`);
+  }
+  assert.match(workflow, /cp go\.mod "\$candidate_modfile"/u);
+  assert.match(workflow, /cp go\.sum "\$candidate_module_dir\/go\.sum"/u);
+  assert.match(workflow, /go mod tidy -modfile="\$candidate_modfile"/u);
+  assert.match(
+    workflow,
+    /go test -run '\^\$' -mod=readonly -modfile="\$candidate_modfile" \.\/apps\/cli\/\.\.\./u,
+  );
+  assert.match(workflow, /git diff --exit-code -- go\.mod go\.sum/u);
+  assert.doesNotMatch(workflow, /git (?:add|commit|push)|pull_request_target/u);
+  assert.doesNotMatch(workflow, /continue-on-error:/u);
+});
+
 test('root build prepares Tailcat artifacts before Native and Web builds', () => {
   const packageJson = JSON.parse(
     readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
