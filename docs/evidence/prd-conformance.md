@@ -674,7 +674,7 @@ The owner's browser-memory direction is an explicit temporary acceptance change,
 | Browser | Latest stable information | Latest two stable majors required by PRD 16.3 |
 |---|---|---|
 | Chrome | 152.0.7977.82/.83 for desktop, released September 3 ([Google release notes](https://chromereleases.googleblog.com/2026/09/stable-channel-update-for-desktop_01882797386.html)) | 152 and 151 |
-| Edge | 152.0.4191.62, released September 2; the same source lists the preceding 151 release ([Microsoft release notes](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-relnote-stable-channel)) | 152 and 151 |
+| Edge | 152.0.4191.66, released September 4; the same source lists the preceding 151 release ([Microsoft release notes](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-relnote-stable-channel)) | 152 and 151 |
 | Firefox | 155.0.1, released September 4; Mozilla identifies 154 as the previous major ([Mozilla release notes](https://www.firefox.com/en-US/firefox/155.0.1/releasenotes/)) | 155 and 154 |
 | Safari | 26.6, released July 27; Apple's index lists 27 as beta and 18 as the previous stable major family ([Apple release notes](https://developer.apple.com/documentation/safari-release-notes)) | 26 and 18; beta 27 does not replace a stable target |
 
