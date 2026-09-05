@@ -28,6 +28,7 @@ async function main() {
       'cli',
       'vim',
       'shell',
+      'long-task',
       'htop',
       'reconnect',
       'retained-exit',
@@ -64,10 +65,14 @@ async function main() {
     let page = await context.newPage();
     stage = 'connect';
     await page.goto(`${request.baseURL}/#/v1/${request.fragment}`);
-    const reconnect = ['reconnect', 'retained-exit', 'browser-crash'].includes(
-      request.scenario,
-    );
+    const reconnect = [
+      'long-task',
+      'reconnect',
+      'retained-exit',
+      'browser-crash',
+    ].includes(request.scenario);
     const retainedExit = request.scenario === 'retained-exit';
+    const longTask = request.scenario === 'long-task';
     const killOnDisconnect = request.scenario === 'browser-crash-kill';
     // Only reconnect scenarios keep the externally supplied invitation in memory
     // for a second explicit scan; the PWA never stores or recovers it.
@@ -81,6 +86,7 @@ async function main() {
       {
         vim: 'Native Vim acceptance',
         shell: 'Native Shell acceptance',
+        'long-task': 'Native long task acceptance',
         htop: 'Native htop acceptance',
       }[request.scenario] ?? 'Native CLI acceptance';
     await expect(page.getByText(title, { exact: true })).toBeVisible();
@@ -171,9 +177,22 @@ async function main() {
       await expect(page.getByLabel('Process status')).toContainText('Exit 19');
     } else if (request.scenario !== 'vim') {
       stage = 'native-output';
-      await expect(output).toContainText('child-ready');
-      await paste('q🐈');
-      await expect(output).toContainText('q🐈');
+      let progressBeforeDisconnect = 0;
+      const latestProgress = async () => {
+        const matches = [
+          ...(await output.innerText()).matchAll(/long-task-progress:(\d+)/g),
+        ];
+        return Math.max(0, ...matches.map((match) => Number(match[1])));
+      };
+      if (longTask) {
+        await expect(output).toContainText('long-task-ready');
+        await expect.poll(latestProgress).toBeGreaterThan(0);
+        progressBeforeDisconnect = await latestProgress();
+      } else {
+        await expect(output).toContainText('child-ready');
+        await paste('q🐈');
+        await expect(output).toContainText('q🐈');
+      }
       if (reconnect) {
         const pid = await page.getByText(/^PID \d+$/).innerText();
         if (retainedExit) {
@@ -221,6 +240,10 @@ async function main() {
           ).toBeVisible();
           await expect(output).toHaveCount(0);
           await context.close();
+        }
+        if (longTask) {
+          // Let the task make observable progress with no browser attached.
+          await new Promise((resolve) => setTimeout(resolve, 750));
         }
         context = await browser.newContext({
           ignoreHTTPSErrors: true,
@@ -275,11 +298,25 @@ async function main() {
           .getByRole('checkbox', { name: 'Screen reader support' })
           .check();
         output = page.getByRole('region', { name: 'Terminal output' });
-        await expect(output).toContainText('q🐈');
+        if (!longTask) await expect(output).toContainText('q🐈');
         if (request.scenario === 'browser-crash')
           await expect(output).toContainText('local-alive🐈');
         await expect(output).not.toContainText('restarted process');
-        if (retainedExit) {
+        if (longTask) {
+          stage = 'long-task-progress-after-reconnect';
+          await expect
+            .poll(latestProgress)
+            .toBeGreaterThan(progressBeforeDisconnect);
+          await expect(output).toContainText('long-task-input', {
+            timeout: 25_000,
+          });
+          stage = 'long-task-input';
+          await paste('approved\n');
+          stage = 'long-task-exit';
+          await expect(page.getByLabel('Process status')).toContainText(
+            'Exit 0',
+          );
+        } else if (retainedExit) {
           stage = 'native-retained-restart';
           await expect(page.getByLabel('Process status')).toContainText(
             'Exit 37',
@@ -300,41 +337,49 @@ async function main() {
             page.getByRole('button', { name: 'Open keyboard' }),
           ).toBeEnabled();
         }
-        await paste('r🐈');
-        await expect(output).toContainText('r🐈');
+        if (!longTask) {
+          await paste('r🐈');
+          await expect(output).toContainText('r🐈');
+        }
       }
-      stage = 'native-initial-size';
-      let sizeSample = 0;
-      const size = async () => {
-        const sample = ++sizeSample;
-        const pattern = new RegExp(`size (\\d+x\\d+) sample ${sample}\\b`);
-        await paste('s');
-        await expect(output).toContainText(pattern);
-        const value = (await output.innerText()).match(pattern)[1];
-        measuredSizes.push(value);
-        if (measuredSizes.length > 8) measuredSizes.shift();
-        return value;
-      };
-      const original = await size();
-      await page.setViewportSize({ width: 420, height: 800 });
-      stage = 'native-resized-size';
-      await expect
-        .poll(size, { intervals: [100], timeout: 5000 })
-        .not.toBe(original);
-      stage = 'native-restart';
-      await page.getByRole('button', { name: 'Restart', exact: true }).click();
-      await page.getByRole('button', { name: 'Confirm restart' }).click();
-      await expect(output).toContainText(
-        `TailMouse restarted process · generation ${retainedExit ? 3 : 2}`,
-      );
-      await expect(output).toContainText('child-ready');
-      await expect(page.getByText(title, { exact: true })).toBeVisible();
-      await expect(
-        page.getByRole('button', { name: 'Open keyboard' }),
-      ).toBeEnabled();
-      stage = 'native-exit';
-      await paste('x');
-      await expect(page.getByLabel('Process status')).toContainText('Exit 37');
+      if (!longTask) {
+        stage = 'native-initial-size';
+        let sizeSample = 0;
+        const size = async () => {
+          const sample = ++sizeSample;
+          const pattern = new RegExp(`size (\\d+x\\d+) sample ${sample}\\b`);
+          await paste('s');
+          await expect(output).toContainText(pattern);
+          const value = (await output.innerText()).match(pattern)[1];
+          measuredSizes.push(value);
+          if (measuredSizes.length > 8) measuredSizes.shift();
+          return value;
+        };
+        const original = await size();
+        await page.setViewportSize({ width: 420, height: 800 });
+        stage = 'native-resized-size';
+        await expect
+          .poll(size, { intervals: [100], timeout: 5000 })
+          .not.toBe(original);
+        stage = 'native-restart';
+        await page
+          .getByRole('button', { name: 'Restart', exact: true })
+          .click();
+        await page.getByRole('button', { name: 'Confirm restart' }).click();
+        await expect(output).toContainText(
+          `TailMouse restarted process · generation ${retainedExit ? 3 : 2}`,
+        );
+        await expect(output).toContainText('child-ready');
+        await expect(page.getByText(title, { exact: true })).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: 'Open keyboard' }),
+        ).toBeEnabled();
+        stage = 'native-exit';
+        await paste('x');
+        await expect(page.getByLabel('Process status')).toContainText(
+          'Exit 37',
+        );
+      }
     } else {
       stage = 'vim-render';
       await expect(output).toContainText('Native Vim fixture 🐈');

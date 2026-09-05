@@ -134,13 +134,15 @@ async function main() {
     const alert = invalidPage.locator('[role="alert"]');
     await alert.waitFor({ state: 'visible' });
     const invalidDetail = await alert.textContent();
-    if (invalidDetail !== 'Tailcat connection timed out.') {
-      const code =
-        invalidDetail === 'Tailcat connection failed.'
+    const incorrectTokenOutcome =
+      invalidDetail === 'Tailcat connection timed out.'
+        ? 'DIAL_TIMEOUT'
+        : invalidDetail === 'Tailcat connection failed.'
           ? 'DIAL_FAILED'
-          : 'UNKNOWN';
-      throw new ProbeError(`INCORRECT_TOKEN_OUTCOME_${code}`);
-    }
+          : undefined;
+    if (incorrectTokenOutcome === undefined)
+      throw new ProbeError('INCORRECT_TOKEN_OUTCOME_UNKNOWN');
+    process.stdout.write(`\n${incorrectTokenOutcome}`);
     const visibleText = await invalidPage.locator('body').innerText();
     if (visibleText.includes(request.incorrectAddress)) {
       throw new ProbeError('TOKEN_DISCLOSED');

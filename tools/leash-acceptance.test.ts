@@ -68,7 +68,7 @@ test('Leash acceptance preserves exact smoke and complete-matrix selection', (t)
         '-tags=tailcatintegration',
         '-count=1',
         '-failfast',
-        matrix ? '-timeout=3h' : '-timeout=3m',
+        matrix ? '-timeout=3h' : '-timeout=4m',
         matrix
           ? '-run=^TestHermeticLeashNetworkMatrix$'
           : '-run=^TestHermeticLeash(Browser|Network)$',

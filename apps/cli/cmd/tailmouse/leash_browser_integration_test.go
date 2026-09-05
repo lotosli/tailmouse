@@ -28,7 +28,7 @@ import (
 // Run with pnpm test:leash. All cases use the real CLI owner, native PTY,
 // loopback DERP, recorded Tailcat Wasm and production Web build.
 func TestHermeticLeashBrowser(t *testing.T) {
-	for _, scenario := range []string{"cli", "vim", "shell", "reconnect", "retained-exit", "browser-crash", "browser-crash-kill"} {
+	for _, scenario := range []string{"cli", "vim", "shell", "long-task", "reconnect", "retained-exit", "browser-crash", "browser-crash-kill"} {
 		t.Run(scenario, func(t *testing.T) { testNativeBrowser(t, scenario, nil) })
 	}
 }
@@ -138,6 +138,12 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 		// production keeps the owner's environment unchanged.
 		environment = append(environment, "LC_ALL=C.UTF-8", "PS1=tailmouse-fixture> ", "PS2=tailmouse-continuation> ")
 		title, wantCode = "Native Shell acceptance", 19
+	} else if scenario == "long-task" {
+		// A standard shell task emits progress while disconnected, then exposes
+		// an interactive prompt on the same terminal before completing.
+		script := `printf 'long-task-ready\n'; i=0; while [ "$i" -lt 100 ]; do i=$((i + 1)); printf 'long-task-progress:%s\n' "$i"; sleep 0.2; done; printf 'long-task-input\n'; IFS= read -r answer; printf 'long-task-complete:%s\n' "$answer"`
+		argv = []string{"/bin/sh", "-c", script}
+		title, wantCode = "Native long task acceptance", 0
 	}
 	if err := os.MkdirAll(filepath.Join(root, ".artifacts"), 0o700); err != nil {
 		t.Fatal(err)

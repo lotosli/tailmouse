@@ -133,6 +133,7 @@ async function main() {
     await context.close();
 
     stage = 'fresh-stream';
+    const freshStreamStarted = performance.now();
     const reconnectRetries = { busy: 0, handshakeTimeout: 0 };
     context = await createContext();
     context.setDefaultTimeout(10_000);
@@ -161,6 +162,10 @@ async function main() {
               reconnectRetries.busy + reconnectRetries.handshakeTimeout <= 80,
               'RECONNECT_ATTEMPT_LIMIT',
             );
+            // A busy response means the Host is still fencing the previous
+            // owner. Avoid turning the acceptance probe into a low-bandwidth
+            // handshake storm that delays already-scheduled peer traffic.
+            if (code === 'SESSION_BUSY') await delay(3000);
             await page
               .getByRole('button', { name: 'Retry connection' })
               .click();
@@ -194,7 +199,7 @@ async function main() {
             : 'status:UNKNOWN';
         }
         process.stderr.write(
-          `reconnect observation: ${JSON.stringify({ retries: reconnectRetries, visible })}\n`,
+          `reconnect observation: ${JSON.stringify({ retries: reconnectRetries, visible, elapsedMS: performance.now() - freshStreamStarted, network: await fixture('network') })}\n`,
         );
         throw new AcceptanceError('RECONNECT_TIMEOUT');
       });

@@ -19,7 +19,7 @@ run('go', [
   '-tags=tailcatintegration',
   '-count=1',
   '-failfast',
-  networkMatrix ? '-timeout=3h' : '-timeout=3m',
+  networkMatrix ? '-timeout=3h' : '-timeout=4m',
   networkMatrix
     ? '-run=^TestHermeticLeashNetworkMatrix$'
     : '-run=^TestHermeticLeash(Browser|Network)$',

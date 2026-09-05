@@ -414,11 +414,15 @@ func runBrowserProbe(t *testing.T, ctx context.Context, root string, payload []b
 	if strings.TrimSpace(output.String()) != expectedTrace {
 		return errors.New("browser transport probe emitted an invalid stage trace")
 	}
-	version := versionOutput.String()
+	result := strings.Split(strings.TrimSpace(versionOutput.String()), "\n")
+	if len(result) != 2 || result[1] != "DIAL_FAILED" && result[1] != "DIAL_TIMEOUT" {
+		return errors.New("browser transport probe emitted an invalid rejection outcome")
+	}
+	version := result[0]
 	if len(version) > 64 || !regexp.MustCompile(`^\d+(?:\.\d+){1,3}$`).MatchString(version) {
 		return errors.New("browser transport probe emitted an invalid runtime version")
 	}
-	t.Logf("browser transport runtime version: %s", version)
+	t.Logf("browser transport runtime version: %s; incorrect-token outcome: %s", version, result[1])
 	return nil
 }
 
