@@ -34,6 +34,7 @@ const phases = [
         'tools/m0-acceptance.test.ts',
         'tools/go-gate.test.ts',
         'tools/leash-acceptance.test.ts',
+        'tools/cross-version-acceptance.test.ts',
         'tools/build-identity.test.ts',
         'tools/release-native.test.ts',
         'tools/release-licenses.test.ts',
@@ -73,6 +74,11 @@ const phases = [
   ],
   ['build', () => runPnpm(['run', 'build'])],
   [
+    'local public-origin verification',
+    () =>
+      run(process.execPath, ['--test', 'tools/verify-public-origin.test.ts']),
+  ],
+  [
     'dependency notices',
     () => run(process.execPath, ['tools/release-licenses.mjs', 'check']),
   ],
@@ -102,7 +108,7 @@ const phases = [
     () => {
       if (process.platform === 'win32') {
         process.stdout.write(
-          'Unix PTY acceptance is not applicable on Windows; ConPTY acceptance remains required.\n',
+          'Unix PTY acceptance is not applicable on Windows; ConPTY runtime acceptance is separately deferred / not verified.\n',
         );
         return;
       }
@@ -151,7 +157,7 @@ const phases = [
           () => {
             if (process.platform === 'win32') {
               process.stdout.write(
-                'Unix PTY impairment acceptance is not applicable on Windows; ConPTY acceptance remains required.\n',
+                'Unix PTY impairment acceptance is not applicable on Windows; ConPTY runtime acceptance is separately deferred / not verified.\n',
               );
               return;
             }

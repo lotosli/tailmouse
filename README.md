@@ -20,7 +20,7 @@ TailMouse is an **unofficial** application built on [Tailcat](https://github.com
 
 TailMouse is not affiliated with or endorsed by Tailscale Inc. Tailscale and Tailcat names and trademarks belong to their respective owners.
 
-**Treat every invitation link and QR code like a password.** The current version has no separate password prompt: the full invitation is the access credential. Anyone holding it can attempt access until expiry or host revocation. A writable terminal has the launched process's authority. DERP sees connection metadata, timing and traffic sizes, although session payloads are end-to-end encrypted. The Web page is a trusted endpoint and can see session plaintext.
+**Treat every invitation link, QR code and access code as a credential.** Leash is password-protected by default: the invitation and separately displayed access code are both required, and the browser sends a fresh challenge proof rather than the code. The explicit `--no-password` exception makes the full invitation sufficient for the configured permissions. A writable terminal has the launched process's authority. DERP sees connection metadata, timing and traffic sizes, although session payloads are end-to-end encrypted. The Web page is a trusted endpoint and can see session plaintext.
 
 ## Development status
 
@@ -63,7 +63,7 @@ tailmouse leash --web-base-url http://127.0.0.1:4173/ -- vim
 
 The second example requires Vim on the host. Open the invitation printed by the CLI in your browser. Leash's default `connect-or-enter` policy waits for a valid browser connection or local Enter before starting the saved command.
 
-The loopback URL is only for a browser on the host computer: `127.0.0.1` on a phone means the phone itself. For a phone, deploy the same static files to a trusted reachable HTTPS origin, set `--web-base-url` or `TAILMOUSE_WEB_BASE_URL` to that origin, then scan the new QR code. The default `https://tailmouse.dev/` is the PRD placeholder, not a verified deployment. The [self-hosting guide](docs/web-self-hosting.md) covers HTTPS, Nginx, MIME types, compression, cache updates and non-root mounts. Vite preview is a local verification server, not the production hosting configuration.
+The loopback URL is only for a browser on the host computer: `127.0.0.1` on a phone means the phone itself. For a phone, deploy the same static files to a trusted reachable HTTPS origin, set `--web-base-url` or `TAILMOUSE_WEB_BASE_URL` to that origin, then scan the new QR code. The default `https://link.tailmouse.com/` is the official publication target, but this checkout does not claim that it is deployed or verified. The [self-hosting guide](docs/web-self-hosting.md) covers HTTPS, Nginx, MIME types, compression, cache updates and non-root mounts. Vite preview is a local verification server, not the production hosting configuration.
 
 ## Escape
 
@@ -89,15 +89,18 @@ Or launch Vim and other terminal commands with their own arguments:
 ```sh
 tailmouse leash --web-base-url http://127.0.0.1:4173/ --readonly --start-on now -- vim
 tailmouse leash --web-base-url http://127.0.0.1:4173/ --title demo --no-restart --no-terminate --post-exit-ttl 0 -- printf hello
+tailmouse leash --web-base-url http://127.0.0.1:4173/ -- codex
 ```
+
+The last command is an AI CLI example and requires that `codex` is already installed and configured on the host. Leash has no AI-provider integration: standards-based terminal CLIs and TUIs use the same PTY byte stream and inherit the selected command environment and filesystem authority.
 
 Arguments after `--` are passed literally to the launched program, not interpreted as TailMouse flags. When switching programs, replace their arguments too: Vim's `-u NONE -U NONE -i NONE -n` options must not be passed to zsh. Use `/bin/zsh -f -i` to test without personal shell startup configuration. Pipes, redirects, wildcards and variables require an explicitly launched shell; TailMouse does not interpret them. Restart reuses the original argv, working directory and environment rather than accepting a replacement command from the browser.
 
 The browser provides a terminal, touch history scrolling, Esc/Tab/arrows, Ctrl/Alt modifiers and explicit copy/paste. Readonly hides input and process controls and is enforced by the host, but it does not redact sensitive output. Enable Screen reader support explicitly if needed. Browser Backpressure pauses input; use the displayed recovery action, and do not assume already-sent input can be safely retried.
 
-Browser disconnect normally leaves the child running. Within reconnect grace, the same live page can retry explicitly and receive retained scrollback. The default raw-byte scrollback is 1 MiB (configurable from 64 KiB to 16 MiB); older bytes may be dropped with an indication. This is bounded history, not a terminal recording.
+Browser disconnect normally leaves the child running and returns the Host to listening; Leash has no reconnect-grace deadline. The same live page can explicitly open a fresh stream with credentials still held in memory and receive reset, retained scrollback and live output in order. A reopened page needs the original invitation and, for protected access, the separate code again. The default raw-byte scrollback is 1 MiB (configurable from 64 KiB to 16 MiB); older bytes may be dropped with an indication. This is bounded history, not a terminal recording.
 
-The session TTL defaults to four hours. After child exit, the final output/status remains available for up to ten minutes, bounded by the session TTL; `--post-exit-ttl 0` ends retention immediately. Expiry revokes browser access but does not kill the child by default. `--kill-on-expire` and `--kill-on-disconnect` explicitly request termination and remain subject to the process-tree limitation above.
+Leash's session TTL and post-exit retention both default to `host`: access and a safe retained result remain until Host shutdown or local revocation. An explicit total TTL can bound access; an explicit positive `--post-exit-ttl` bounds retained result time, and `--post-exit-ttl 0` ends it immediately. Child exit releases PTY/process/input/pump resources even while bounded output and final status remain available. Expiry revokes browser access but does not kill a running child by default. `--kill-on-expire` and `--kill-on-disconnect` explicitly request termination and remain subject to the process-tree limitation above.
 
 While a child runs, the first local Ctrl+C interrupts it; a second within two seconds requests host and child shutdown. Ordinary `q` remains application input. Browser interrupt/restart/terminate require confirmation and the host's permission. These controls are not a security sandbox or a replacement for OS process isolation.
 
@@ -118,9 +121,9 @@ To use an operator-managed relay, follow [custom DERP requirements](docs/custom-
 
 ## Security and troubleshooting
 
-- Share invitations privately. Keep them out of issue reports, screenshots, terminal recordings, browser diagnostics and shell arguments. `--no-qr` hides the QR, not the remaining `Open:` URL.
-- One active browser is not identity authentication: another link holder can race during reconnect. Use a short TTL; `--ttl 0` retains access until host exit/mode completion and increases exposure.
-- The page consumes the fragment and removes it from visible history. Credentials are memory-only: after reload, reopen an unexpired original invitation. Caching static Wasm does not preserve a session or make relay connectivity optional.
+- Share invitations privately and keep access codes separate. Keep both out of issue reports, screenshots, terminal recordings, browser diagnostics and shell arguments. `--no-qr` hides the QR, not the remaining `Open:` URL or the terminal-only access code.
+- Protected access is not an account identity system: anyone with both credentials can attempt control. In `--no-password` mode, anyone with the invitation alone can attempt the configured permissions. Use an explicit short TTL when Host-lived access is unnecessary.
+- The page consumes the fragment and removes it from visible history. Credentials are memory-only: after reload or page-cache restoration, reopen an unexpired original invitation and enter the code again. Caching static Wasm does not preserve a session or make relay connectivity optional.
 - A trusted Web deployment matters. There are no required third-party scripts or analytics, but a modified page or browser extension can still expose terminal data. Verify matching Native/Web revision metadata and use the documented HTTPS/security headers.
 - `SESSION_BUSY` means another browser owns the slot. `EXPIRED` needs a fresh host session. A protocol mismatch needs compatible Native and Web builds, not repeated retries.
 - For a loading failure, check that the static server returns real local JS/Wasm files with the correct MIME and compression headers, not an HTML fallback. Browser permissions or a failed static cache registration do not authorize more capabilities.

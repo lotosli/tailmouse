@@ -18,6 +18,7 @@ const required = [
   '.node-version',
   'context.md',
   'docs/architecture.md',
+  'docs/cloudflare-r2-publication.md',
   'docs/decisions/2026-001-engineering-foundation.md',
   'docs/development/engineering-practices.md',
   'docs/development/gates.md',
@@ -45,6 +46,44 @@ const required = [
   'pnpm-workspace.yaml',
   'tooling/versions.json',
 ];
+
+const r2Runbook = readFileSync(
+  join(root, 'docs/cloudflare-r2-publication.md'),
+  'utf8',
+);
+for (const anchor of [
+  'one dedicated Cloudflare R2 bucket',
+  '`link.tailmouse.com`',
+  'Public Development',
+  'http.request.uri.path eq "/"',
+  'public, max-age=31536000, immutable',
+  '`Content-Encoding`',
+  '`application/wasm`',
+  '`Content-Security-Policy`',
+  '`Referrer-Policy`',
+  '`Permissions-Policy`',
+  '`X-Content-Type-Options`',
+  '`minTLS` value to `1.2`',
+  'It uses no Worker',
+]) {
+  if (!r2Runbook.includes(anchor)) {
+    failures.push(
+      `docs/cloudflare-r2-publication.md is missing invariant: ${anchor}`,
+    );
+  }
+}
+for (const forbidden of [
+  /Authorization:\s*Bearer/iu,
+  /CLOUDFLARE_API_TOKEN/u,
+  /wrangler\s+r2\s+(?:bucket\s+create|object\s+put)/u,
+  /api\.cloudflare\.com\/client\/v4\/accounts\//u,
+]) {
+  if (forbidden.test(r2Runbook)) {
+    failures.push(
+      'docs/cloudflare-r2-publication.md must not contain deployment credentials or mutating command templates',
+    );
+  }
+}
 
 for (const path of required) {
   try {

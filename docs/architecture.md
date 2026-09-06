@@ -94,6 +94,8 @@ The native adapter fetches official/custom maps through a private standard-libra
 
 The web client is a static mobile-first PWA using Preact, Canvas 2D for Escape, and xterm.js with FitAddon for Leash. Small capability adapters centralize permission, degradation, and testing. The client uses no remote scripts, fonts, analytics, or server runtime. It consumes an invitation fragment once, immediately removes it from the address bar, and never persists it.
 
+Protected Leash keeps the separately entered access code only in active-page memory. Web Crypto derives a proof for the Host's fresh challenge and erases proof/challenge working bytes; a retry creates a new stream and proof rather than replaying either. The Host alone reports protected or link-only access and admits capabilities. Page disposal and page-cache restoration erase invitation and code state. Link-only access is an explicit CLI exception, not a browser downgrade.
+
 The existing Wasm loader counts decoded bytes through one backpressured stream into streaming compilation. It uses an unencoded response's valid length or the verified build artifact's raw size for compressed/lengthless responses. Integer updates are coalesced and EOF establishes download completion; cancellation/failure releases the load-local stream without retaining another Wasm copy. Session presentation carries only a numeric percentage and the observable loading, combined relay/Meow and session-handshake stages. A native progress element exposes the value without turning each chunk into a live-region announcement. Tailcat's bridge and the existing deadlines are unchanged.
 
 A page-local monotonic recorder uses those same presentation boundaries to retain only numeric startup durations in memory. EOF separates Wasm transfer from remaining initialization; dial completion separates the combined relay/Meow phase; the protocol callbacks bound authentication/admission; and the first usable terminal reset plus process state marks terminal readiness. Access-code entry wait is accumulated separately and subtracted from total startup time. The About panel shows every phase and preserves `met`, `missed`, or `pending` warm/cold target status without analytics, storage, a new worker, or another timing source.
@@ -130,9 +132,13 @@ On an invited page, registration waits until runtime loading ends so its integri
 
 The minimal Nginx example serves only static files with the production security and caching headers; the Docker build context contains only its configuration and built assets. Sensor access is same-origin and still requires Escape's existing user-initiated permission flow. See `docs/web-self-hosting.md` for MIME/compression, deployment and verification boundaries.
 
+Official publication uses one R2 bucket behind only `link.tailmouse.com`. An exact root-only internal rewrite selects `index.html`; manifest-listed hashed paths retain immutable metadata, entry/metadata/notices remain no-cache, Cloudflare negotiates Brotli or gzip, and one response transform mirrors the static-server security headers. The R2 custom domain requires TLS 1.2 or newer and its `r2.dev` development URL remains disabled. There is no Worker, Pages project, application backend or credential in repository configuration. `docs/cloudflare-r2-publication.md` is the operator runbook; public mutation remains separately owner-authorized.
+
+The schema-2 Web manifest is the pre-publication contract rather than a second deployment system. It records exact bytes, hashes and HTTP metadata for every uploadable object plus the root rewrite, 404 behavior, security headers and no-backend invariant. Release verification independently matches the directory to that allowlist and proves the sole raw Wasm's gzip and Brotli variants decompress to the same bytes. The manifest itself remains no-cache and is verified from the expected local file, avoiding an impossible self-hash.
+
 ### Protocol
 
-`protocol/` owns TMOUSE/1 frames, state transitions, limits, capability negotiation, and golden fixtures. Implementation types are not protocol definitions. A breaking framing or state change increments the protocol version and updates Go, TypeScript, and cross-language conformance tests together.
+`protocol/` owns TMOUSE frames, state transitions, limits, capability negotiation, and golden fixtures. Wire identifier 1 is the Escape TMOUSE/1.0 contract; identifier 2 is the protected-capable Leash TMOUSE/1.1 contract. An identifier-1 Leash peer and identifier-2 Leash peer fail closed in either direction before admission, terminal disclosure or child startup; there is no automatic downgrade. Implementation types are not protocol definitions. A breaking framing or state change increments the protocol version and updates Go, TypeScript, cross-version and cross-language conformance tests together.
 
 ## Monorepo mechanics
 
@@ -143,7 +149,7 @@ pnpm orchestrates JavaScript workspaces and cross-language commands; Go remains 
 - Unit tests stay next to owned logic and cover success, boundaries, and failures.
 - One golden fixture corpus drives Go and TypeScript protocol conformance.
 - Integration tests use local, controlled, credential-free Tailcat/DERP infrastructure.
-- A `tailcatintegration`-tagged adapter starter shares the existing loopback relay between adapter probes and real CLI/PTY/browser acceptance. Normal builds contain no fixture or TLS bypass; CLI tests do not import upstream types. `pnpm test:leash` verifies ordinary CLI and Vim behavior against the production Web build and recorded Wasm on Unix.
+- A `tailcatintegration`-tagged adapter starter shares the existing loopback relay between adapter probes and real CLI/PTY/browser acceptance. Normal builds contain no fixture or TLS bypass; CLI tests do not import upstream types. `pnpm test:leash` verifies protected/link-only terminal behavior, shell, Vim, lifecycle and impairment cases against the production Web build and recorded Wasm on Unix. Explicit selectors cover an installed AI CLI example and macOS official-relay acceptance without turning either external prerequisite into a default-gate dependency.
 - Playwright verifies user-visible connection, degradation, and mobile behavior.
 - Vitest's official Playwright provider runs DOM/Canvas component tests in the existing Chromium engine alongside Node unit suites, with one combined coverage gate. It adds no production dependency or DOM emulator.
 - Impairment and security tests cover reconnect, loss, reorder, latency, backpressure, oversized input, and credential leakage.

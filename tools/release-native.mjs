@@ -168,6 +168,10 @@ function main(args) {
       process.stdout.write(
         `Native version command verified: ${goos}/${goarch}.\n`,
       );
+    } else if (goos === 'linux' || goos === 'windows') {
+      process.stdout.write(
+        `Build metadata and stamps verified: ${goos}/${goarch}; native execution is deferred / not verified.\n`,
+      );
     } else {
       process.stdout.write(
         `Build metadata and stamps verified: ${goos}/${goarch}; native execution remains required.\n`,

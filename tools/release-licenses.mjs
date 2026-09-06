@@ -70,7 +70,7 @@ function main() {
   const web = JSON.parse(
     readFileSync(resolve(root, 'apps/web/dist/web-manifest.json'), 'utf8'),
   );
-  assert.equal(web.schemaVersion, 1, 'Unsupported Web manifest.');
+  assert.equal(web.schemaVersion, 2, 'Unsupported Web manifest.');
   assert.equal(
     web.tailcatRevision,
     identity.tailcatRevision,

@@ -1,6 +1,5 @@
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
-import { extname } from 'node:path';
 import { securityHeaders } from '../../tools/web-assets.ts';
 
 // An isolated read-only origin permits actual outages and worker updates
@@ -9,21 +8,14 @@ export async function staticServer() {
   const root = new URL('../../apps/web/dist/', import.meta.url);
   const manifest = JSON.parse(
     readFileSync(new URL('web-manifest.json', root), 'utf8'),
-  ) as { cacheVersion: string; files: Record<string, unknown> };
-  const files = new Set([
-    ...Object.keys(manifest.files),
-    'index.html',
-    'web-manifest.json',
-    'manifest.webmanifest',
-  ]);
-  const types: Record<string, string> = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.wasm': 'application/wasm',
-    '.json': 'application/json',
-    '.webmanifest': 'application/manifest+json',
+  ) as {
+    cacheVersion: string;
+    staticHosting: {
+      manifestObject: { metadata: StaticMetadata };
+    };
+    files: Record<string, StaticMetadata>;
   };
+  const files = new Set([...Object.keys(manifest.files), 'web-manifest.json']);
   let cacheVersion = manifest.cacheVersion;
   let corruptWasm = false;
   let closed = false;
@@ -32,14 +24,21 @@ export async function staticServer() {
     const url = new URL(request.url ?? '/', 'http://localhost');
     const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
     requests.push(url.pathname + url.search);
-    const headers = { ...securityHeaders, 'Cache-Control': 'no-cache' };
-    if (request.method !== 'GET' || !files.has(file)) {
+    const headers: Record<string, string> = {
+      ...securityHeaders,
+      'Cache-Control': 'no-cache',
+    };
+    if (!['GET', 'HEAD'].includes(request.method ?? '') || !files.has(file)) {
+      const body = Buffer.from(
+        '<!doctype html><title>Not found</title><p>Not found</p>',
+      );
       response
         .writeHead(404, {
           ...headers,
           'Content-Type': 'text/html; charset=utf-8',
+          'Content-Length': String(body.byteLength),
         })
-        .end('<!doctype html><title>Not found</title><p>Not found</p>');
+        .end(request.method === 'HEAD' ? undefined : body);
       return;
     }
     let body = readFileSync(new URL(file, root));
@@ -51,11 +50,19 @@ export async function staticServer() {
       body = Buffer.from(
         body.toString().replace(manifest.cacheVersion, cacheVersion),
       );
+    const metadata =
+      file === 'web-manifest.json'
+        ? manifest.staticHosting.manifestObject.metadata
+        : manifest.files[file]!;
+    headers['Cache-Control'] = metadata.cacheControl;
+    if (metadata.contentEncoding)
+      headers['Content-Encoding'] = metadata.contentEncoding;
     response.writeHead(200, {
       ...headers,
-      'Content-Type': types[extname(file)] ?? 'application/octet-stream',
+      'Content-Type': metadata.contentType,
+      'Content-Length': String(body.byteLength),
     });
-    response.end(body);
+    response.end(request.method === 'HEAD' ? undefined : body);
   });
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);
@@ -82,3 +89,9 @@ export async function staticServer() {
     },
   };
 }
+
+type StaticMetadata = {
+  contentType: string;
+  cacheControl: string;
+  contentEncoding?: 'br' | 'gzip';
+};

@@ -722,13 +722,84 @@ func TestProtectedProofAttemptsUseFreshChallengesAndResetFailures(t *testing.T) 
 	})
 }
 
+func TestProtectedProofReplayAndCrossShareFailClosed(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		newProtectedHost := func(sessionID [16]byte) *Host {
+			host, err := NewHost(t.Context(), Config{
+				Mode: "leash", SessionID: sessionID, ReconnectGrace: time.Minute,
+				entropy: bytes.NewReader(sequentialEntropy(1024)),
+			}, time.Now(), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := host.Listen("official", "relay.example.com", time.Now()); err != nil {
+				t.Fatal(err)
+			}
+			return host
+		}
+
+		first := newProtectedHost(testHostID)
+		code, ok := first.AccessCodeForDisplay()
+		if !ok {
+			t.Fatal("protected Host lost its access code")
+		}
+		originalChallenge, response := authenticationAttemptWithCode(t, first, code)
+		if response.Type != protocol.TypeServerWelcome {
+			t.Fatal("valid proof was not admitted before replay coverage")
+		}
+		clear(response.Payload)
+		replayedProof := AccessProof(code, testHostID, originalChallenge)
+		freshChallenge, response := authenticationAttempt(t, first, replayedProof)
+		if freshChallenge == originalChallenge {
+			t.Fatal("replay attempt reused its original challenge")
+		}
+		if got, _ := protocol.ErrorCodeOf(protocol.DecodeError(response)); got != protocol.CodeAuthFailed {
+			t.Fatalf("replayed proof returned %s", got)
+		}
+		if bytes.Contains(response.Payload, code[:]) || bytes.Contains(response.Payload, replayedProof[:]) {
+			t.Fatal("replay rejection disclosed authentication material")
+		}
+		clear(response.Payload)
+		if err := first.Close("local_revoke"); err != nil {
+			t.Fatal(err)
+		}
+
+		otherID := testHostID
+		otherID[0] ^= 1
+		second := newProtectedHost(otherID)
+		crossChallenge, response := authenticationAttemptForSession(t, second, otherID, replayedProof)
+		if crossChallenge != originalChallenge {
+			t.Fatal("cross-share fixture did not isolate the session binding")
+		}
+		if got, _ := protocol.ErrorCodeOf(protocol.DecodeError(response)); got != protocol.CodeAuthFailed {
+			t.Fatalf("cross-share proof returned %s", got)
+		}
+		if bytes.Contains(response.Payload, code[:]) || bytes.Contains(response.Payload, replayedProof[:]) {
+			t.Fatal("cross-share rejection disclosed authentication material")
+		}
+		clear(response.Payload)
+		clear(originalChallenge[:])
+		clear(freshChallenge[:])
+		clear(crossChallenge[:])
+		clear(replayedProof[:])
+		clear(code[:])
+		if err := second.Close("local_revoke"); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 func authenticationAttempt(t *testing.T, host *Host, proof [32]byte) ([32]byte, protocol.Frame) {
+	return authenticationAttemptForSession(t, host, testHostID, proof)
+}
+
+func authenticationAttemptForSession(t *testing.T, host *Host, sessionID [16]byte, proof [32]byte) ([32]byte, protocol.Frame) {
 	t.Helper()
 	server, browser := net.Pipe()
 	if !host.Accept(server) {
 		t.Fatal("Host rejected authentication attempt")
 	}
-	writeTestHello(t, browser, "leash", testHostID, 2)
+	writeTestHello(t, browser, "leash", sessionID, 2)
 	response, err := protocol.ReadFrame(t.Context(), browser, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
 	if err != nil {
 		t.Fatal(err)

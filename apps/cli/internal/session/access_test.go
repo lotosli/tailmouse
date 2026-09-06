@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
+	"os"
 	"testing"
 )
 
@@ -99,6 +100,14 @@ func TestAccessProofVectorAndBinding(t *testing.T) {
 	if !VerifyAccessProof(code, sessionID, challenge, proof) {
 		t.Fatal("complete valid proof was rejected")
 	}
+	for index := range proof {
+		mutated := proof
+		mutated[index] ^= 1
+		if VerifyAccessProof(code, sessionID, challenge, mutated) {
+			t.Fatalf("proof mismatch at byte %d was accepted", index)
+		}
+		clear(mutated[:])
+	}
 	for _, mutate := range []func(*[16]byte, *[32]byte, *[32]byte){
 		func(identifier *[16]byte, _ *[32]byte, _ *[32]byte) { identifier[0] ^= 1 },
 		func(_ *[16]byte, value *[32]byte, _ *[32]byte) { value[31] ^= 1 },
@@ -110,6 +119,13 @@ func TestAccessProofVectorAndBinding(t *testing.T) {
 		if VerifyAccessProof(code, otherSession, otherChallenge, otherProof) {
 			t.Fatal("replayed, cross-session, or incomplete proof was accepted")
 		}
+	}
+	source, err := os.ReadFile("access.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(source, []byte("subtle.ConstantTimeCompare(expected[:], proof[:])")) {
+		t.Fatal("access proof verification does not use the standard-library constant-time comparison")
 	}
 }
 

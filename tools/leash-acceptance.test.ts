@@ -46,15 +46,38 @@ function acceptance(t: TestContext, args: string[], failBuild = false) {
   return { result, commands };
 }
 
-test('Leash acceptance preserves exact smoke and complete-matrix selection', (t) => {
-  for (const matrix of [false, true]) {
+test('Leash acceptance preserves exact smoke, matrix, AI CLI, official and Chrome selection', (t) => {
+  for (const mode of [
+    'smoke',
+    'matrix',
+    'ai-cli',
+    'official',
+    'chrome',
+  ] as const) {
     const { result, commands } = acceptance(
       t,
-      matrix ? ['--network-matrix'] : [],
+      mode === 'matrix'
+        ? ['--network-matrix']
+        : mode === 'official'
+          ? ['--official']
+          : mode === 'chrome'
+            ? ['--chrome']
+            : mode === 'ai-cli'
+              ? ['--ai-cli']
+              : [],
     );
-    if (!['darwin', 'linux'].includes(process.platform)) {
+    if (
+      !['darwin', 'linux'].includes(process.platform) ||
+      (['official', 'chrome'].includes(mode) && process.platform !== 'darwin')
+    ) {
       assert.notEqual(result.status, 0);
-      assert.match(result.stderr, /requires a Unix PTY/);
+      assert.match(
+        result.stderr,
+        ['official', 'chrome'].includes(mode) &&
+          ['darwin', 'linux'].includes(process.platform)
+          ? /requires macOS/
+          : /requires a Unix PTY/,
+      );
       assert.deepEqual(commands, []);
       continue;
     }
@@ -68,10 +91,23 @@ test('Leash acceptance preserves exact smoke and complete-matrix selection', (t)
         '-tags=tailcatintegration',
         '-count=1',
         '-failfast',
-        matrix ? '-timeout=3h' : '-timeout=4m',
-        matrix
+        ...(['official', 'ai-cli', 'chrome'].includes(mode) ? ['-v'] : []),
+        mode === 'matrix'
+          ? '-timeout=3h'
+          : mode === 'official' || mode === 'chrome'
+            ? '-timeout=4m'
+            : mode === 'ai-cli'
+              ? '-timeout=2m'
+              : '-timeout=6m',
+        mode === 'matrix'
           ? '-run=^TestHermeticLeashNetworkMatrix$'
-          : '-run=^TestHermeticLeash(Browser|Network)$',
+          : mode === 'official'
+            ? '-run=^TestOfficialLeashBrowser$'
+            : mode === 'chrome'
+              ? '-run=^TestOfficialChromeLeashBrowser$'
+              : mode === 'ai-cli'
+                ? '-run=^TestHermeticLeashAI$'
+                : '-run=^TestHermeticLeash(Browser|Network)$',
         './apps/cli/cmd/tailmouse',
       ],
     ]);
@@ -79,12 +115,27 @@ test('Leash acceptance preserves exact smoke and complete-matrix selection', (t)
 });
 
 test('Leash acceptance rejects unknown or duplicate selectors before any build', (t) => {
-  for (const args of [['--matrix'], ['--network-matrix', '--network-matrix']]) {
+  for (const args of [
+    ['--matrix'],
+    ['--network-matrix', '--network-matrix'],
+    ['--official', '--network-matrix'],
+  ]) {
     const { result, commands } = acceptance(t, args);
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Usage:/);
     assert.deepEqual(commands, []);
   }
+});
+
+test('Leash acceptance accepts the pnpm argument separator', (t) => {
+  const { result, commands } = acceptance(t, ['--', '--official']);
+  if (process.platform !== 'darwin') {
+    assert.notEqual(result.status, 0);
+    assert.deepEqual(commands, []);
+    return;
+  }
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(commands.at(-1)?.at(-2), '-run=^TestOfficialLeashBrowser$');
 });
 
 test('Leash acceptance never proceeds after a prerequisite failure', (t) => {

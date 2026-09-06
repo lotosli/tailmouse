@@ -258,7 +258,7 @@ test('notice command explicitly updates sources and fails closed on drift or a m
   put(
     'apps/web/dist/web-manifest.json',
     JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: 2,
       tailcatRevision: revision,
       dependencies: { npm: [{ name: 'vite', version: '8.0.0' }], wasm },
     }),

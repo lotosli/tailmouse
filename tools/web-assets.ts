@@ -12,6 +12,75 @@ export const securityHeaders = Object.freeze({
   'X-Content-Type-Options': 'nosniff',
 });
 
+export const immutableCacheControl = 'public, max-age=31536000, immutable';
+
+export const staticHosting = Object.freeze({
+  applicationBackend: false,
+  manifestObject: Object.freeze({
+    path: 'web-manifest.json',
+    metadata: Object.freeze({
+      contentType: 'application/json',
+      cacheControl: 'no-cache',
+    }),
+  }),
+  rootRoute: Object.freeze({
+    requestPath: '/',
+    objectPath: 'index.html',
+    action: 'internal-rewrite',
+    clearQuery: true,
+  }),
+  unknownPathStatus: 404,
+  requiredHeaders: securityHeaders,
+});
+
+export type WebObjectMetadata = {
+  contentType: string;
+  cacheControl: string;
+  contentEncoding?: 'br' | 'gzip';
+};
+
+export function webObjectMetadata(fileName: string): WebObjectMetadata {
+  const compressed = fileName.match(/\.(br|gz)$/u)?.[1];
+  const rawName = compressed ? fileName.slice(0, -3) : fileName;
+  const contentType = rawName.endsWith('.html')
+    ? 'text/html; charset=utf-8'
+    : rawName.endsWith('.js')
+      ? 'text/javascript; charset=utf-8'
+      : rawName.endsWith('.css')
+        ? 'text/css; charset=utf-8'
+        : rawName.endsWith('.wasm')
+          ? 'application/wasm'
+          : rawName.endsWith('.webmanifest')
+            ? 'application/manifest+json'
+            : rawName.endsWith('.json') || rawName.endsWith('.map')
+              ? 'application/json'
+              : rawName.endsWith('.txt') ||
+                  ['LICENSE', 'NOTICE'].includes(rawName)
+                ? 'text/plain; charset=utf-8'
+                : rawName.endsWith('.svg')
+                  ? 'image/svg+xml'
+                  : rawName.endsWith('.png')
+                    ? 'image/png'
+                    : rawName.endsWith('.webp')
+                      ? 'image/webp'
+                      : rawName.endsWith('.woff2')
+                        ? 'font/woff2'
+                        : undefined;
+  if (!contentType)
+    throw new Error(`Unsupported static Web object type: ${fileName}`);
+  const immutable =
+    /^(?:assets|tailcat)\/[\w.-]+-[\w-]{8,}\.(?:js|js\.map|css|wasm|svg|png|webp|woff2)$/u.test(
+      rawName,
+    );
+  return {
+    contentType,
+    cacheControl: immutable ? immutableCacheControl : 'no-cache',
+    ...(compressed
+      ? { contentEncoding: compressed === 'br' ? 'br' : 'gzip' }
+      : {}),
+  };
+}
+
 export function digest(bytes: string | Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
 }

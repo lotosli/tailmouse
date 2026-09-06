@@ -7,8 +7,12 @@ import { brotliDecompressSync, gunzipSync } from 'node:zlib';
 import {
   compressedAssets,
   digest,
+  immutableCacheControl,
+  securityHeaders,
+  staticHosting,
   tailcatAssets,
   verifyStaticReferences,
+  webObjectMetadata,
 } from './web-assets.ts';
 
 test('Tailcat asset paths and checksums derive only from verified bytes', (t) => {
@@ -86,6 +90,54 @@ test('gzip and Brotli artifacts are deterministic and preserve original bytes', 
   assert.deepEqual(gunzipSync(first[0]!.source), source);
   assert.deepEqual(brotliDecompressSync(first[1]!.source), source);
   assert.ok(first.every((item) => item.source.length < source.length));
+});
+
+test('static object metadata and hosting policy are exact and backend-free', () => {
+  assert.deepEqual(webObjectMetadata('index.html'), {
+    contentType: 'text/html; charset=utf-8',
+    cacheControl: 'no-cache',
+  });
+  assert.deepEqual(
+    webObjectMetadata(`tailcat/tailcat-web-${'1'.repeat(64)}.wasm`),
+    {
+      contentType: 'application/wasm',
+      cacheControl: immutableCacheControl,
+    },
+  );
+  assert.deepEqual(
+    webObjectMetadata(`tailcat/tailcat-web-${'1'.repeat(64)}.wasm.br`),
+    {
+      contentType: 'application/wasm',
+      cacheControl: immutableCacheControl,
+      contentEncoding: 'br',
+    },
+  );
+  assert.deepEqual(webObjectMetadata(`assets/index-${'A'.repeat(8)}.js.map`), {
+    contentType: 'application/json',
+    cacheControl: immutableCacheControl,
+  });
+  assert.throws(
+    () => webObjectMetadata('unexpected.exe'),
+    /Unsupported static Web object type/u,
+  );
+  assert.deepEqual(staticHosting, {
+    applicationBackend: false,
+    manifestObject: {
+      path: 'web-manifest.json',
+      metadata: {
+        contentType: 'application/json',
+        cacheControl: 'no-cache',
+      },
+    },
+    rootRoute: {
+      requestPath: '/',
+      objectPath: 'index.html',
+      action: 'internal-rewrite',
+      clearQuery: true,
+    },
+    unknownPathStatus: 404,
+    requiredHeaders: securityHeaders,
+  });
 });
 
 test('the non-root read-only Nginx image keeps every temporary path on tmpfs', () => {

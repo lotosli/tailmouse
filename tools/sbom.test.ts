@@ -103,6 +103,15 @@ test('Web SBOM separates npm and Wasm libraries and includes every supplied stat
   );
   assert.equal(bom.dependencies[1]?.ref, `file:${webFiles[1]!.name}`);
   assert.equal(bom.dependencies[1]?.dependsOn.length, 3);
+  assert.deepEqual(
+    bom.metadata.component.properties.filter(({ name }) =>
+      name.startsWith('tailmouse:protocol-'),
+    ),
+    [
+      { name: 'tailmouse:protocol-escape', value: '1' },
+      { name: 'tailmouse:protocol-leash', value: '2' },
+    ],
+  );
   assert.ok(!JSON.stringify(bom).includes('/Users/'));
   const win = nativeSBOM(
     identity,

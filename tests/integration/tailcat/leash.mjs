@@ -21,12 +21,15 @@ async function main() {
   if (
     typeof request?.baseURL !== 'string' ||
     typeof request.fragment !== 'string' ||
+    !['chromium', 'chrome'].includes(request.engine) ||
     !Number.isSafeInteger(request.hostPID) ||
     request.hostPID <= 0 ||
     !/^[A-Za-z0-9_-]{1,16384}$/.test(request.fragment) ||
     ![
       'cli',
       'protected',
+      'readonly',
+      'ai-cli',
       'old-peer',
       'vim',
       'shell',
@@ -41,11 +44,20 @@ async function main() {
     ].includes(request.scenario)
   )
     throw new Error('INPUT_INVALID');
-  const protectedAccess = request.scenario === 'protected';
+  const protectedAccess = request.accessMode === 'code';
   if (
+    !['code', 'link'].includes(request.accessMode) ||
     protectedAccess !==
-    (typeof request.accessCode === 'string' &&
-      /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{16}$/.test(request.accessCode))
+      (typeof request.accessCode === 'string' &&
+        /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{16}$/.test(request.accessCode))
+  )
+    throw new Error('INPUT_INVALID');
+  if (
+    (request.scenario === 'ai-cli') !==
+    (typeof request.expectedOutput === 'string' &&
+      /^codex-cli [0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/.test(
+        request.expectedOutput,
+      ))
   )
     throw new Error('INPUT_INVALID');
   const base = new URL(request.baseURL);
@@ -56,17 +68,25 @@ async function main() {
   const launch = () =>
     chromium.launchServer({
       args: ['--ignore-certificate-errors'],
+      ...(request.engine === 'chrome' ? { channel: 'chrome' } : {}),
       headless: true,
       host: '127.0.0.1',
       timeout: 10_000,
     });
   let server;
   let failure;
+  let browserVersion = '';
   try {
     server = await launch();
     let browser = await chromium.connect(server.wsEndpoint(), {
       timeout: 10_000,
     });
+    browserVersion = browser.version();
+    if (
+      !/^\d+(?:\.\d+){1,3}$/.test(browserVersion) ||
+      browserVersion.length > 64
+    )
+      throw new Error('BROWSER_VERSION_INVALID');
     let context = await browser.newContext({
       ignoreHTTPSErrors: true,
       serviceWorkers: 'block',
@@ -74,22 +94,8 @@ async function main() {
     });
     context.setDefaultTimeout(10_000);
     let page = await context.newPage();
-    stage = 'connect';
-    await page.goto(`${request.baseURL}/#/v1/${request.fragment}`);
-    if (protectedAccess) {
-      stage = 'protected-code-entry';
-      let code = request.accessCode;
-      request.accessCode = '';
-      await expect(
-        page.getByRole('region', { name: 'Connection' }).getByRole('alert'),
-      ).toHaveText('Enter the host access code to continue.', {
-        timeout: 30_000,
-      });
-      await page.getByLabel('Access code').fill(code);
-      code = '';
-      await page.getByRole('button', { name: 'Connect' }).click();
-    }
     const reconnect = [
+      'protected',
       'long-task',
       'reconnect',
       'retained-exit',
@@ -99,6 +105,25 @@ async function main() {
     const longTask = request.scenario === 'long-task';
     const killOnDisconnect = request.scenario === 'browser-crash-kill';
     const hostEndsSession = ['expiry', 'revocation'].includes(request.scenario);
+    const invitationURL = `${request.baseURL}/#/v1/${request.fragment}`;
+    let code = protectedAccess ? request.accessCode : '';
+    request.accessCode = '';
+    stage = 'connect';
+    await page.goto(invitationURL);
+    if (protectedAccess) {
+      stage = 'protected-code-entry';
+      const connection = page.getByRole('region', { name: 'Connection' });
+      const accessAlert = connection.getByRole('alert');
+      const expectCodeEntry = () =>
+        expect(accessAlert).toHaveText(
+          'Enter the host access code to continue.',
+          { timeout: 30_000 },
+        );
+      await expectCodeEntry();
+      await page.getByLabel('Access code').fill(code);
+      await page.getByRole('button', { name: 'Connect' }).click();
+      if (!reconnect) code = '';
+    }
     // Only reconnect scenarios keep the externally supplied invitation in memory
     // for a second explicit scan; the PWA never stores or recovers it.
     if (!reconnect) request.fragment = '';
@@ -106,12 +131,51 @@ async function main() {
       page.getByRole('region', { name: 'Connection' }).getByRole('status'),
     ).toHaveText('Connected', { timeout: 30_000 });
     if (page.url() !== `${request.baseURL}/`) throw new Error('URL_NOT_CLEAN');
+    if (request.scenario === 'protected') {
+      stage = 'protected-busy-peer';
+      const busyContext = await browser.newContext({
+        ignoreHTTPSErrors: true,
+        serviceWorkers: 'block',
+        viewport: { width: 900, height: 900 },
+      });
+      busyContext.setDefaultTimeout(10_000);
+      try {
+        const busyPage = await busyContext.newPage();
+        await busyPage.goto(invitationURL);
+        await expect(
+          busyPage
+            .getByRole('region', { name: 'Connection' })
+            .getByRole('alert'),
+        ).toHaveText('Enter the host access code to continue.', {
+          timeout: 30_000,
+        });
+        await busyPage.getByLabel('Access code').fill(code);
+        await busyPage.getByRole('button', { name: 'Connect' }).click();
+        await expect(
+          busyPage
+            .getByRole('region', { name: 'Connection' })
+            .getByRole('alert'),
+        ).toHaveText('Another browser is controlling this session.', {
+          timeout: 30_000,
+        });
+        await expect(
+          busyPage.getByRole('region', { name: 'Terminal output' }),
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+        ).toHaveText('Connected');
+      } finally {
+        await busyContext.close();
+      }
+    }
     let output = page.getByRole('region', { name: 'Terminal output' });
     const title =
       {
         vim: 'Native Vim acceptance',
         shell: 'Native Shell acceptance',
         'long-task': 'Native long task acceptance',
+        readonly: 'Native readonly acceptance',
+        'ai-cli': 'Installed Codex CLI acceptance',
         htop: 'Native htop acceptance',
       }[request.scenario] ?? 'Native CLI acceptance';
     await expect(page.getByText(title, { exact: true })).toBeVisible();
@@ -162,6 +226,40 @@ async function main() {
       await crash();
       // The Go owner must now observe heartbeat loss and child exit 143.
       // No browser shutdown or application CLOSE can trigger that policy.
+    } else if (request.scenario === 'ai-cli') {
+      stage = 'ai-cli-version';
+      await expect(output).toContainText(request.expectedOutput);
+      request.expectedOutput = '';
+      await expect(page.getByLabel('Process status')).toContainText('Exit 0');
+    } else if (request.scenario === 'readonly') {
+      stage = 'readonly-terminal-output';
+      await expect(output).toContainText('readonly-ready');
+      stage = 'readonly-authority-label';
+      await expect(
+        page
+          .getByRole('region', { name: 'Connection' })
+          .getByText('Read only', { exact: true }),
+      ).toBeVisible();
+      stage = 'readonly-terminal-label';
+      await expect(
+        page
+          .getByRole('region', { name: 'Leash terminal' })
+          .getByText('Read only', { exact: true }),
+      ).toBeVisible();
+      stage = 'readonly-keyboard';
+      await expect(
+        page.getByRole('button', { name: 'Open keyboard' }),
+      ).toHaveCount(0);
+      stage = 'readonly-paste';
+      await expect(
+        page.getByRole('textbox', { name: 'Paste text' }),
+      ).toHaveCount(0);
+      stage = 'readonly-process-controls';
+      await expect(
+        page.getByRole('group', { name: 'Process controls' }),
+      ).toHaveCount(0);
+      stage = 'readonly-exit';
+      await expect(page.getByLabel('Process status')).toContainText('Exit 23');
     } else if (request.scenario === 'htop') {
       stage = 'htop-render';
       const ownedPID = new RegExp(`\\b${request.hostPID}\\b`);
@@ -302,6 +400,16 @@ async function main() {
         stage = 'native-reconnect';
         await page.goto(`${request.baseURL}/#/v1/${request.fragment}`);
         request.fragment = '';
+        if (protectedAccess) {
+          await expect(
+            page.getByRole('region', { name: 'Connection' }).getByRole('alert'),
+          ).toHaveText('Enter the host access code to continue.', {
+            timeout: 30_000,
+          });
+          await page.getByLabel('Access code').fill(code);
+          code = '';
+          await page.getByRole('button', { name: 'Connect' }).click();
+        }
         await expect
           .poll(
             async () => {
@@ -454,7 +562,13 @@ async function main() {
       stage = 'retention-close';
       await expect(
         page.getByText('Session closed.', { exact: true }),
-      ).toBeVisible({ timeout: retainedExit ? 8_000 : 5_000 });
+      ).toBeVisible({
+        timeout: ['retained-exit', 'readonly', 'ai-cli'].includes(
+          request.scenario,
+        )
+          ? 8_000
+          : 5_000,
+      });
       await context.close();
     }
   } catch (error) {
@@ -471,7 +585,12 @@ async function main() {
   }
   if (failure !== undefined) throw failure;
   process.stdout.write(
-    `leash browser acceptance passed: ${request.scenario}\n`,
+    `${JSON.stringify({
+      result: 'passed',
+      scenario: request.scenario,
+      engine: request.engine,
+      browserVersion,
+    })}\n`,
   );
 }
 

@@ -29,6 +29,7 @@ import {
   distributionNotices,
   verifyNoticeCoverage,
 } from './release-licenses.ts';
+import { staticHosting, webObjectMetadata } from './web-assets.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const release = resolve(root, '.artifacts/release');
@@ -118,9 +119,29 @@ function checkSums(modules, sumPath) {
 
 function webInventory(directory, identity, versions) {
   const manifest = json(resolve(directory, 'web-manifest.json'));
-  assert.equal(manifest.schemaVersion, 1, 'Unsupported Web manifest.');
+  assert.equal(manifest.schemaVersion, 2, 'Unsupported Web manifest.');
+  assert.deepEqual(
+    Object.keys(manifest).sort(),
+    [
+      'cacheVersion',
+      'dependencies',
+      'files',
+      'protocols',
+      'schemaVersion',
+      'staticHosting',
+      'tailcatRevision',
+      'toolchains',
+      'version',
+    ],
+    'Unexpected Web manifest fields.',
+  );
+  assert.deepEqual(
+    manifest.staticHosting,
+    staticHosting,
+    'Static hosting contract mismatch.',
+  );
   for (const [key, value] of Object.entries(identity))
-    assert.equal(manifest[key], value, 'Web build identity mismatch.');
+    assert.deepEqual(manifest[key], value, 'Web build identity mismatch.');
   const webPackage = json(resolve(root, 'apps/web/package.json'));
   const expectedNpm = [...Object.keys(webPackage.dependencies), 'vite']
     .sort()
@@ -167,7 +188,11 @@ function webInventory(directory, identity, versions) {
     if (name !== 'web-manifest.json')
       assert.deepEqual(
         manifest.files[name],
-        { bytes: identity.bytes, sha256: identity.sha256 },
+        {
+          bytes: identity.bytes,
+          sha256: identity.sha256,
+          ...webObjectMetadata(name),
+        },
         'Web content hash mismatch.',
       );
     if (name.endsWith('.gz') || name.endsWith('.br')) {
@@ -189,6 +214,12 @@ function webInventory(directory, identity, versions) {
   });
   const wasmFiles = names.filter((name) => name.endsWith('.wasm'));
   assert.equal(wasmFiles.length, 1, 'Expected one WebAssembly binary.');
+  for (const suffix of ['.wasm.br', '.wasm.gz'])
+    assert.equal(
+      names.filter((name) => name.endsWith(suffix)).length,
+      1,
+      `Expected one ${suffix} WebAssembly object.`,
+    );
   const wasm = wasmDependencies(
     bytes(resolve(directory, wasmFiles[0])),
     identity.tailcatRevision,

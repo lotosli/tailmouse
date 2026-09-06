@@ -37,6 +37,8 @@ Set a boolean explicitly with --flag=false. Plain HTTP Web is loopback-only.
 Treat invitations and access codes as separate passwords. With --no-password,
 the complete invitation alone grants the configured Leash permissions.
 Browser transport is DERP-only. TailMouse is an unofficial Tailcat application.
+TMOUSE Escape uses identifier 1; Leash uses identifier 2. Older Leash peers
+fail closed before terminal disclosure or child startup; there is no downgrade.
 `
 	const escape = `
 Escape flags:
@@ -74,6 +76,7 @@ always prints a warning, including with --quiet.
 
 Arguments after -- are literal: no shell expansion. For pipes or redirects,
 explicitly launch a shell: tailmouse leash -- sh -lc 'make test | tee test.log'
+Examples: tailmouse leash -- vim; tailmouse leash -- codex (an installed AI CLI).
 Browser input has the selected process's authority; use --readonly to view only.
 Leash streams terminal applications and TUIs, not native GUI windows or desktops.
 `

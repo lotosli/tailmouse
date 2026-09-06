@@ -12,6 +12,20 @@ application backend or connection credential in this directory. Native TailMouse
 and browser Wasm embed the same Tailcat gitlink. `web-manifest.json` records their
 compatibility metadata and SHA-256 identities of generated files.
 
+The static host never receives URL fragments. Protected Leash access codes stay
+in the active page's memory and are converted into fresh challenge proofs inside
+the encrypted session; they are not static configuration, object metadata or
+server logs. Link-only invitations remain full-access bearer credentials and
+must not be placed in paths, queries, redirects or deployment tooling.
+
+Deploy one coherent manifest at a time. Escape uses wire identifier 1 and Leash
+uses identifier 2; an old Leash browser or Host must fail before terminal data or
+child startup rather than loading a compatibility shim. The official target is
+`https://link.tailmouse.com/`, but local self-hosting does not imply that the
+official origin has been published or verified. Its no-backend R2 topology and
+reviewed rule set are defined in the
+[Cloudflare R2 publication runbook](cloudflare-r2-publication.md).
+
 ## Nginx example
 
 The minimal example uses the official Nginx 1.30.4 stable image with an exact

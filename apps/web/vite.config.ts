@@ -17,8 +17,10 @@ import {
   compressedAssets,
   digest,
   securityHeaders,
+  staticHosting,
   tailcatAssets,
   verifyStaticReferences,
+  webObjectMetadata,
 } from '../../tools/web-assets.ts';
 
 const tailcatArtifacts = resolve(
@@ -90,13 +92,23 @@ export default defineConfig({
             vite: viteVersion,
             rolldown: rolldownVersion,
           };
-          const files: Record<string, { bytes: number; sha256: string }> = {};
+          const files: Record<
+            string,
+            {
+              bytes: number;
+              sha256: string;
+              contentType: string;
+              cacheControl: string;
+              contentEncoding?: 'br' | 'gzip';
+            }
+          > = {};
           const publicManifest = readFileSync(
             resolve(import.meta.dirname, 'public/manifest.webmanifest'),
           );
           files['manifest.webmanifest'] = {
             bytes: publicManifest.byteLength,
             sha256: digest(publicManifest),
+            ...webObjectMetadata('manifest.webmanifest'),
           };
           const assets: { path: string; integrity: string }[] = [];
           for (const fileName of Object.keys(bundle).sort()) {
@@ -110,7 +122,11 @@ export default defineConfig({
                 source.toString(),
                 fileName.endsWith('.html') ? 'html' : 'css',
               );
-            files[fileName] = { bytes: source.byteLength, sha256 };
+            files[fileName] = {
+              bytes: source.byteLength,
+              sha256,
+              ...webObjectMetadata(fileName),
+            };
             if (
               /^(?:assets|tailcat)\/[\w.-]+-[\w-]{8,}\.(?:js|css|wasm|svg|png|webp|woff2)$/u.test(
                 fileName,
@@ -124,6 +140,7 @@ export default defineConfig({
                 files[compressed.fileName] = {
                   bytes: compressed.source.byteLength,
                   sha256: digest(compressed.source),
+                  ...webObjectMetadata(compressed.fileName),
                 };
                 this.emitFile({ ...compressed, type: 'asset' });
               }
@@ -150,6 +167,7 @@ export default defineConfig({
           files['service-worker.js'] = {
             bytes: Buffer.byteLength(source),
             sha256: digest(source),
+            ...webObjectMetadata('service-worker.js'),
           };
           this.emitFile({
             type: 'asset',
@@ -162,11 +180,12 @@ export default defineConfig({
             source:
               JSON.stringify(
                 {
-                  schemaVersion: 1,
+                  schemaVersion: 2,
                   ...identity,
                   cacheVersion: version,
                   dependencies,
                   toolchains,
+                  staticHosting,
                   files,
                 },
                 null,

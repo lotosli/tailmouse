@@ -36,8 +36,54 @@ import (
 // Run with pnpm test:leash. All cases use the real CLI owner, native PTY,
 // loopback DERP, recorded Tailcat Wasm and production Web build.
 func TestHermeticLeashBrowser(t *testing.T) {
-	for _, scenario := range []string{"cli", "protected", "old-peer", "vim", "shell", "long-task", "reconnect", "retained-exit", "expiry", "revocation", "browser-crash", "browser-crash-kill"} {
+	for _, scenario := range []string{"cli", "protected", "readonly", "old-peer", "vim", "shell", "long-task", "reconnect", "retained-exit", "expiry", "revocation", "browser-crash", "browser-crash-kill"} {
 		t.Run(scenario, func(t *testing.T) { testNativeBrowser(t, scenario, nil) })
+	}
+}
+
+// Run explicitly with pnpm test:leash -- --ai-cli. An available AI CLI is an
+// acceptance target, not a dependency of the self-contained development gate.
+func TestHermeticLeashAI(t *testing.T) {
+	testNativeBrowser(t, "ai-cli", nil)
+}
+
+// Run explicitly with pnpm test:leash -- --official. These two cases prove
+// both access modes through Tailcat's production official-relay selection
+// without making the hermetic development gate depend on public availability.
+func TestOfficialLeashBrowser(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("phase-two official-relay runtime acceptance is macOS-scoped")
+	}
+	for _, test := range []struct {
+		name      string
+		scenario  string
+		protected bool
+	}{
+		{"link-short-command", "cli", false},
+		{"protected-ai-cli", "ai-cli", true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			testNativeBrowserWithAccess(t, test.scenario, nil, test.protected, true)
+		})
+	}
+}
+
+// Run explicitly with pnpm test:leash -- --chrome. This is installed branded
+// Chrome acceptance, distinct from the pinned Chrome-for-Testing gate engine.
+func TestOfficialChromeLeashBrowser(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("branded Chrome phase-two acceptance is macOS-scoped")
+	}
+	for _, test := range []struct {
+		name      string
+		protected bool
+	}{
+		{"link-only", false},
+		{"protected", true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			testNativeBrowserWithEngineAccess(t, "cli", nil, test.protected, true, "chrome")
+		})
 	}
 }
 
@@ -85,10 +131,24 @@ func TestHermeticEscapeIdleMemory(t *testing.T) {
 }
 
 func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.TestNetworkProfile) {
+	testNativeBrowserWithAccess(t, scenario, profile, scenario == "protected" || scenario == "ai-cli", false)
+}
+
+func testNativeBrowserWithAccess(t *testing.T, scenario string, profile *tailcattransport.TestNetworkProfile, protected, official bool) {
+	testNativeBrowserWithEngineAccess(t, scenario, profile, protected, official, "chromium")
+}
+
+func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *tailcattransport.TestNetworkProfile, protected, official bool, engine string) {
 	t.Helper()
+	startedAt := time.Now()
 	isNetwork := scenario == "network" || scenario == "network-memory"
 	isEscape := scenario == "escape-idle"
-	isProtected := scenario == "protected"
+	if engine != "chromium" && engine != "chrome" {
+		t.Fatal("unsupported Leash acceptance browser engine")
+	}
+	if official && (profile != nil || isEscape) {
+		t.Fatal("official relay acceptance cannot use a hermetic network profile")
+	}
 	_, source, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("cannot locate browser integration source")
@@ -122,6 +182,7 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 	}
 	environment = append(environment, "TAILMOUSE_LEASH_CLI_CHILD="+childMode)
 	title, wantCode := "Native CLI acceptance", 37
+	expectedOutput := ""
 	if scenario == "vim" {
 		if _, err := os.Stat("/usr/bin/vi"); err != nil {
 			t.Fatal("Vim is required for full-screen native acceptance")
@@ -153,13 +214,36 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 		script := `printf 'long-task-ready\n'; i=0; while [ "$i" -lt 200 ]; do i=$((i + 1)); printf 'long-task-progress:%s\n' "$i"; sleep 0.2; done; printf 'long-task-input\n'; IFS= read -r answer; printf 'long-task-complete:%s\n' "$answer"`
 		argv = []string{"/bin/sh", "-c", script}
 		title, wantCode = "Native long task acceptance", 0
+	} else if scenario == "readonly" {
+		argv = []string{"/bin/sh", "-c", "printf 'readonly-ready\\n'; exit 23"}
+		title, wantCode = "Native readonly acceptance", 23
+	} else if scenario == "ai-cli" {
+		codex, err := exec.LookPath("codex")
+		if err != nil {
+			t.Fatal("an installed Codex CLI is required for AI CLI acceptance")
+		}
+		version, err := exec.Command(codex, "--version").Output()
+		if err != nil {
+			t.Fatal("the installed Codex CLI version command failed")
+		}
+		expectedOutput = strings.TrimSpace(string(version))
+		clear(version)
+		matched, err := regexp.MatchString(`^codex-cli [0-9A-Za-z][0-9A-Za-z.+-]{0,63}$`, expectedOutput)
+		if err != nil || !matched {
+			t.Fatal("the installed Codex CLI returned an invalid bounded version")
+		}
+		argv = []string{codex, "--version"}
+		title, wantCode = "Installed Codex CLI acceptance", 0
+		t.Logf("AI CLI example: %s", expectedOutput)
 	}
 	if err := os.MkdirAll(filepath.Join(root, ".artifacts"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	var network *tailcattransport.LocalTestNetwork
 	var start func(context.Context, tailcattransport.Config) (*tailcattransport.Server, error)
-	if profile != nil {
+	if official {
+		start = tailcattransport.Start
+	} else if profile != nil {
 		network = tailcattransport.NewLocalTestNetwork(*profile)
 		start = tailcattransport.LocalTestStarter(t, network)
 	} else {
@@ -173,14 +257,17 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 	if scenario == "long-task" {
 		deadline = 100 * time.Second
 	}
-	if scenario == "startup" || isNetwork || isEscape {
+	if scenario == "startup" || isNetwork || isEscape || official {
 		deadline = 90 * time.Second
+	}
+	if scenario == "protected" {
+		deadline = 150 * time.Second
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), deadline)
 	t.Cleanup(cancel)
 	revokeSignal := make(chan os.Signal, 1)
 	var input, inputWriter *os.File
-	if isProtected {
+	if protected {
 		inputWriter, input, err = nativepty.Open()
 	} else {
 		input, inputWriter, err = os.Pipe()
@@ -294,11 +381,17 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 	var nativeTransport *tailcattransport.Server
 	finished := false
 	retention := "1s"
-	if scenario == "retained-exit" {
+	if scenario == "retained-exit" || scenario == "readonly" || scenario == "ai-cli" {
 		retention = "5s" // Includes a fresh browser context and real Wasm startup.
 	}
-	args := []string{"leash", "--derp-host=localhost", "--no-qr", "--start-on=connect", "--post-exit-ttl=" + retention, "--cwd=" + directory, "--title=" + title}
-	if !isProtected {
+	args := []string{"leash", "--no-qr", "--start-on=connect", "--post-exit-ttl=" + retention, "--cwd=" + directory, "--title=" + title}
+	if !official {
+		args = append(args, "--derp-host=localhost")
+	}
+	if scenario == "readonly" {
+		args = append(args, "--readonly")
+	}
+	if !protected {
 		args = append(args, "--no-password")
 	}
 	args = append(args, "--")
@@ -383,14 +476,38 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 		oldSessionID = card.SessionID
 		defer clear(oldAddress)
 	}
+	var protectedAddress []byte
+	var protectedSessionID [16]byte
+	if scenario == "protected" {
+		protectedAddress = []byte(card.TailcatAddr)
+		protectedSessionID = card.SessionID
+		defer clear(protectedAddress)
+	}
 	encoded, err := invitation.Encode(card)
 	card = invitation.MouseCard{}
 	if err != nil {
 		t.Fatal("native invitation could not be consumed")
 	}
 	var accessCode session.AccessCode
-	if isProtected {
+	if protected {
 		accessCode = readBrowserIntegrationAccessCode(t, ctx, inputWriter)
+	}
+	if scenario == "protected" {
+		for attempt := 0; attempt < 10; attempt++ {
+			expectProtectedLeashRejection(t, ctx, protectedAddress, protectedSessionID, protocol.CodeAuthFailed)
+		}
+		expectProtectedLeashRejection(t, ctx, protectedAddress, protectedSessionID, protocol.CodeAuthThrottled)
+		capture.mu.Lock()
+		started := bytes.Contains(capture.capture.Bytes(), []byte("child-ready"))
+		capture.mu.Unlock()
+		if started {
+			t.Fatal("rejected protected attempts started the task")
+		}
+		select {
+		case <-time.After(30 * time.Second):
+		case <-ctx.Done():
+			t.Fatal("protected cooldown did not finish within the acceptance deadline")
+		}
 	}
 	if scenario == "old-peer" {
 		rejectOldLeashPeer(t, ctx, oldAddress, oldSessionID)
@@ -401,14 +518,21 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 			t.Fatal("old Leash peer started the protected task")
 		}
 	}
+	accessMode := "link"
+	if protected {
+		accessMode = "code"
+	}
 	request, err := json.Marshal(struct {
 		BaseURL    string                               `json:"baseURL"`
 		Fragment   string                               `json:"fragment"`
 		Scenario   string                               `json:"scenario"`
+		Engine     string                               `json:"engine"`
 		HostPID    int                                  `json:"hostPID"`
 		Profile    *tailcattransport.TestNetworkProfile `json:"profile,omitempty"`
+		AccessMode string                               `json:"accessMode"`
 		AccessCode string                               `json:"accessCode,omitempty"`
-	}{static.URL, base64.RawURLEncoding.EncodeToString(encoded), scenario, os.Getpid(), profile, string(accessCode[:])})
+		Expected   string                               `json:"expectedOutput,omitempty"`
+	}{static.URL, base64.RawURLEncoding.EncodeToString(encoded), scenario, engine, os.Getpid(), profile, accessMode, string(accessCode[:]), expectedOutput})
 	clear(accessCode[:])
 	clear(encoded)
 	if err != nil {
@@ -583,8 +707,19 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 		} else if evidence.Memory != nil {
 			t.Fatal("functional network case unexpectedly enabled memory inspection")
 		}
-	} else if strings.TrimSpace(probe.String()) != "leash browser acceptance passed: "+scenario {
-		t.Fatal("browser probe emitted an unexpected trace")
+	} else {
+		var acceptance struct {
+			Result         string `json:"result"`
+			Scenario       string `json:"scenario"`
+			Engine         string `json:"engine"`
+			BrowserVersion string `json:"browserVersion"`
+		}
+		if err := json.Unmarshal(probe.Bytes(), &acceptance); err != nil ||
+			acceptance.Result != "passed" || acceptance.Scenario != scenario || acceptance.Engine != engine ||
+			len(acceptance.BrowserVersion) > 64 || !regexp.MustCompile(`^\d+(?:\.\d+){1,3}$`).MatchString(acceptance.BrowserVersion) {
+			t.Fatal("browser probe emitted an unexpected trace")
+		}
+		t.Logf("browser runtime %s %s", engine, acceptance.BrowserVersion)
 	}
 	waitForExit := ctx
 	if isEscape {
@@ -610,6 +745,11 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 	case <-waitForExit.Done():
 		t.Fatal("native owner did not finish after browser acceptance")
 	}
+	relay := "hermetic"
+	if official {
+		relay = "official"
+	}
+	t.Logf("%s/%s %s-relay %s %s acceptance completed in %s", runtime.GOOS, runtime.GOARCH, relay, engine, scenario, time.Since(startedAt).Round(time.Millisecond))
 }
 
 func readBrowserIntegrationAccessCode(t *testing.T, ctx context.Context, terminal *os.File) session.AccessCode {
@@ -639,6 +779,77 @@ func readBrowserIntegrationAccessCode(t *testing.T, ctx context.Context, termina
 	}
 	t.Fatal("protected credential terminal exceeded its output bound")
 	return session.AccessCode{}
+}
+
+func expectProtectedLeashRejection(t *testing.T, parent context.Context, address []byte, sessionID [16]byte, expected protocol.ErrorCode) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
+	defer cancel()
+	connection, closeClient, err := tailcattransport.DialLocalTestStream(ctx, address, invitation.VirtualPort)
+	if err != nil {
+		t.Fatal("protected rejection client could not reach the hermetic Host")
+	}
+	defer func() {
+		_ = connection.Close()
+		if err := closeClient(); err != nil {
+			t.Error("protected rejection client did not close")
+		}
+	}()
+	hello, err := json.Marshal(map[string]any{
+		"protocol_min": 2,
+		"protocol_max": 2,
+		"session_id":   hex.EncodeToString(sessionID[:]),
+		"mode":         "leash",
+		"client": map[string]string{
+			"name": "phase-two-rejection", "version": "2", "platform": "test", "user_agent": "",
+		},
+	})
+	if err != nil {
+		t.Fatal("protected rejection HELLO could not be encoded")
+	}
+	defer clear(hello)
+	if err := protocol.WriteFrame(ctx, connection, protocol.PeerBrowser, protocol.StateAwaitClientHello, protocol.Frame{Type: protocol.TypeClientHello, Payload: hello}); err != nil {
+		t.Fatal("protected rejection HELLO could not be sent")
+	}
+	response, err := protocol.ReadFrame(ctx, connection, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+	if err != nil {
+		t.Fatal("protected rejection Host response could not be read")
+	}
+	if expected == protocol.CodeAuthFailed {
+		challenge, err := protocol.DecodeAuthChallenge(response)
+		clear(response.Payload)
+		clear(challenge[:])
+		if err != nil {
+			t.Fatal("protected rejection did not receive a valid challenge")
+		}
+		proofFrame, err := protocol.AuthProofFrame([32]byte{})
+		if err != nil {
+			t.Fatal("protected rejection proof could not be encoded")
+		}
+		if err := protocol.WriteFrame(ctx, connection, protocol.PeerBrowser, protocol.StateAwaitAuthProof, proofFrame); err != nil {
+			clear(proofFrame.Payload)
+			t.Fatal("protected rejection proof could not be sent")
+		}
+		clear(proofFrame.Payload)
+		response, err = protocol.ReadFrame(ctx, connection, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+		if err != nil {
+			t.Fatal("protected rejection error could not be read")
+		}
+	}
+	defer clear(response.Payload)
+	decoded := protocol.DecodeError(response)
+	code, ok := protocol.ErrorCodeOf(decoded)
+	if !ok || code != expected {
+		t.Fatalf("protected rejection code = %s, want %s", code, expected)
+	}
+	var protocolError *protocol.ProtocolError
+	if expected == protocol.CodeAuthThrottled {
+		if !errors.As(decoded, &protocolError) || protocolError.RetryAfterMS == 0 || protocolError.RetryAfterMS > 30_000 {
+			t.Fatal("protected cooldown did not return a bounded retry interval")
+		}
+	} else if errors.As(decoded, &protocolError) && protocolError.RetryAfterMS != 0 {
+		t.Fatal("authentication failure exposed a retry interval")
+	}
 }
 
 func rejectOldLeashPeer(t *testing.T, parent context.Context, address []byte, sessionID [16]byte) {
