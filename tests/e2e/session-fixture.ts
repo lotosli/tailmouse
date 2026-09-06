@@ -54,6 +54,7 @@ export function runtimeScript(
     oversizedFrame?: 'global' | 'terminal';
     pauseDial?: boolean;
     firstHandshakeTimeout?: boolean;
+    protected?: boolean;
   } = {},
 ) {
   return {
@@ -70,6 +71,7 @@ export function runtimeScript(
             const queue = [];
             let reader;
             let closed = false;
+            let awaitingProof = false;
             globalThis.testProtocolEvents = [];
             globalThis.testProtocolNotice = undefined;
             let serverClosing = false;
@@ -152,6 +154,12 @@ export function runtimeScript(
                   globalThis.testHelloProtocol = { minimum: hello.protocol_min, maximum: hello.protocol_max };
                   if (options.rejection) {
                     frame(3, { code: options.rejection, message: 'tcSyntheticPeerSecret', retryable: true });
+                  } else if (options.protected && hello.mode === 'leash') {
+                    awaitingProof = true;
+                    const challenge = crypto.getRandomValues(new Uint8Array(32));
+                    const encoded = btoa(String.fromCharCode(...challenge)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+                    challenge.fill(0);
+                    frame(7, { scheme: 'hmac-sha256-v1', challenge: encoded });
                   } else {
                     frame(2, { protocol: hello.mode === 'escape' ? 1 : 2, mode: hello.mode, session_state: 'active', expires_at: 0,
                       relay: { mode: 'official', host: 'relay.example.com', browser_path: 'derp' },
@@ -167,6 +175,17 @@ export function runtimeScript(
                       push(new Uint8Array(options.oversizedFrame === 'terminal' ? [0, 0, 0x80, 1, 0x11, 0] : [0, 0x10, 0, 1]));
                     }
                   }
+                } else if (data[4] === 8 && options.protected && awaitingProof) {
+                  awaitingProof = false;
+                  const auth = JSON.parse(new TextDecoder().decode(data.slice(6)));
+                  if (auth.scheme !== 'hmac-sha256-v1' || !/^[A-Za-z0-9_-]{43}$/.test(auth.proof) || Object.keys(auth).sort().join(',') !== 'proof,scheme')
+                    throw new Error('INVALID_AUTH_PROOF');
+                  frame(2, { protocol: 2, mode: 'leash', session_state: 'active', expires_at: 0,
+                    relay: { mode: 'official', host: 'relay.example.com', browser_path: 'derp' },
+                    capabilities: options.readonly ? ['terminal_output'] : ['interrupt', 'resize', 'restart', 'terminal_input', 'terminal_output', 'terminate'],
+                    access_mode: 'code',
+                  });
+                  if (options.terminal) terminalReset();
                 } else if (data[4] === 3) {
                   if (globalThis.testProtocolNotice) throw new Error('Repeated protocol error notification');
                   globalThis.testProtocolNotice = JSON.parse(new TextDecoder().decode(data.slice(6)));

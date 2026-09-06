@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
-import { LeashClient, TERMINAL_INPUT_BYTES } from './leash.ts';
+import { LeashClient, TERMINAL_INPUT_BYTES, type LeashState } from './leash.ts';
 import type { ProcessAction } from './protocol/terminal.ts';
 import type { Welcome } from './protocol/frame.ts';
 import type { ConnectionMetrics } from './session.ts';
@@ -67,10 +67,12 @@ export function LeashView({
   terminal: client,
   welcome,
   metrics,
+  onState,
 }: {
   terminal: LeashClient;
   welcome: Welcome;
   metrics?: ConnectionMetrics | undefined;
+  onState?: (state: LeashState) => void;
 }) {
   const [state, setState] = useState(() => client.inspect());
   const [now, setNow] = useState(Date.now);
@@ -305,6 +307,7 @@ export function LeashView({
       unobserve = client.observe(() => {
         const next = client.inspect();
         setState(next);
+        onState?.(next);
         term.options.disableStdin = !client.canInput();
         if (
           next.stopped ||
@@ -316,7 +319,9 @@ export function LeashView({
           setConfirmation(undefined);
         }
       });
-      setState(client.inspect());
+      const initial = client.inspect();
+      setState(initial);
+      onState?.(initial);
       resizeObserver.observe(screen.current!);
       window.addEventListener('blur', clear);
       window.visualViewport?.addEventListener('resize', scheduleFit);
@@ -343,7 +348,7 @@ export function LeashView({
     };
     // Each connection owns one xterm instance. Event handlers read current
     // modifiers through the ref; protocol state remains in the client.
-  }, [client, writable, resizable]);
+  }, [client, writable, resizable, onState]);
 
   useEffect(() => {
     if (display.current)

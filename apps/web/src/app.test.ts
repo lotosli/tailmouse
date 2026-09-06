@@ -5,7 +5,10 @@ import {
   retryAllowed,
   retryableFailure,
   safeMessage,
+  StartupTimingRecorder,
   statusRole,
+  startupTarget,
+  taskPresentation,
   titleFor,
   viewForStage,
 } from './app.tsx';
@@ -71,6 +74,92 @@ describe('Session connection presentation', () => {
     expect(titleFor(escapeInvitation)).toBe('TailMouse Escape');
     expect(titleFor(leashInvitation)).toBe('TailMouse Leash');
     expect(titleFor(invalid)).toBe('TailMouse');
+  });
+
+  it('keeps task state distinct from live connection state', () => {
+    const running = {
+      generation: 2,
+      state: 'running',
+      pid: 42,
+      started_at: 1,
+      exit_code: null,
+      signal: null,
+    } as const;
+    expect(taskPresentation(undefined, true)).toEqual({
+      label: 'Waiting for task state',
+      observation: 'Live Host state',
+    });
+    expect(taskPresentation(running, false)).toEqual({
+      label: 'Running',
+      observation: 'Last observed before the connection ended',
+    });
+    expect(
+      taskPresentation({ ...running, state: 'exited', exit_code: 37 }, false),
+    ).toEqual({
+      label: 'Retained result',
+      observation: 'Last observed before the connection ended',
+    });
+  });
+
+  it('records startup phases while excluding human code-entry delay', () => {
+    const timing = new StartupTimingRecorder(0);
+    timing.uiReady(12);
+    timing.uiReady(99);
+    timing.stage('loading', 0, 20);
+    timing.stage('loading', 50, 70);
+    timing.stage('loading', 100, 120);
+    timing.stage('connecting', undefined, 170);
+    timing.stage('establishing', undefined, 270);
+    timing.stage('authenticating', undefined, 300);
+    timing.waitForCode(370);
+
+    timing.submitCode(10_370);
+    timing.stage('loading', 0, 10_370);
+    timing.stage('loading', 100, 10_370);
+    timing.stage('connecting', undefined, 10_420);
+    timing.stage('establishing', undefined, 10_520);
+    timing.stage('authenticating', undefined, 10_550);
+    timing.stage('admitting', undefined, 10_620);
+    timing.connected(10_720);
+    timing.terminalReady(10_820);
+    timing.terminalReady(12_000);
+
+    expect(timing.snapshot()).toEqual({
+      uiReadyMS: 12,
+      codeEntryMS: 10_000,
+      wasmTransferMS: 100,
+      wasmInitializationMS: 100,
+      relayMeowMS: 200,
+      authenticationAdmissionMS: 300,
+      terminalReadyMS: 100,
+      totalMS: 820,
+    });
+  });
+
+  it('keeps an exceeded startup target explicit', () => {
+    expect(startupTarget(null, 3000)).toBe('pending');
+    expect(startupTarget(2999.9, 3000)).toBe('met');
+    expect(startupTarget(3000, 3000)).toBe('missed');
+    expect(startupTarget(15_000, 15_000)).toBe('missed');
+
+    const timing = new StartupTimingRecorder(100);
+    timing.submitCode(200);
+    timing.terminalReady(200);
+    timing.stage('loading', 0, 200);
+    timing.stage('connecting', undefined, 250);
+    timing.stage('establishing', undefined, 200);
+    timing.connected(15_200);
+    timing.terminalReady(15_200);
+    timing.stage('loading', 0, 16_000);
+    expect(timing.snapshot()).toMatchObject({
+      wasmTransferMS: 50,
+      wasmInitializationMS: 0,
+      relayMeowMS: 0,
+      authenticationAdmissionMS: 15_000,
+      terminalReadyMS: 0,
+      totalMS: 15_100,
+    });
+    expect(startupTarget(timing.snapshot().totalMS, 15_000)).toBe('missed');
   });
 
   it('offers retry only for connection failures and exposes status semantics', () => {

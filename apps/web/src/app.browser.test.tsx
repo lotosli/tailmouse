@@ -88,9 +88,14 @@ describe('invitation safety notice', () => {
       authChallengeFrame(new Uint8Array(32).fill(4)),
       leashWelcome('code'),
     );
+    const replacement = hostPeer(
+      authChallengeFrame(new Uint8Array(32).fill(8)),
+      leashWelcome('code'),
+    );
     vi.mocked(dialTailcat)
       .mockResolvedValueOnce(discovery.stream)
-      .mockResolvedValueOnce(admission.stream);
+      .mockResolvedValueOnce(admission.stream)
+      .mockResolvedValueOnce(replacement.stream);
     vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(
       {} as ServiceWorkerRegistration,
     );
@@ -126,6 +131,30 @@ describe('invitation safety notice', () => {
     await expect
       .element(page.getByText('Password protected', { exact: true }))
       .toBeVisible();
+
+    admission.disconnect();
+    await expect
+      .element(page.getByRole('button', { name: 'Retry connection' }))
+      .toBeVisible();
+    await expect
+      .element(page.getByText('Last observed before the connection ended'))
+      .toBeVisible();
+    expect(root.querySelector('input[type="password"]')).toBeNull();
+    await userEvent.click(
+      page.getByRole('button', { name: 'Retry connection' }),
+    );
+    await expect
+      .element(
+        page
+          .getByLabelText('Connection')
+          .getByText('Connected', { exact: true }),
+      )
+      .toBeVisible();
+    expect(replacement.writes.map((bytes) => bytes[4])).toEqual([
+      Message.CLIENT_HELLO,
+      Message.AUTH_PROOF,
+    ]);
+    expect(root.querySelector('input[type="password"]')).toBeNull();
   });
 
   it('shows Host-authoritative link-only access without a password field', async () => {
@@ -146,6 +175,68 @@ describe('invitation safety notice', () => {
       .element(page.getByText(/^No password — link grants access\./u))
       .toBeVisible();
     expect(root.querySelector('input[type="password"]')).toBeNull();
+  });
+
+  it('records separate startup phases through terminal readiness', async () => {
+    const peer = hostPeer(leashWelcome('link'));
+    vi.mocked(dialTailcat).mockResolvedValueOnce(peer.stream);
+    vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(
+      {} as ServiceWorkerRegistration,
+    );
+    await mount(true);
+    await expect
+      .element(
+        page
+          .getByLabelText('Connection')
+          .getByText('Connected', { exact: true }),
+      )
+      .toBeVisible();
+
+    peer.send(
+      jsonFrame(Message.TERM_RESET, {
+        generation: 1,
+        cols: 80,
+        rows: 24,
+      }),
+    );
+    peer.send(
+      jsonFrame(Message.PROCESS_STATE, {
+        generation: 1,
+        state: 'running',
+        pid: 42,
+        started_at: 1,
+        exit_code: null,
+        signal: null,
+      }),
+    );
+    await expect
+      .element(page.getByLabelText('Process status').getByText('running'))
+      .toBeVisible();
+
+    const timing = root.querySelector('[aria-label="Startup timing"]');
+    expect(timing).not.toBeNull();
+    expect(
+      [...timing!.querySelectorAll('dt')].map((term) => term.textContent),
+    ).toEqual([
+      'UI ready',
+      'Code-entry wait',
+      'Wasm transfer',
+      'Wasm initialization',
+      'Relay / Meow handshake',
+      'Authentication / admission',
+      'Terminal ready',
+      'Startup excluding code entry',
+    ]);
+    expect(
+      [...timing!.querySelectorAll('dd')].every(
+        (value) => value.textContent !== 'Pending',
+      ),
+    ).toBe(true);
+    await expect
+      .element(page.getByTestId('startup-targets'))
+      .toHaveTextContent(
+        /^Warm target \(<3 s\): (?:met|missed)\. Cold target \(<15 s\): (?:met|missed)\.$/u,
+      );
   });
 
   it('keeps failed proofs explicit and disables attempts for Host cooldown', async () => {
@@ -194,6 +285,31 @@ describe('invitation safety notice', () => {
       .toBeDisabled();
     await new Promise((resolve) => setTimeout(resolve, 300));
     expect(dialTailcat).toHaveBeenCalledTimes(3);
+  });
+
+  it('erases form and in-memory session state before page-cache restoration', async () => {
+    const discovery = hostPeer(authChallengeFrame(new Uint8Array(32).fill(9)));
+    vi.mocked(dialTailcat).mockResolvedValueOnce(discovery.stream);
+    vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(
+      {} as ServiceWorkerRegistration,
+    );
+    await mount(true);
+    const field = page.getByRole('textbox', { name: 'Access code' });
+    await userEvent.fill(field, '2345-6789-abcd-efgh');
+    expect(root.innerHTML).not.toContain('2345-6789');
+    expect(history.state).toBeNull();
+    expect(Object.entries(localStorage)).toEqual([]);
+    expect(Object.entries(sessionStorage)).toEqual([]);
+
+    await act(() => {
+      window.dispatchEvent(new PageTransitionEvent('pagehide'));
+    });
+    expect(root.querySelector('input[type="password"]')).toBeNull();
+    expect(root.querySelector('[aria-label="Leash terminal"]')).toBeNull();
+    expect(root.textContent).not.toContain('2345-6789');
+    await expect
+      .element(page.getByRole('alert'))
+      .toHaveTextContent('Request a new link from the host.');
   });
 });
 
@@ -346,6 +462,13 @@ function leashWelcome(accessMode: 'code' | 'link'): Frame {
   };
 }
 
+function jsonFrame(type: Frame['type'], value: unknown): Frame {
+  return {
+    type,
+    payload: new TextEncoder().encode(JSON.stringify(value)),
+  };
+}
+
 function hostPeer(first: Frame, afterProof?: Frame) {
   const chunks: Array<Uint8Array | null> = [];
   const writes: Uint8Array[] = [];
@@ -378,5 +501,10 @@ function hostPeer(first: Frame, afterProof?: Frame) {
     },
     close: vi.fn(async () => push(null)),
   } satisfies ByteStream;
-  return { stream, writes };
+  return {
+    stream,
+    writes,
+    disconnect: () => push(null),
+    send: (frame: Frame) => push(encodeFrame('host', 'active-leash', frame)),
+  };
 }

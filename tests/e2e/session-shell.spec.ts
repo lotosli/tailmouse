@@ -343,6 +343,67 @@ test('invitation is memory-only across reload and stays out of storage, referrer
   }
 });
 
+test('protected access stays out of durable state and page-cache restoration', async ({
+  page,
+}) => {
+  const outputs: string[] = [];
+  page.on('console', (message) => outputs.push(message.text()));
+  page.on('pageerror', (error) => outputs.push(error.message));
+  await installTailcatBridge(page, (route) =>
+    route.fulfill(runtimeScript({ protected: true, terminal: true })),
+  );
+  await page.goto(invitationURL('leash'));
+  const code = '2345-6789-ABCD-EFGH';
+  const field = page.getByLabel('Access code');
+  await expect(field).toBeVisible();
+  await field.fill(code);
+  expect(await field.getAttribute('value')).toBeNull();
+  expect(
+    await page.locator('html').evaluate((node) => node.outerHTML),
+  ).not.toContain(code);
+  await page.getByRole('button', { name: 'Connect' }).click();
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Connected');
+
+  const persistent = await page.evaluate(async () => {
+    const cacheEntries: { body: string; url: string }[] = [];
+    for (const cacheName of await caches.keys()) {
+      const cache = await caches.open(cacheName);
+      for (const request of await cache.keys()) {
+        const response = await cache.match(request);
+        cacheEntries.push({
+          body: response ? await response.text() : '',
+          url: request.url,
+        });
+      }
+    }
+    return {
+      cacheEntries,
+      databases: await indexedDB.databases(),
+      historyState: history.state as unknown,
+      localStorage: Object.entries(localStorage),
+      sessionStorage: Object.entries(sessionStorage),
+      visibleDocument: document.documentElement.outerHTML,
+    };
+  });
+  expect(persistent.historyState).toBeNull();
+  expect(persistent.localStorage).toEqual([]);
+  expect(persistent.sessionStorage).toEqual([]);
+  expect(persistent.databases).toEqual([]);
+  const inspected = JSON.stringify({ outputs, persistent });
+  for (const secret of [code, code.replaceAll('-', ''), address, cardFixture])
+    expect(inspected).not.toContain(secret);
+
+  await page.goto('about:blank');
+  await page.goBack();
+  await expect(page.getByRole('alert')).toContainText(
+    'Request a new link from the host.',
+  );
+  await expect(page.getByLabel('Access code')).toHaveCount(0);
+  expect(await page.locator('body').innerText()).not.toContain(code);
+});
+
 test('readonly capability comes from the host and is not inferred from the invitation', async ({
   page,
 }) => {
