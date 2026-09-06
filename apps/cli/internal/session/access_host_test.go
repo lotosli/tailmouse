@@ -400,6 +400,49 @@ func TestConcurrentAuthenticatedPeersSelectOneOwnerAndReconnectSnapshot(t *testi
 	waitForNoConnections(t, host)
 }
 
+func TestHundredAuthenticatedReconnectsReleaseConnectionState(t *testing.T) {
+	host, err := NewHost(t.Context(), Config{
+		Mode: "leash", SessionID: testHostID, ReconnectGrace: time.Minute,
+		entropy: bytes.NewReader(sequentialEntropy(4096)),
+	}, time.Now(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := host.Listen("official", "relay.example.com", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := host.Close("local_revoke"); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	var previous Lease
+	for cycle := range 100 {
+		peer, welcome := connectTestHost(t, host, "leash", testHostID, 2)
+		if welcome.Type != protocol.TypeServerWelcome {
+			t.Fatalf("cycle %d did not admit the authenticated peer", cycle+1)
+		}
+		clear(welcome.Payload)
+		owner := host.Authority.Inspect(time.Now()).Owner
+		if owner == 0 || owner == previous {
+			t.Fatalf("cycle %d did not acquire a fresh lease", cycle+1)
+		}
+		previous = owner
+		if err := peer.Close(); err != nil {
+			t.Fatal(err)
+		}
+		waitForNoConnections(t, host)
+		snapshot := host.Authority.Inspect(time.Now())
+		if snapshot.State != Listening || snapshot.Owner != 0 || !snapshot.GraceDeadline.IsZero() {
+			t.Fatalf("cycle %d retained connection authority", cycle+1)
+		}
+	}
+	if reconnects := host.Authority.Inspect(time.Now()).Reconnects; reconnects != 99 {
+		t.Fatalf("reconnect count = %d, want 99", reconnects)
+	}
+}
+
 func TestConcurrentAuthenticatedPeersCannotEvictActiveLease(t *testing.T) {
 	host, err := NewHost(t.Context(), Config{
 		Mode: "leash", SessionID: testHostID, ReconnectGrace: time.Minute,

@@ -30,6 +30,8 @@ async function main() {
       'protected',
       'readonly',
       'ai-cli',
+      'ai-cli-codex',
+      'ai-cli-claude',
       'old-peer',
       'vim',
       'shell',
@@ -52,12 +54,15 @@ async function main() {
         /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{16}$/.test(request.accessCode))
   )
     throw new Error('INPUT_INVALID');
+  const expectedPattern = ['ai-cli', 'ai-cli-codex'].includes(request.scenario)
+    ? /^codex-cli [0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/
+    : request.scenario === 'ai-cli-claude'
+      ? /^[0-9]+(?:\.[0-9]+){2} \(Claude Code\)$/
+      : null;
   if (
-    (request.scenario === 'ai-cli') !==
+    (expectedPattern !== null) !==
     (typeof request.expectedOutput === 'string' &&
-      /^codex-cli [0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/.test(
-        request.expectedOutput,
-      ))
+      expectedPattern?.test(request.expectedOutput))
   )
     throw new Error('INPUT_INVALID');
   const base = new URL(request.baseURL);
@@ -176,6 +181,8 @@ async function main() {
         'long-task': 'Native long task acceptance',
         readonly: 'Native readonly acceptance',
         'ai-cli': 'Installed Codex CLI acceptance',
+        'ai-cli-codex': 'Installed Codex CLI acceptance',
+        'ai-cli-claude': 'Installed Claude Code acceptance',
         htop: 'Native htop acceptance',
       }[request.scenario] ?? 'Native CLI acceptance';
     await expect(page.getByText(title, { exact: true })).toBeVisible();
@@ -226,7 +233,7 @@ async function main() {
       await crash();
       // The Go owner must now observe heartbeat loss and child exit 143.
       // No browser shutdown or application CLOSE can trigger that policy.
-    } else if (request.scenario === 'ai-cli') {
+    } else if (request.scenario.startsWith('ai-cli')) {
       stage = 'ai-cli-version';
       await expect(output).toContainText(request.expectedOutput);
       request.expectedOutput = '';
@@ -563,11 +570,11 @@ async function main() {
       await expect(
         page.getByText('Session closed.', { exact: true }),
       ).toBeVisible({
-        timeout: ['retained-exit', 'readonly', 'ai-cli'].includes(
-          request.scenario,
-        )
-          ? 8_000
-          : 5_000,
+        timeout:
+          ['retained-exit', 'readonly'].includes(request.scenario) ||
+          request.scenario.startsWith('ai-cli')
+            ? 8_000
+            : 5_000,
       });
       await context.close();
     }

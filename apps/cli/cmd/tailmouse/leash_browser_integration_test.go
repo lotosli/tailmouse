@@ -41,10 +41,14 @@ func TestHermeticLeashBrowser(t *testing.T) {
 	}
 }
 
-// Run explicitly with pnpm test:leash -- --ai-cli. An available AI CLI is an
-// acceptance target, not a dependency of the self-contained development gate.
+// Run explicitly with pnpm test:leash -- --ai-cli. Installed AI CLIs are
+// acceptance targets, not dependencies of the self-contained development gate.
 func TestHermeticLeashAI(t *testing.T) {
-	testNativeBrowser(t, "ai-cli", nil)
+	for _, scenario := range []string{"ai-cli-codex", "ai-cli-claude"} {
+		t.Run(strings.TrimPrefix(scenario, "ai-cli-"), func(t *testing.T) {
+			testNativeBrowser(t, scenario, nil)
+		})
+	}
 }
 
 // Run explicitly with pnpm test:leash -- --official. These two cases prove
@@ -131,7 +135,7 @@ func TestHermeticEscapeIdleMemory(t *testing.T) {
 }
 
 func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.TestNetworkProfile) {
-	testNativeBrowserWithAccess(t, scenario, profile, scenario == "protected" || scenario == "ai-cli", false)
+	testNativeBrowserWithAccess(t, scenario, profile, scenario == "protected" || strings.HasPrefix(scenario, "ai-cli"), false)
 }
 
 func testNativeBrowserWithAccess(t *testing.T, scenario string, profile *tailcattransport.TestNetworkProfile, protected, official bool) {
@@ -217,23 +221,38 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	} else if scenario == "readonly" {
 		argv = []string{"/bin/sh", "-c", "printf 'readonly-ready\\n'; exit 23"}
 		title, wantCode = "Native readonly acceptance", 23
-	} else if scenario == "ai-cli" {
-		codex, err := exec.LookPath("codex")
-		if err != nil {
-			t.Fatal("an installed Codex CLI is required for AI CLI acceptance")
+	} else if strings.HasPrefix(scenario, "ai-cli-") || scenario == "ai-cli" {
+		name := strings.TrimPrefix(scenario, "ai-cli-")
+		if scenario == "ai-cli" {
+			name = "codex"
 		}
-		version, err := exec.Command(codex, "--version").Output()
+		cli, err := exec.LookPath(name)
 		if err != nil {
-			t.Fatal("the installed Codex CLI version command failed")
+			t.Fatalf("an installed %s CLI is required for AI CLI acceptance", name)
+		}
+		version, err := exec.Command(cli, "--version").Output()
+		if err != nil {
+			t.Fatalf("the installed %s CLI version command failed", name)
 		}
 		expectedOutput = strings.TrimSpace(string(version))
 		clear(version)
-		matched, err := regexp.MatchString(`^codex-cli [0-9A-Za-z][0-9A-Za-z.+-]{0,63}$`, expectedOutput)
-		if err != nil || !matched {
-			t.Fatal("the installed Codex CLI returned an invalid bounded version")
+		pattern := `^codex-cli [0-9A-Za-z][0-9A-Za-z.+-]{0,63}$`
+		title = "Installed Codex CLI acceptance"
+		if name == "claude" {
+			pattern = `^[0-9]+(?:\.[0-9]+){2} \(Claude Code\)$`
+			title = "Installed Claude Code acceptance"
 		}
-		argv = []string{codex, "--version"}
-		title, wantCode = "Installed Codex CLI acceptance", 0
+		matched, err := regexp.MatchString(pattern, expectedOutput)
+		if err != nil || !matched {
+			t.Fatalf("the installed %s CLI returned an invalid bounded version", name)
+		}
+		argv = []string{cli, "--version"}
+		if name == "claude" {
+			// Claude Code is an env-node script. Invoke it through the already
+			// resolved runtime so the isolated child PATH remains deterministic.
+			argv = []string{node, cli, "--version"}
+		}
+		wantCode = 0
 		t.Logf("AI CLI example: %s", expectedOutput)
 	}
 	if err := os.MkdirAll(filepath.Join(root, ".artifacts"), 0o700); err != nil {
@@ -381,7 +400,7 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	var nativeTransport *tailcattransport.Server
 	finished := false
 	retention := "1s"
-	if scenario == "retained-exit" || scenario == "readonly" || scenario == "ai-cli" {
+	if scenario == "retained-exit" || scenario == "readonly" || strings.HasPrefix(scenario, "ai-cli") {
 		retention = "5s" // Includes a fresh browser context and real Wasm startup.
 	}
 	args := []string{"leash", "--no-qr", "--start-on=connect", "--post-exit-ttl=" + retention, "--cwd=" + directory, "--title=" + title}
