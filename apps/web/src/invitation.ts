@@ -13,7 +13,7 @@ export interface MouseCard {
   readonly port: 44321;
   readonly sessionID: Uint8Array;
   readonly expiresAt: number;
-  readonly protocolMin: 1;
+  readonly protocolMin: number;
   readonly protocolMax: number;
 }
 
@@ -120,14 +120,14 @@ export function parseFragment(
 type CardRecord = Record<(typeof CARD_KEYS)[number], unknown>;
 
 function isMouseCard(value: unknown): value is CardRecord & {
-  a: 1;
+  a: 1 | 2;
   e: number;
   m: InvitationMode;
   p: 44321;
   s: Uint8Array;
   t: string;
   v: 1;
-  z: number;
+  z: 1 | 2;
 } {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
@@ -148,10 +148,7 @@ function isMouseCard(value: unknown): value is CardRecord & {
     typeof card.e === 'number' &&
     Number.isSafeInteger(card.e) &&
     card.e >= 0 &&
-    card.a === 1 &&
-    typeof card.z === 'number' &&
-    Number.isSafeInteger(card.z) &&
-    card.z >= card.a &&
-    card.z <= 65_535
+    ((card.m === 'escape' && card.a === 1 && card.z === 1) ||
+      (card.m === 'leash' && card.a === 2 && card.z === 2))
   );
 }

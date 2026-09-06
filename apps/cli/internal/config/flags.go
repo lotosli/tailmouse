@@ -67,6 +67,7 @@ func parseFlags(args []string, options *Options) (bool, []string, error) {
 	case "leash":
 		flags.StringVar(&options.Leash.Title, "title", options.Leash.Title, "session title")
 		flags.BoolVar(&options.Leash.Readonly, "readonly", options.Leash.Readonly, "view-only browser")
+		flags.BoolVar(&options.Leash.NoPassword, "no-password", options.Leash.NoPassword, "disable the separate access code for this launch")
 		flags.BoolVar(&options.Leash.NoRestart, "no-restart", options.Leash.NoRestart, "disable browser restart")
 		flags.BoolVar(&options.Leash.NoTerminate, "no-terminate", options.Leash.NoTerminate, "disable browser terminate")
 		flags.StringVar(&options.Leash.Cwd, "cwd", options.Leash.Cwd, "child working directory")
@@ -74,7 +75,15 @@ func parseFlags(args []string, options *Options) (bool, []string, error) {
 			options.Leash.Env = append(options.Leash.Env, value)
 			return nil
 		})
-		flags.DurationVar(&options.Leash.PostExitTTL, "post-exit-ttl", options.Leash.PostExitTTL, "post-exit retention")
+		flags.Func("post-exit-ttl", "post-exit retention: host, 0, or a positive duration", func(value string) error {
+			duration, host, err := parsePostExitTTL(value)
+			if err != nil {
+				return err
+			}
+			options.Leash.PostExitTTL = duration
+			options.Leash.PostExitHost = host
+			return nil
+		})
 		flags.DurationVar(&options.Leash.ReconnectGrace, "reconnect-grace", options.Leash.ReconnectGrace, "reconnect grace")
 		flags.IntVar(&options.Leash.ScrollbackBytes, "scrollback-bytes", options.Leash.ScrollbackBytes, "scrollback size")
 		flags.StringVar(&options.Leash.StartOn, "start-on", options.Leash.StartOn, "connect-or-enter, now, or connect")

@@ -3,7 +3,9 @@ import { EscapeClient } from './escape.ts';
 import { LeashClient } from './leash.ts';
 import { Latency, type LatencySnapshot } from './latency.ts';
 import {
+  authProofFrame,
   closeFrame,
+  decodeAuthChallenge,
   decodeClose,
   decodeError,
   decodeWelcome,
@@ -25,7 +27,8 @@ import {
   type ByteStream,
 } from './transport/tailcat/adapter.ts';
 
-export type SessionStage = 'loading' | 'connecting' | 'establishing';
+export type SessionStage =
+  'loading' | 'connecting' | 'establishing' | 'authenticating' | 'admitting';
 
 interface Counters {
   bytesTx: number;
@@ -43,6 +46,83 @@ const messages: Record<SessionErrorCode, string> = {
   DISCONNECTED: 'The encrypted session disconnected. Retry to reconnect.',
   CANCELED: 'The session was canceled.',
 };
+
+const ACCESS_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+const ACCESS_KEY_PREFIX = new TextEncoder().encode('tailmouse-access-key-v1\0');
+const ACCESS_PROOF_PREFIX = new TextEncoder().encode(
+  'tailmouse-access-proof-v1\0',
+);
+
+export function canonicalAccessCode(input: string): string {
+  let canonical = '';
+  for (let index = 0; index < input.length; index++) {
+    const character = input.charCodeAt(index);
+    if (character === 0x20 || character === 0x2d) continue;
+    const symbol = String.fromCharCode(
+      character >= 0x61 && character <= 0x7a ? character - 0x20 : character,
+    );
+    if (canonical.length === 16 || !ACCESS_ALPHABET.includes(symbol)) {
+      throw new ProtocolError('AUTH_FAILED');
+    }
+    canonical += symbol;
+  }
+  if (canonical.length !== 16) throw new ProtocolError('AUTH_FAILED');
+  return canonical;
+}
+
+export async function createAccessProof(
+  input: string,
+  sessionID: Uint8Array,
+  challenge: Uint8Array,
+): Promise<Uint8Array> {
+  if (sessionID.byteLength !== 16 || challenge.byteLength !== 32) {
+    throw new ProtocolError('BAD_FRAME');
+  }
+  const canonical = canonicalAccessCode(input);
+  const keyMaterial = new Uint8Array(ACCESS_KEY_PREFIX.byteLength + 16);
+  keyMaterial.set(ACCESS_KEY_PREFIX);
+  for (let index = 0; index < canonical.length; index++) {
+    keyMaterial[ACCESS_KEY_PREFIX.byteLength + index] =
+      canonical.charCodeAt(index);
+  }
+  let keyBytes: Uint8Array<ArrayBuffer>;
+  try {
+    keyBytes = new Uint8Array(
+      await globalThis.crypto.subtle.digest('SHA-256', keyMaterial),
+    );
+  } finally {
+    keyMaterial.fill(0);
+  }
+  try {
+    const key = await globalThis.crypto.subtle.importKey(
+      'raw',
+      keyBytes,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+    const message = new Uint8Array(
+      ACCESS_PROOF_PREFIX.byteLength +
+        sessionID.byteLength +
+        challenge.byteLength,
+    );
+    message.set(ACCESS_PROOF_PREFIX);
+    message.set(sessionID, ACCESS_PROOF_PREFIX.byteLength);
+    message.set(
+      challenge,
+      ACCESS_PROOF_PREFIX.byteLength + sessionID.byteLength,
+    );
+    try {
+      return new Uint8Array(
+        await globalThis.crypto.subtle.sign('HMAC', key, message),
+      );
+    } finally {
+      message.fill(0);
+    }
+  } finally {
+    keyBytes.fill(0);
+  }
+}
 
 export class SessionError extends Error {
   readonly code: SessionErrorCode;
@@ -66,6 +146,7 @@ export async function connectSession(
   card: MouseCard,
   signal: AbortSignal,
   onStage: (stage: SessionStage, progress?: number) => void,
+  accessCode?: string,
 ): Promise<BrowserSession> {
   if (signal.aborted) throw new SessionError('CANCELED');
   if (card.expiresAt !== 0 && card.expiresAt * 1000 <= Date.now()) {
@@ -79,13 +160,15 @@ export async function connectSession(
   onStage('connecting');
   const stream = await dialTailcat(card.address, { signal });
   onStage('establishing');
-  return negotiateSession(stream, card, signal);
+  return negotiateSession(stream, card, signal, accessCode, onStage);
 }
 
 export async function negotiateSession(
   stream: ByteStream,
   card: MouseCard,
   signal: AbortSignal,
+  accessCode?: string,
+  onStage: (stage: SessionStage) => void = () => {},
 ): Promise<BrowserSession> {
   const counters: Counters = {
     bytesTx: 0,
@@ -115,6 +198,7 @@ export async function negotiateSession(
   const timer = setTimeout(() => controller.abort(), 10_000);
   const decoder = new FrameDecoder(stream);
   let graceful = false;
+  let authenticated = false;
   try {
     const hello = helloFrame(card.sessionID, card.mode);
     try {
@@ -130,13 +214,64 @@ export async function negotiateSession(
     } finally {
       hello.payload.fill(0);
     }
-    const frame = await decoder
+    let frame = await decoder
       .read('browser', 'await-server-welcome', bound)
       .catch((error: unknown) => {
         throw streamFailure(error);
       });
     if (frame === null) throw new SessionError('DISCONNECTED');
     counters.framesRx++;
+    if (frame.type === Message.AUTH_CHALLENGE) {
+      onStage('authenticating');
+      let challenge: Uint8Array | undefined;
+      try {
+        challenge = decodeAuthChallenge(frame);
+      } finally {
+        frame.payload.fill(0);
+      }
+      try {
+        if (card.mode !== 'leash') throw new ProtocolError('BAD_FRAME');
+        if (accessCode === undefined || accessCode.length === 0) {
+          throw new ProtocolError('AUTH_REQUIRED');
+        }
+        const proof = await createAccessProof(
+          accessCode,
+          card.sessionID,
+          challenge,
+        );
+        try {
+          const proofFrame = authProofFrame(proof);
+          try {
+            await writeFrame(
+              stream,
+              'browser',
+              'await-auth-proof',
+              proofFrame,
+              bound,
+            ).catch((error: unknown) => {
+              throw streamFailure(error);
+            });
+          } finally {
+            proofFrame.payload.fill(0);
+          }
+          authenticated = true;
+        } finally {
+          proof.fill(0);
+        }
+      } finally {
+        challenge.fill(0);
+      }
+      onStage('admitting');
+      frame = await decoder
+        .read('browser', 'await-server-welcome', bound)
+        .catch((error: unknown) => {
+          throw streamFailure(error);
+        });
+      if (frame === null) throw new SessionError('DISCONNECTED');
+      counters.framesRx++;
+    } else {
+      onStage('admitting');
+    }
     let welcome: Welcome;
     try {
       if (frame.type === Message.ERROR) {
@@ -144,6 +279,12 @@ export async function negotiateSession(
         throw decodeError(frame);
       }
       welcome = decodeWelcome(frame, card.mode);
+      if (
+        card.mode === 'leash' &&
+        welcome.accessMode !== (authenticated ? 'code' : 'link')
+      ) {
+        throw new ProtocolError('BAD_FRAME');
+      }
     } finally {
       frame.payload.fill(0);
     }

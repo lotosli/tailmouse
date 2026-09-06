@@ -11,8 +11,7 @@ export default defineConfig({
     __TAILMOUSE_BUILD__: JSON.stringify({
       version: '0.0.0-test',
       tailcatRevision: '1'.repeat(40),
-      protocolMin: 1,
-      protocolMax: 1,
+      protocols: { escape: 1, leash: 2 },
     }),
   },
   test: {

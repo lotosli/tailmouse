@@ -15,7 +15,7 @@ type DownloadFixtureWindow = typeof window & {
   testDialCount?: number;
 };
 
-test('compatible MouseCard ranges negotiate only local version 1 and reject unsupported ranges before dialing', async ({
+test('exact mode-specific MouseCard identifiers negotiate only their protocol and reject other ranges before dialing', async ({
   page,
 }) => {
   const corpus = JSON.parse(
@@ -23,24 +23,38 @@ test('compatible MouseCard ranges negotiate only local version 1 and reject unsu
       new URL('../../protocol/fixtures/v1/mousecards.json', import.meta.url),
       'utf8',
     ),
-  ) as { cases: Array<{ id: string; accept: boolean; hex: string }> };
+  ) as {
+    cases: Array<{
+      id: string;
+      accept: boolean;
+      protocolMin?: number;
+      protocolMax?: number;
+      hex: string;
+    }>;
+  };
   await installTailcatBridge(page);
   for (const fixture of corpus.cases) {
     await page.goto('about:blank');
     const fragment = Buffer.from(fixture.hex, 'hex').toString('base64url');
     await page.goto(`/#/v1/${fragment}`);
     if (fixture.accept) {
-      await expect(page.getByRole('status'), fixture.id).toHaveText(
+      const connection = page.getByRole('region', { name: 'Connection' });
+      await expect(connection.getByRole('status'), fixture.id).toHaveText(
         'Connected',
       );
       expect(
         await page.evaluate('globalThis.testHelloProtocol'),
         fixture.id,
-      ).toEqual({ minimum: 1, maximum: 1 });
+      ).toEqual({
+        minimum: fixture.protocolMin,
+        maximum: fixture.protocolMax,
+      });
       await page
         .getByRole('button', { name: 'Exit session', exact: true })
         .click();
-      await expect(page.getByRole('status')).toHaveText('Session closed.');
+      await expect(connection.getByRole('status')).toHaveText(
+        'Session closed.',
+      );
     } else {
       await expect(page.getByRole('alert'), fixture.id).toHaveText(
         'This invitation is invalid or unsupported. Request a new link from the host.',
@@ -223,7 +237,7 @@ test('fragment stays out of requests, disappears from history, and establishes a
   await expect(page.getByTestId('latency')).toContainText('ms /');
   await page.getByText('About TailMouse', { exact: true }).click();
   await expect(
-    page.getByText('TMOUSE protocol 1..1', { exact: true }),
+    page.getByText('TMOUSE Escape protocol 1', { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText(/^Tailcat revision [0-9a-f]{40}$/u),

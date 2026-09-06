@@ -132,7 +132,7 @@ func exerciseCLIConnection(cards <-chan invitation.MouseCard, fake *fakeTranspor
 	_ = browser.SetDeadline(time.Now().Add(2 * time.Second))
 	fake.config.OnConnection(server)
 	payload, _ := json.Marshal(map[string]any{
-		"protocol_min": 1, "protocol_max": 1, "session_id": hex.EncodeToString(card.SessionID[:]), "mode": string(card.Mode),
+		"protocol_min": card.ProtocolMin, "protocol_max": card.ProtocolMax, "session_id": hex.EncodeToString(card.SessionID[:]), "mode": string(card.Mode),
 		"client": map[string]string{"name": "test-browser", "version": "1", "platform": "test", "user_agent": ""},
 	})
 	ctx := context.Background()

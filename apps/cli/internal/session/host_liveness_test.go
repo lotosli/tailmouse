@@ -17,7 +17,7 @@ func TestHostPeerLivenessDeadline(t *testing.T) {
 		t.Run(scenario, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				host := newTestHost(t, "leash", false)
-				browser, _ := connectTestHost(t, host, "leash", testHostID, 1)
+				browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
 				if err := browser.SetDeadline(time.Time{}); err != nil {
 					t.Fatal(err)
 				}
@@ -77,7 +77,7 @@ func TestHostPeerLivenessDeadline(t *testing.T) {
 						payload[15] ^= 1
 						write(protocol.TypePong, payload)
 					case "other-peer":
-						other, response := connectTestHost(t, host, "leash", testHostID, 1)
+						other, response := connectTestHost(t, host, "leash", testHostID, 2)
 						if code, _ := protocol.ErrorCodeOf(protocol.DecodeError(response)); code != protocol.CodeSessionBusy {
 							t.Fatal("live owner was displaced by another peer")
 						}
@@ -94,8 +94,8 @@ func TestHostPeerLivenessDeadline(t *testing.T) {
 				}
 				time.Sleep(time.Nanosecond)
 				synctest.Wait()
-				if snapshot := host.Authority.Inspect(time.Now()); snapshot.State != ReconnectGrace || snapshot.Owner != 0 {
-					t.Fatal("missing PONG did not release the active slot at 30 seconds")
+				if snapshot := host.Authority.Inspect(time.Now()); snapshot.State != Listening || snapshot.Owner != 0 || !snapshot.GraceDeadline.IsZero() {
+					t.Fatal("missing PONG did not return the live Leash share to listening at 30 seconds")
 				}
 				select {
 				case err := <-ended:
@@ -111,7 +111,7 @@ func TestHostPeerLivenessDeadline(t *testing.T) {
 				if remaining != 0 {
 					t.Fatal("lost connection retained a worker")
 				}
-				replacement, welcome := connectTestHost(t, host, "leash", testHostID, 1)
+				replacement, welcome := connectTestHost(t, host, "leash", testHostID, 2)
 				if welcome.Type != protocol.TypeServerWelcome || host.Authority.Inspect(time.Now()).Owner == owner {
 					t.Fatal("replacement did not acquire a fresh lease")
 				}

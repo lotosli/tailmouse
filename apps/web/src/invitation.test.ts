@@ -27,7 +27,7 @@ afterEach(() => {
 });
 
 describe('invitation', () => {
-  it('agrees with the shared compatible-range corpus without claiming another codec', () => {
+  it('agrees with the shared exact mode-specific protocol corpus', () => {
     const corpus = JSON.parse(
       readFileSync(
         new URL(
@@ -40,17 +40,19 @@ describe('invitation', () => {
       cases: Array<{
         id: string;
         accept: boolean;
+        mode?: 'escape' | 'leash';
         protocolMin?: number;
         protocolMax?: number;
         hex: string;
       }>;
     };
-    expect(corpus.cases).toHaveLength(14);
+    expect(corpus.cases).toHaveLength(10);
     for (const fixture of corpus.cases) {
       const encoded =
         '#/v1/' + Buffer.from(fixture.hex, 'hex').toString('base64url');
       if (fixture.accept) {
         expect(parseFragment(encoded, now), fixture.id).toMatchObject({
+          mode: fixture.mode,
           protocolMin: fixture.protocolMin,
           protocolMax: fixture.protocolMax,
         });
@@ -63,7 +65,13 @@ describe('invitation', () => {
   });
   it('decodes every bounded v1 field and retains a valid session ID after buffer erasure', () => {
     expect(parseFragment(fragment(), now)).toEqual(expectedCard);
-    expect(parseFragment(fragment({ m: 'leash' }), now).mode).toBe('leash');
+    expect(
+      parseFragment(fragment({ m: 'leash', a: 2, z: 2 }), now),
+    ).toMatchObject({
+      mode: 'leash',
+      protocolMin: 2,
+      protocolMax: 2,
+    });
     vi.spyOn(Date, 'now').mockReturnValue(now * 1000);
     expect(parseFragment(fragment())).toEqual(expectedCard);
   });
@@ -106,6 +114,12 @@ describe('invitation', () => {
       fragment({ e: Number.MAX_SAFE_INTEGER + 1 }),
       fragment({ a: 0 }),
       fragment({ z: 0 }),
+      fragment({ m: 'escape', a: 2, z: 2 }),
+      fragment({ m: 'leash', a: 1, z: 1 }),
+      fragment({ m: 'escape', a: 1, z: 2 }),
+      fragment({ m: 'leash', a: 1, z: 2 }),
+      fragment({ m: 'leash', a: 2, z: 3 }),
+      fragment({ m: 'leash', a: 2, z: 2, code: '2345-6789-ABCD-EFGH' }),
       fragment({ extra: true }),
       '#/v1/uQFhAWFhAg', // {"a": 1, "a": 2}
     ];

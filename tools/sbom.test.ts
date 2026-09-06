@@ -13,8 +13,7 @@ import {
 
 const identity = {
   version: '1.0.0',
-  protocolMin: 1,
-  protocolMax: 1,
+  protocols: { escape: 1, leash: 2 },
   tailcatRevision: '1'.repeat(40),
 } as const;
 const revision = '2'.repeat(40);

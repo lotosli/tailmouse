@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"math"
@@ -24,7 +25,7 @@ func ruleFor(message MessageType) (messageRule, bool) {
 		return messageRule{minimum: 2, maximum: 1024, exact: -1}, true
 	case TypePing, TypePong:
 		return messageRule{minimum: 16, maximum: 16, exact: 16}, true
-	case TypeClose, TypeProcessControl, TypeOutputDropped:
+	case TypeClose, TypeAuthChallenge, TypeAuthProof, TypeProcessControl, TypeOutputDropped:
 		return messageRule{minimum: 2, maximum: 512, exact: -1}, true
 	case TypeTermReset, TypeProcessState, TypeGameEvent:
 		return messageRule{minimum: 2, maximum: 1024, exact: -1}, true
@@ -55,8 +56,15 @@ func validateRoute(message MessageType, sender Peer, state State) ErrorCode {
 			return ""
 		}
 	case StateAwaitServerWelcome:
-		if sender == PeerHost && (message == TypeServerWelcome || message == TypeError) {
+		if sender == PeerHost && (message == TypeServerWelcome || message == TypeError || message == TypeAuthChallenge) {
 			return ""
+		}
+	case StateAwaitAuthProof:
+		if sender == PeerBrowser && message == TypeAuthProof || sender == PeerHost && message == TypeError {
+			return ""
+		}
+		if sender == PeerBrowser && (isTerminalMessage(message) || isEscapeMessageType(message)) {
+			return CodeAuthRequired
 		}
 	case StateActiveEscape:
 		if isCommonActive(message) || isEscapeMessage(message, sender) {
@@ -124,6 +132,12 @@ func validatePayload(message MessageType, payload []byte, sender Peer) (uint16, 
 		return validateServerWelcome(payload)
 	case TypeError:
 		return 0, validateError(payload)
+	case TypeAuthChallenge:
+		_, err := decodeAuthenticationPayload(payload, "challenge")
+		return 0, err
+	case TypeAuthProof:
+		_, err := decodeAuthenticationPayload(payload, "proof")
+		return 0, err
 	case TypeClose:
 		return 0, validateClose(payload)
 	case TypeTermReset:
@@ -218,10 +232,14 @@ func validateClientHello(payload []byte) (uint16, error) {
 			return 0, &ProtocolError{Code: CodeBadFrame}
 		}
 	}
-	if value.ProtocolMin > 1 || value.ProtocolMax < 1 {
+	expectedProtocol := float64(1)
+	if value.Mode == "leash" {
+		expectedProtocol = 2
+	}
+	if value.ProtocolMin != expectedProtocol || value.ProtocolMax != expectedProtocol {
 		return 0, &ProtocolError{Code: CodeProtocolMismatch}
 	}
-	return 1, nil
+	return uint16(expectedProtocol), nil
 }
 
 type serverWelcome struct {
@@ -231,6 +249,7 @@ type serverWelcome struct {
 	ExpiresAt    *float64     `json:"expires_at"`
 	Relay        welcomeRelay `json:"relay"`
 	Capabilities []string     `json:"capabilities"`
+	AccessMode   *string      `json:"access_mode,omitempty"`
 }
 
 type welcomeRelay struct {
@@ -241,21 +260,63 @@ type welcomeRelay struct {
 
 func validateServerWelcome(payload []byte) (uint16, error) {
 	object, err := strictJSONObject(payload)
-	if err != nil || !exactKeys(object, "capabilities", "expires_at", "mode", "protocol", "relay", "session_state") {
+	if err != nil {
 		return 0, &ProtocolError{Code: CodeBadFrame}
 	}
 	var value serverWelcome
-	if strictUnmarshal(payload, &value) != nil || value.Protocol != 1 || value.SessionState != "active" ||
+	if strictUnmarshal(payload, &value) != nil || value.SessionState != "active" ||
 		value.ExpiresAt == nil || !integerBetween(*value.ExpiresAt, 0, 9_007_199_254_740_991) ||
 		(value.Mode != "escape" && value.Mode != "leash") || !validRelay(value.Relay) ||
 		!validCapabilities(value.Mode, value.Capabilities) {
+		return 0, &ProtocolError{Code: CodeBadFrame}
+	}
+	if value.Mode == "escape" {
+		if !exactKeys(object, "capabilities", "expires_at", "mode", "protocol", "relay", "session_state") ||
+			value.Protocol != 1 || value.AccessMode != nil {
+			return 0, &ProtocolError{Code: CodeBadFrame}
+		}
+	} else if !exactKeys(object, "access_mode", "capabilities", "expires_at", "mode", "protocol", "relay", "session_state") ||
+		value.Protocol != 2 || value.AccessMode == nil || (*value.AccessMode != "code" && *value.AccessMode != "link") {
 		return 0, &ProtocolError{Code: CodeBadFrame}
 	}
 	relayObject, err := strictJSONObject(object["relay"])
 	if err != nil || !exactKeys(relayObject, "browser_path", "host", "mode") {
 		return 0, &ProtocolError{Code: CodeBadFrame}
 	}
-	return 1, nil
+	return uint16(value.Protocol), nil
+}
+
+type authenticationPayload struct {
+	Scheme    string `json:"scheme"`
+	Challenge string `json:"challenge,omitempty"`
+	Proof     string `json:"proof,omitempty"`
+}
+
+func decodeAuthenticationPayload(payload []byte, field string) ([32]byte, error) {
+	object, err := strictJSONObject(payload)
+	if err != nil || !exactKeys(object, field, "scheme") {
+		return [32]byte{}, &ProtocolError{Code: CodeBadFrame}
+	}
+	var value authenticationPayload
+	if strictUnmarshal(payload, &value) != nil || value.Scheme != "hmac-sha256-v1" {
+		return [32]byte{}, &ProtocolError{Code: CodeBadFrame}
+	}
+	encoded := value.Challenge
+	if field == "proof" {
+		encoded = value.Proof
+	}
+	if len(encoded) != 43 {
+		return [32]byte{}, &ProtocolError{Code: CodeBadFrame}
+	}
+	decoded, err := base64.RawURLEncoding.Strict().DecodeString(encoded)
+	if err != nil || len(decoded) != 32 || base64.RawURLEncoding.EncodeToString(decoded) != encoded {
+		erase(decoded)
+		return [32]byte{}, &ProtocolError{Code: CodeBadFrame}
+	}
+	var result [32]byte
+	copy(result[:], decoded)
+	erase(decoded)
+	return result, nil
 }
 
 func strictJSONObject(payload []byte) (map[string]json.RawMessage, error) {

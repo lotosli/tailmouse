@@ -31,7 +31,8 @@ const reported = run(output, ['version'], { cwd: root, capture: true }).stdout;
 if (
   !reported.includes(`TailMouse ${identity.version}\n`) ||
   !reported.includes(`Tailcat revision ${identity.tailcatRevision}\n`) ||
-  !reported.includes('TMOUSE protocol 1..1\n')
+  !reported.includes('TMOUSE Escape protocol 1\n') ||
+  !reported.includes('TMOUSE Leash protocol 2\n')
 ) {
   throw new Error('Native build identity verification failed.');
 }

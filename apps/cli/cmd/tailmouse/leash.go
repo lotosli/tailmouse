@@ -78,7 +78,9 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 			if pumpCancel != nil {
 				pumpCancel()
 			}
-			inputReader.Close()
+			if inputReader != nil {
+				inputReader.Close()
+			}
 			clear(pendingLocal)
 			if process != nil {
 				cleanup, finish := context.WithTimeout(context.Background(), 6*time.Second)
@@ -114,10 +116,12 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 			}
 			return outcome
 		})
-		if err := console.Close(); err != nil {
-			_ = log.cleanupFailure("terminal_restoration")
-			if code == exitOK || childOutcome(outcome) {
-				code, outcome = exitInternal, session.InternalFailure
+		if console != nil {
+			if err := console.Close(); err != nil {
+				_ = log.cleanupFailure("terminal_restoration")
+				if code == exitOK || childOutcome(outcome) {
+					code, outcome = exitInternal, session.InternalFailure
+				}
 			}
 		}
 		log.terminal(false, false)
@@ -211,6 +215,9 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 	}
 	revoke := func() (int, session.Outcome) {
 		gracefulStop = true
+		if ended {
+			return childResult.ExitCode, session.LocalRevoke
+		}
 		return exitExpired, session.LocalRevoke // Cleanup supplies the child's result.
 	}
 	// Preserve each raw chunk atomically except at an owner-level Ctrl+C
@@ -263,6 +270,21 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 		if ended && drained && state.State != "exited" {
 			// Retention owns only bytes and the recorded result. Release the old
 			// group/PTY now, not minutes later when its PID might be reused.
+			if inputReader != nil {
+				inputReader.Close()
+				inputReader = nil
+			}
+			local, localResize = nil, nil
+			clear(pendingLocal)
+			pendingLocal = nil
+			if retryInput != nil {
+				retryInput.Stop()
+				retryInput, retryInputTick = nil, nil
+			}
+			if resize != nil {
+				resize.Stop()
+				resize, resizeTick = nil, nil
+			}
 			if err := process.Close(ctx); err != nil {
 				return exitInternal, session.InternalFailure
 			}
@@ -271,14 +293,34 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 				name := leashSignalName(childResult.Signal)
 				state.Signal = &name
 			}
-			if err := publish(); err != nil {
-				return exitInternal, session.InternalFailure
-			}
 			if accessClosed {
+				process, pump, pumpCancel = nil, nil, nil
+				if err := console.Close(); err != nil {
+					return exitInternal, session.InternalFailure
+				}
+				console = nil
+				log.terminal(false, false)
+				if err := log.processState(state); err != nil {
+					return exitInternal, session.InternalFailure
+				}
 				return childResult.ExitCode, session.ModeComplete
 			}
-			retention = time.NewTimer(options.Leash.PostExitTTL)
-			retentionTick = retention.C
+			if err := host.RetainLeash(state, pump); err != nil {
+				return exitInternal, session.InternalFailure
+			}
+			process, pump, pumpCancel = nil, nil, nil
+			if err := console.Close(); err != nil {
+				return exitInternal, session.InternalFailure
+			}
+			console = nil
+			log.terminal(false, false)
+			if err := log.processState(state); err != nil {
+				return exitInternal, session.InternalFailure
+			}
+			if options.Once {
+				return childResult.ExitCode, session.ModeComplete
+			}
+			retention, retentionTick = leashRetentionTimer(options.Leash.PostExitHost, options.Leash.PostExitTTL)
 		}
 		select {
 		case <-parent.Done():
@@ -295,7 +337,7 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 				}
 			case shutdownSignal(value):
 				return revoke()
-			case leashResizeSignal(value):
+			case leashResizeSignal(value) && process != nil && !ended:
 				if err := requestLocalResize(); err != nil {
 					return exitInternal, session.InternalFailure
 				}
@@ -477,7 +519,7 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 			}
 		case <-host.LeashControls():
 			request, ok := host.TakeLeashControl()
-			if !ok || process == nil {
+			if !ok || process == nil && request.Action != "restart" {
 				continue
 			}
 			if request.Action == "interrupt" {
@@ -494,7 +536,7 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 				}
 				continue
 			}
-			if !ended {
+			if !ended && process != nil {
 				if err := process.Terminate(ctx); err != nil {
 					return exitInternal, session.InternalFailure
 				}
@@ -502,16 +544,23 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 			if request.Action == "terminate" {
 				continue
 			}
-			inputReader.Close()
-			pumpCancel()
+			if inputReader != nil {
+				inputReader.Close()
+				inputReader = nil
+			}
+			if pumpCancel != nil {
+				pumpCancel()
+			}
 			clear(pendingLocal)
 			pendingLocal = nil
 			if retryInput != nil {
 				retryInput.Stop()
 				retryInputTick = nil
 			}
-			if err := process.Close(ctx); err != nil {
-				return exitInternal, session.InternalFailure
+			if process != nil {
+				if err := process.Close(ctx); err != nil {
+					return exitInternal, session.InternalFailure
+				}
 			}
 			if pumpDone != nil {
 				<-pumpDone
@@ -529,15 +578,28 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 				return exitInternal, session.InternalFailure
 			}
 			state.Generation++
+			if console == nil {
+				console, err = openLeashConsole(input, file)
+				if err != nil {
+					return config.ExitPTY, session.InternalFailure
+				}
+				log.terminal(console.state != nil, false)
+			}
 			if err := start(); err != nil {
 				return startFailure(err)
 			}
-			if local != nil {
-				inputReader = readLeashInput(ctx, console)
-				local = inputReader.values
-			}
+			inputReader = readLeashInput(ctx, console)
+			local, localResize = inputReader.values, leashResizeEvents(console)
 		}
 	}
+}
+
+func leashRetentionTimer(host bool, duration time.Duration) (*time.Timer, <-chan time.Time) {
+	if host {
+		return nil, nil
+	}
+	timer := time.NewTimer(duration)
+	return timer, timer.C
 }
 
 func outcomeCode(outcome session.Outcome) int {

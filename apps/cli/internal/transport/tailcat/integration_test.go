@@ -355,6 +355,10 @@ type browserRequest struct {
 func mouseCardFragment(t *testing.T, address string, mode invitation.Mode) string {
 	t.Helper()
 	identifier := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	protocolIdentifier := invitation.EscapeProtocol
+	if mode == invitation.ModeLeash {
+		protocolIdentifier = invitation.LeashProtocol
+	}
 	encoded, err := invitation.Encode(invitation.MouseCard{
 		Version:     invitation.CardVersion,
 		Mode:        mode,
@@ -362,8 +366,8 @@ func mouseCardFragment(t *testing.T, address string, mode invitation.Mode) strin
 		Port:        invitation.VirtualPort,
 		SessionID:   identifier,
 		ExpiresAt:   time.Now().Add(5 * time.Minute).Unix(),
-		ProtocolMin: invitation.ProtocolVersion,
-		ProtocolMax: invitation.ProtocolVersion,
+		ProtocolMin: protocolIdentifier,
+		ProtocolMax: protocolIdentifier,
 	})
 	if err != nil {
 		t.Fatal(err)

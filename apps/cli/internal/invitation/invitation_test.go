@@ -117,7 +117,8 @@ func TestInvitationRejectsInvalidAndOversizedInputWithoutSecretErrors(t *testing
 		{name: "bad port", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.Port = 80 }), want: ErrInvalidCard},
 		{name: "zero session", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.SessionID = [16]byte{} }), want: ErrInvalidCard},
 		{name: "bad expiry", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ExpiresAt = -1 }), want: ErrInvalidCard},
-		{name: "bad protocol", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ProtocolMin, value.ProtocolMax = 2, 2 }), want: ErrInvalidCard},
+		{name: "wrong mode protocol", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ProtocolMin, value.ProtocolMax = 2, 2 }), want: ErrInvalidCard},
+		{name: "wide protocol range", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ProtocolMax = 2 }), want: ErrInvalidCard},
 		{name: "oversized", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.TailcatAddr = syntheticAddress + strings.Repeat("x", 1400) }), want: ErrInvitationSize},
 	}
 	for _, test := range tests {
@@ -202,14 +203,15 @@ func TestQRPayloadBoundsAndMinimumVersion(t *testing.T) {
 
 func TestRenderShowsOnlyDeliberateURLAndRedactsFormatting(t *testing.T) {
 	for _, test := range []struct {
-		name     string
-		mode     Mode
-		readonly bool
-		warning  string
+		name, accessMode, sensitivity string
+		mode                          Mode
+		readonly                      bool
+		warning                       string
 	}{
-		{name: "escape", mode: ModeEscape},
-		{name: "leash control", mode: ModeLeash, warning: "This browser can type into the selected terminal process.\nRunning a shell grants shell-level access.\n"},
-		{name: "leash readonly", mode: ModeLeash, readonly: true, warning: "Browser access is view-only.\n"},
+		{name: "escape", mode: ModeEscape, sensitivity: "Anyone with this link can access this session until it expires.\nTreat it like a password.\n"},
+		{name: "protected leash control", mode: ModeLeash, accessMode: "code", sensitivity: "Keep this invitation private.\nThe separate access code is also required.\n", warning: "This browser can type into the selected terminal process.\nRunning a shell grants shell-level access.\n"},
+		{name: "protected leash readonly", mode: ModeLeash, accessMode: "code", readonly: true, sensitivity: "Keep this invitation private.\nThe separate access code is also required.\n", warning: "Browser access is view-only.\n"},
+		{name: "link-only leash", mode: ModeLeash, accessMode: "link", sensitivity: "Anyone with this link can access this session until it expires.\nTreat it like a password.\n", warning: "This browser can type into the selected terminal process.\nRunning a shell grants shell-level access.\n"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			invitation := testInvitation(t, test.mode)
@@ -217,16 +219,17 @@ func TestRenderShowsOnlyDeliberateURLAndRedactsFormatting(t *testing.T) {
 			secretURL := string(invitation.url)
 			var output bytes.Buffer
 			err := invitation.Render(&output, time.Unix(1_700_000_000, 0), DisplayOptions{
-				Relay:    "official",
-				NoQR:     true,
-				Readonly: test.readonly,
+				Relay:      "official",
+				NoQR:       true,
+				Readonly:   test.readonly,
+				AccessMode: test.accessMode,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
 			got := output.String()
 			if strings.Count(got, secretURL) != 1 ||
-				!strings.Contains(got, "Anyone with this link can access this session until it expires.\nTreat it like a password.\n") ||
+				!strings.Contains(got, test.sensitivity) ||
 				!strings.Contains(got, "Open: "+secretURL) ||
 				(test.warning != "" && !strings.Contains(got, test.warning)) {
 				t.Fatalf("unexpected invitation display: %q", got)
@@ -247,6 +250,13 @@ func TestRenderShowsOnlyDeliberateURLAndRedactsFormatting(t *testing.T) {
 				}
 			}
 		})
+	}
+	leash := testInvitation(t, ModeLeash)
+	defer leash.Erase()
+	for _, accessMode := range []string{"", "password", "CODE"} {
+		if err := leash.Render(io.Discard, time.Now(), DisplayOptions{Relay: "official", AccessMode: accessMode}); !errors.Is(err, ErrDisplay) {
+			t.Fatalf("ambiguous Leash access mode %q was rendered", accessMode)
+		}
 	}
 }
 
@@ -288,6 +298,10 @@ func validTestCard(t *testing.T, mode Mode) MouseCard {
 	if err != nil {
 		t.Fatal(err)
 	}
+	protocolIdentifier := EscapeProtocol
+	if mode == ModeLeash {
+		protocolIdentifier = LeashProtocol
+	}
 	return MouseCard{
 		Version:     CardVersion,
 		Mode:        mode,
@@ -295,8 +309,8 @@ func validTestCard(t *testing.T, mode Mode) MouseCard {
 		Port:        VirtualPort,
 		SessionID:   identifier,
 		ExpiresAt:   1_700_000_600,
-		ProtocolMin: ProtocolVersion,
-		ProtocolMax: ProtocolVersion,
+		ProtocolMin: protocolIdentifier,
+		ProtocolMax: protocolIdentifier,
 	}
 }
 

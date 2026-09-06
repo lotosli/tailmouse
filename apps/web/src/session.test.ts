@@ -3,12 +3,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { MouseCard } from './invitation.ts';
 import {
+  authChallengeFrame,
   closeFrame,
+  decodeAuthProof,
   encodeFrame,
+  errorFrame,
   Message,
   type Frame,
 } from './protocol/frame.ts';
-import { connectSession, negotiateSession } from './session.ts';
+import {
+  canonicalAccessCode,
+  connectSession,
+  createAccessProof,
+  negotiateSession,
+} from './session.ts';
 import type { ByteStream, LoadOptions } from './transport/tailcat/adapter.ts';
 import {
   decodeGameInit,
@@ -39,6 +47,193 @@ const card: MouseCard = {
 afterEach(() => {
   vi.resetAllMocks();
   vi.useRealTimers();
+});
+
+describe('Access proof', () => {
+  it('canonicalizes only ASCII case, spaces, and hyphens', () => {
+    for (const input of [
+      '23456789ABCDEFGH',
+      '2345-6789-ABCD-EFGH',
+      ' 2345 6789 abcd efgh ',
+    ]) {
+      expect(canonicalAccessCode(input)).toBe('23456789ABCDEFGH');
+    }
+    for (const input of [
+      '23456789ABCDEFG',
+      '23456789ABCDEFGHH',
+      '23456789ABCDEFIH',
+      '23456789ABCDEF0H',
+      '2345_6789_ABCD_EFGH',
+      '2345\t6789 ABCD EFGH',
+      '２３４５６７８９ＡＢＣＤＥＦＧＨ',
+    ]) {
+      expect(() => canonicalAccessCode(input), input).toThrow(
+        expect.objectContaining({ code: 'AUTH_FAILED' }),
+      );
+    }
+  });
+
+  it('matches the protocol vector and binds proofs to the session and fresh challenge', async () => {
+    const sessionID = Uint8Array.from({ length: 16 }, (_, index) => index);
+    const challenge = Uint8Array.from({ length: 32 }, (_, index) => index);
+    const proof = await createAccessProof(
+      '2345-6789-abcd-efgh',
+      sessionID,
+      challenge,
+    );
+    expect(Buffer.from(proof).toString('base64url')).toBe(
+      'V0OMGOWhH9n8r-cwHjkH06dDCyNQrZQgrlxJXDmzl4s',
+    );
+    const otherSession = sessionID.slice();
+    otherSession[0]! ^= 1;
+    const otherChallenge = challenge.slice();
+    otherChallenge[31]! ^= 1;
+    const crossSession = await createAccessProof(
+      '23456789ABCDEFGH',
+      otherSession,
+      challenge,
+    );
+    const freshChallenge = await createAccessProof(
+      '23456789ABCDEFGH',
+      sessionID,
+      otherChallenge,
+    );
+    expect(crossSession).not.toEqual(proof);
+    expect(freshChallenge).not.toEqual(proof);
+    expect(proof).toEqual(
+      await createAccessProof('23456789ABCDEFGH', sessionID, challenge),
+    );
+  });
+
+  it('rejects malformed binding inputs before invoking Web Crypto', async () => {
+    await expect(
+      createAccessProof(
+        '23456789ABCDEFGH',
+        new Uint8Array(15),
+        new Uint8Array(32),
+      ),
+    ).rejects.toMatchObject({ code: 'BAD_FRAME' });
+    await expect(
+      createAccessProof(
+        '23456789ABCDEFGH',
+        new Uint8Array(16),
+        new Uint8Array(31),
+      ),
+    ).rejects.toMatchObject({ code: 'BAD_FRAME' });
+  });
+
+  it('answers one protected Leash challenge before accepting Welcome', async () => {
+    const challenge = Uint8Array.from({ length: 32 }, (_, index) => index);
+    const leashCard = { ...card, mode: 'leash' as const, protocolMin: 2 };
+    const peer = protectedPeer(challenge, welcome('leash', undefined, 'code'));
+    const stages: string[] = [];
+    const session = await negotiateSession(
+      peer.stream,
+      leashCard,
+      new AbortController().signal,
+      '2345-6789-abcd-efgh',
+      (stage) => stages.push(stage),
+    );
+    expect(stages).toEqual(['authenticating', 'admitting']);
+    expect(peer.writes.map((bytes) => bytes[4])).toEqual([
+      Message.CLIENT_HELLO,
+      Message.AUTH_PROOF,
+    ]);
+    const proofFrame = {
+      type: Message.AUTH_PROOF,
+      payload: peer.writes[1]!.slice(6),
+    } as const;
+    const proof = decodeAuthProof(proofFrame);
+    await expect(
+      createAccessProof('23456789ABCDEFGH', leashCard.sessionID, challenge),
+    ).resolves.toEqual(proof);
+    proof.fill(0);
+    await session.close();
+  });
+
+  it('closes a challenged attempt without sending a proof when the code is absent', async () => {
+    const peer = protectedPeer(
+      new Uint8Array(32).fill(9),
+      welcome('leash', undefined, 'code'),
+    );
+    await expect(
+      negotiateSession(
+        peer.stream,
+        { ...card, mode: 'leash', protocolMin: 2 },
+        new AbortController().signal,
+      ),
+    ).rejects.toMatchObject({ code: 'AUTH_REQUIRED', retryable: false });
+    expect(peer.writes.map((bytes) => bytes[4])).toEqual([
+      Message.CLIENT_HELLO,
+    ]);
+    expect(peer.stream.close).toHaveBeenCalledExactlyOnceWith({
+      graceful: false,
+    });
+  });
+
+  it('preserves the Host authentication failure after sending one proof', async () => {
+    const peer = protectedPeer(
+      new Uint8Array(32).fill(10),
+      errorFrame('AUTH_FAILED'),
+    );
+    await expect(
+      negotiateSession(
+        peer.stream,
+        { ...card, mode: 'leash', protocolMin: 2 },
+        new AbortController().signal,
+        '23456789ABCDEFGH',
+      ),
+    ).rejects.toMatchObject({ code: 'AUTH_FAILED', retryable: true });
+    expect(peer.writes.map((bytes) => bytes[4])).toEqual([
+      Message.CLIENT_HELLO,
+      Message.AUTH_PROOF,
+    ]);
+    expect(peer.stream.close).toHaveBeenCalledExactlyOnceWith({
+      graceful: true,
+    });
+  });
+
+  it('rejects a duplicate challenge after the proof', async () => {
+    const challenge = new Uint8Array(32).fill(11);
+    const peer = protectedPeer(challenge, authChallengeFrame(challenge));
+    await expect(
+      negotiateSession(
+        peer.stream,
+        { ...card, mode: 'leash', protocolMin: 2 },
+        new AbortController().signal,
+        '23456789ABCDEFGH',
+      ),
+    ).rejects.toMatchObject({ code: 'BAD_FRAME', retryable: false });
+    expect(peer.stream.close).toHaveBeenCalledExactlyOnceWith({
+      graceful: false,
+    });
+  });
+
+  it('fails closed when canceled while deriving a protected proof', async () => {
+    const digest = Promise.withResolvers<ArrayBuffer>();
+    const digestSpy = vi
+      .spyOn(globalThis.crypto.subtle, 'digest')
+      .mockReturnValueOnce(digest.promise);
+    const controller = new AbortController();
+    const peer = protectedPeer(
+      new Uint8Array(32).fill(12),
+      welcome('leash', undefined, 'code'),
+    );
+    const connecting = negotiateSession(
+      peer.stream,
+      { ...card, mode: 'leash', protocolMin: 2 },
+      controller.signal,
+      '23456789ABCDEFGH',
+    );
+    await vi.waitFor(() => expect(digestSpy).toHaveBeenCalled());
+    controller.abort();
+    digest.resolve(new ArrayBuffer(32));
+    await expect(connecting).rejects.toMatchObject({ code: 'CANCELED' });
+    expect(peer.writes.map((bytes) => bytes[4])).toEqual([
+      Message.CLIENT_HELLO,
+    ]);
+    expect(peer.stream.close).toHaveBeenCalledOnce();
+  });
 });
 
 describe('Browser session ownership', () => {
@@ -733,6 +928,7 @@ describe('Browser session ownership', () => {
       ['loading', 100],
       ['connecting', undefined],
       ['establishing', undefined],
+      ['admitting', undefined],
     ]);
     expect(adapter.dialTailcat).toHaveBeenCalledWith(
       card.address,
@@ -1119,10 +1315,13 @@ function gameFrames(): Frame[] {
 
 function welcome(
   mode: 'escape' | 'leash' = 'escape',
-  capabilities = ['dash', 'game_input', 'game_view'],
+  capabilities = mode === 'escape'
+    ? ['dash', 'game_input', 'game_view']
+    : ['terminal_input', 'terminal_output'],
+  accessMode: 'code' | 'link' = 'link',
 ): Frame {
   return jsonFrame(Message.SERVER_WELCOME, {
-    protocol: 1,
+    protocol: mode === 'escape' ? 1 : 2,
     mode,
     session_state: 'active',
     expires_at: 0,
@@ -1132,6 +1331,7 @@ function welcome(
       browser_path: 'derp',
     },
     capabilities,
+    ...(mode === 'leash' ? { access_mode: accessMode } : {}),
   });
 }
 
@@ -1172,4 +1372,27 @@ function fakePeer(initial: Frame | null = welcome(), acknowledgeClose = true) {
     }),
   } satisfies ByteStream;
   return { stream, push, writes, pendingRead: () => reader !== undefined };
+}
+
+function protectedPeer(challenge: Uint8Array, admission: Frame) {
+  const peer = fakePeer(null);
+  peer.stream.write = async (bytes: Uint8Array): Promise<void> => {
+    peer.writes.push(bytes.slice());
+    if (bytes[4] === Message.CLIENT_HELLO) {
+      peer.push(
+        encodeFrame(
+          'host',
+          'await-server-welcome',
+          authChallengeFrame(challenge),
+        ),
+      );
+    }
+    if (bytes[4] === Message.AUTH_PROOF) {
+      peer.push(encodeFrame('host', 'await-server-welcome', admission));
+    }
+    if (bytes[4] === Message.CLOSE) {
+      peer.push(encodeFrame('host', 'active-leash', closeFrame('normal')));
+    }
+  };
+  return peer;
 }

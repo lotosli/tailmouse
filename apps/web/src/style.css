@@ -213,6 +213,40 @@ h1 {
   color: #b8d7aa;
 }
 
+.access-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.access-form p,
+.access-form label {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.access-form label {
+  color: #b8d7aa;
+  font-size: 0.875rem;
+}
+
+.access-form input {
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #71806c;
+  border-radius: 0.6rem;
+  background: #090d09;
+  color: #f1f5ee;
+  font: inherit;
+  letter-spacing: 0.08em;
+}
+
+.access-form input:focus-visible {
+  outline: 3px solid #d8ff62;
+  outline-offset: 2px;
+}
+
 .status {
   min-height: 3rem;
   margin: 0 0 1rem;
@@ -247,7 +281,9 @@ h1 {
 @media (prefers-reduced-motion: no-preference) {
   .status-loading::before,
   .status-connecting::before,
-  .status-establishing::before {
+  .status-establishing::before,
+  .status-authenticating::before,
+  .status-admitting::before {
     animation: pulse 1.2s ease-in-out infinite alternate;
   }
 }

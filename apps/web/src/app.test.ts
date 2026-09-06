@@ -45,6 +45,14 @@ describe('Session connection presentation', () => {
       detail: 'Establishing encrypted session',
       stage: 'establishing',
     });
+    expect(viewForStage('authenticating')).toEqual({
+      detail: 'Verifying access code',
+      stage: 'authenticating',
+    });
+    expect(viewForStage('admitting')).toEqual({
+      detail: 'Waiting for session admission',
+      stage: 'admitting',
+    });
     expect(viewForStage('loading', 50)).toEqual({
       detail: 'Loading Tailcat WebAssembly',
       stage: 'loading',

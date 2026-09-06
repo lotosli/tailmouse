@@ -74,9 +74,8 @@ func applyFile(options *Options, path string, required bool) error {
 	input.DERP.Mode = "official"
 	input.DERP.DERPPort, input.DERP.STUNPort = options.Relay.DERPPort, options.Relay.STUNPort
 	input.DERP.RegionID, input.DERP.RegionCode, input.DERP.RegionName = options.Relay.RegionID, options.Relay.RegionCode, options.Relay.RegionName
-	input.Session.EscapeTTL, input.Session.LeashTTL = "10m", "4h"
-	input.Session.ReconnectGrace = "30s"
-	input.Leash.ScrollbackBytes, input.Leash.PostExitTTL = 1<<20, "10m"
+	input.Session.EscapeTTL, input.Session.LeashTTL = "10m", "0"
+	input.Leash.ScrollbackBytes, input.Leash.PostExitTTL = 1<<20, "host"
 	input.Leash.StartOn, input.Leash.LocalInput = "connect-or-enter", true
 	metadata, err := toml.Decode(string(contents), &input)
 	if err != nil {
@@ -125,8 +124,6 @@ func applyFile(options *Options, path string, required bool) error {
 	}{
 		{"session.escape_ttl", input.Session.EscapeTTL, nil},
 		{"session.leash_ttl", input.Session.LeashTTL, nil},
-		{"session.reconnect_grace", input.Session.ReconnectGrace, &options.Leash.ReconnectGrace},
-		{"leash.post_exit_ttl", input.Leash.PostExitTTL, &options.Leash.PostExitTTL},
 	}
 	for _, duration := range durations {
 		value, err := time.ParseDuration(duration.value)
@@ -140,10 +137,26 @@ func applyFile(options *Options, path string, required bool) error {
 			options.TTL = value
 		}
 	}
+	if input.Session.ReconnectGrace != "" {
+		value, err := time.ParseDuration(input.Session.ReconnectGrace)
+		if err != nil || value < 0 {
+			return &Error{"session.reconnect_grace", File}
+		}
+		options.Leash.ReconnectGrace = value
+	}
+	postExitTTL, postExitHost, err := parsePostExitTTL(input.Leash.PostExitTTL)
+	if err != nil {
+		return &Error{"leash.post_exit_ttl", File}
+	}
+	options.Leash.PostExitTTL = postExitTTL
+	options.Leash.PostExitHost = postExitHost
 	options.Leash.ScrollbackBytes = input.Leash.ScrollbackBytes
 	options.Leash.StartOn, options.Leash.LocalInput = input.Leash.StartOn, input.Leash.LocalInput
 	for _, key := range metadata.Keys() {
 		field := key.String()
+		if field == "session.reconnect_grace" && input.Session.ReconnectGrace == "" {
+			continue
+		}
 		aliases := map[string]string{"web.base_url": "web-base-url", "derp.hosts": "derp-host", "derp.map_url": "derp-map-url",
 			"session." + options.Command + "_ttl": "ttl", "session.reconnect_grace": "reconnect-grace",
 			"leash.post_exit_ttl": "post-exit-ttl", "leash.scrollback_bytes": "scrollback-bytes", "leash.start_on": "start-on", "leash.local_input": "local-input"}
@@ -158,6 +171,11 @@ func applyFile(options *Options, path string, required bool) error {
 	// Validate mode-independent file settings even when launching Escape.
 	otherMode := *options
 	otherMode.Command = "leash"
+	otherMode.Sources = make(map[string]Source, len(options.Sources))
+	for field, source := range options.Sources {
+		otherMode.Sources[field] = source
+	}
+	delete(otherMode.Sources, "reconnect-grace")
 	return validate(otherMode)
 }
 
@@ -170,7 +188,7 @@ func applyEnvironment(options *Options, lookup func(string) (string, bool)) erro
 	for _, setting := range []struct{ name, field string }{
 		{"TAILMOUSE_WEB_BASE_URL", "web-base-url"}, {"TAILMOUSE_DERP_HOST", "derp-host"},
 		{"TAILMOUSE_DERP_MAP_URL", "derp-map-url"}, {"TAILMOUSE_TTL", "ttl"},
-		{"TAILMOUSE_NO_QR", "no-qr"},
+		{"TAILMOUSE_NO_QR", "no-qr"}, {"TAILMOUSE_RECONNECT_GRACE", "reconnect-grace"},
 	} {
 		value, exists := lookup(setting.name)
 		if !exists {
@@ -210,6 +228,15 @@ func applyEnvironment(options *Options, lookup func(string) (string, bool)) erro
 				return &Error{setting.name, Environment}
 			}
 			options.NoQR = parsed
+		case "TAILMOUSE_RECONNECT_GRACE":
+			if options.Command == "leash" {
+				continue
+			}
+			parsed, err := time.ParseDuration(value)
+			if err != nil || parsed < 0 {
+				return &Error{setting.name, Environment}
+			}
+			options.Leash.ReconnectGrace = parsed
 		}
 	}
 	// Cross-source relay conflicts are checked after flags have had the chance

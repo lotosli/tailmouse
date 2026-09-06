@@ -261,7 +261,7 @@ describe('TMOUSE/1 validation', () => {
   });
 
   it('exposes the complete fixed registry and rejects unknown types', () => {
-    expect(Object.entries(Message)).toHaveLength(18);
+    expect(Object.entries(Message)).toHaveLength(20);
     for (const [name, type] of Object.entries(Message)) {
       expect(messageName(type)).toBe(name);
     }

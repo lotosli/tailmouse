@@ -100,7 +100,7 @@ func TestLeashShutdownClosesStreamBeforeChildAndTransportBeforeConsole(t *testin
 			}
 			ctx, cancel := context.WithTimeout(t.Context(), 8*time.Second)
 			defer cancel()
-			code := run(ctx, slave, []string{"leash", "--no-qr", "--json", "--start-on=now", "--", binary, "-test.run=^TestLeashCLIChild$"},
+			code := run(ctx, slave, []string{"leash", "--no-password", "--no-qr", "--json", "--start-on=now", "--", binary, "-test.run=^TestLeashCLIChild$"},
 				environment, t.TempDir(), slave, fault, fake.start)
 			assertTerminalRestored(t, fd, initial, flags)
 			if code != exitInternal || fake.closeCalls != 1 || !closedWhileChildAlive.Load() || !childGoneBeforeTransport || !rawAtTransportClose {
@@ -162,7 +162,7 @@ func TestLeashOwnerShutdownClosesApplicationBeforeGracefulTermination(t *testing
 	}
 }
 
-func TestLeashTransportFailurePrecedesLaterTerminalRestorationFailure(t *testing.T) {
+func TestLeashTransportFailureFollowsEarlyTerminalRestoration(t *testing.T) {
 	_, slave, fd, initial, _ := terminalPair(t)
 	duplicate, err := unix.Dup(fd)
 	if err != nil {
@@ -183,17 +183,17 @@ func TestLeashTransportFailurePrecedesLaterTerminalRestorationFailure(t *testing
 	fake.onClose = func() { closeErr = input.Close() }
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
-	code := run(ctx, input, []string{"leash", "--no-qr", "--start-on=now", "--post-exit-ttl=30ms", "--", "/bin/sh", "-c", "exit 37"},
+	code := run(ctx, input, []string{"leash", "--no-password", "--no-qr", "--start-on=now", "--post-exit-ttl=30ms", "--", "/bin/sh", "-c", "exit 37"},
 		nil, t.TempDir(), slave, io.Discard, fake.start)
 	if code != exitTransport || closeErr != nil || fake.closeCalls != 1 {
-		t.Fatalf("later console failure replaced transport root: code=%d, close count=%d, injected=%t", code, fake.closeCalls, closeErr == nil)
+		t.Fatalf("early terminal restoration changed the transport root: code=%d, close count=%d, callback=%t", code, fake.closeCalls, closeErr == nil)
 	}
-	if after, err := term.GetState(fd); err != nil || reflect.DeepEqual(after, initial) {
-		t.Fatal("test did not exercise failed terminal restoration")
+	if after, err := term.GetState(fd); err != nil || !reflect.DeepEqual(after, initial) {
+		t.Fatal("child exit did not restore the terminal before retained-result cleanup")
 	}
 }
 
-func TestLeashApplicationCloseFailurePrecedesLaterTerminalRestorationFailure(t *testing.T) {
+func TestLeashApplicationCloseFailureSurvivesEarlyTerminalRestoration(t *testing.T) {
 	master, _, fd, initial, _ := terminalPair(t)
 	duplicate, err := unix.Dup(fd)
 	if err != nil {
@@ -215,27 +215,27 @@ func TestLeashApplicationCloseFailurePrecedesLaterTerminalRestorationFailure(t *
 	// Application closure must fail at its existing bound and force-join it.
 	fixture.result(t, exitTransport)
 	if closeErr != nil {
-		t.Fatal("terminal restoration fault was not injected")
+		t.Fatal("transport close callback did not run cleanly")
 	}
-	if after, err := term.GetState(fd); err != nil || reflect.DeepEqual(after, initial) {
-		t.Fatal("test did not exercise the later restoration failure")
+	if after, err := term.GetState(fd); err != nil || !reflect.DeepEqual(after, initial) {
+		t.Fatal("application failure changed the terminal restored at child exit")
 	}
 }
 
-func TestLeashNormalExitClosesTransportBeforeConsole(t *testing.T) {
+func TestLeashNormalExitRestoresConsoleBeforeRetainedTransportCleanup(t *testing.T) {
 	_, slave, fd, initial, flags := terminalPair(t)
 	fake := newFakeTransport()
-	closedWhileRaw := false
+	restoredBeforeTransport := false
 	fake.onClose = func() {
-		raw, err := term.GetState(fd)
-		closedWhileRaw = err == nil && !reflect.DeepEqual(raw, initial)
+		state, err := term.GetState(fd)
+		restoredBeforeTransport = err == nil && reflect.DeepEqual(state, initial)
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
-	code := run(ctx, slave, []string{"leash", "--no-qr", "--start-on=now", "--post-exit-ttl=30ms", "--", "/bin/sh", "-c", "exit 37"},
+	code := run(ctx, slave, []string{"leash", "--no-password", "--no-qr", "--start-on=now", "--post-exit-ttl=30ms", "--", "/bin/sh", "-c", "exit 37"},
 		nil, t.TempDir(), slave, io.Discard, fake.start)
 	assertTerminalRestored(t, fd, initial, flags)
-	if code != 37 || fake.closeCalls != 1 || !closedWhileRaw {
-		t.Fatalf("normal exit ordering failed: code=%d, close count=%d, transport-before-restore=%t", code, fake.closeCalls, closedWhileRaw)
+	if code != 37 || fake.closeCalls != 1 || !restoredBeforeTransport {
+		t.Fatalf("normal exit ordering failed: code=%d, close count=%d, restored-before-transport=%t", code, fake.closeCalls, restoredBeforeTransport)
 	}
 }

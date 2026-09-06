@@ -26,15 +26,26 @@ async function main() {
     !/^[A-Za-z0-9_-]{1,16384}$/.test(request.fragment) ||
     ![
       'cli',
+      'protected',
+      'old-peer',
       'vim',
       'shell',
       'long-task',
       'htop',
       'reconnect',
       'retained-exit',
+      'expiry',
+      'revocation',
       'browser-crash',
       'browser-crash-kill',
     ].includes(request.scenario)
+  )
+    throw new Error('INPUT_INVALID');
+  const protectedAccess = request.scenario === 'protected';
+  if (
+    protectedAccess !==
+    (typeof request.accessCode === 'string' &&
+      /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{16}$/.test(request.accessCode))
   )
     throw new Error('INPUT_INVALID');
   const base = new URL(request.baseURL);
@@ -65,6 +76,19 @@ async function main() {
     let page = await context.newPage();
     stage = 'connect';
     await page.goto(`${request.baseURL}/#/v1/${request.fragment}`);
+    if (protectedAccess) {
+      stage = 'protected-code-entry';
+      let code = request.accessCode;
+      request.accessCode = '';
+      await expect(
+        page.getByRole('region', { name: 'Connection' }).getByRole('alert'),
+      ).toHaveText('Enter the host access code to continue.', {
+        timeout: 30_000,
+      });
+      await page.getByLabel('Access code').fill(code);
+      code = '';
+      await page.getByRole('button', { name: 'Connect' }).click();
+    }
     const reconnect = [
       'long-task',
       'reconnect',
@@ -74,6 +98,7 @@ async function main() {
     const retainedExit = request.scenario === 'retained-exit';
     const longTask = request.scenario === 'long-task';
     const killOnDisconnect = request.scenario === 'browser-crash-kill';
+    const hostEndsSession = ['expiry', 'revocation'].includes(request.scenario);
     // Only reconnect scenarios keep the externally supplied invitation in memory
     // for a second explicit scan; the PWA never stores or recovers it.
     if (!reconnect) request.fragment = '';
@@ -110,7 +135,29 @@ async function main() {
         throw new Error('BROWSER_DID_NOT_CRASH');
       await expect.poll(() => browser.isConnected()).toBe(false);
     };
-    if (killOnDisconnect) {
+    if (hostEndsSession) {
+      await expect(output).toContainText('child-ready');
+      if (request.scenario === 'revocation') {
+        stage = 'native-revocation';
+        const response = await fetch(`${base.origin}/__test/revoke`, {
+          method: 'POST',
+          signal: AbortSignal.timeout(2000),
+        });
+        if (response.status !== 204) throw new Error('REVOCATION_FAILED');
+        await response.arrayBuffer();
+      } else {
+        stage = 'native-expiry';
+      }
+      await expect(
+        page.getByText(
+          request.scenario === 'expiry'
+            ? 'Session has expired.'
+            : 'Session closed.',
+          { exact: true },
+        ),
+      ).toBeVisible({ timeout: 8000 });
+      await context.close();
+    } else if (killOnDisconnect) {
       await expect(output).toContainText('child-ready');
       await crash();
       // The Go owner must now observe heartbeat loss and child exit 143.
@@ -242,8 +289,8 @@ async function main() {
           await context.close();
         }
         if (longTask) {
-          // Let the task make observable progress with no browser attached.
-          await new Promise((resolve) => setTimeout(resolve, 750));
+          // Exceed the removed 30-second reconnect grace with no browser.
+          await new Promise((resolve) => setTimeout(resolve, 31_000));
         }
         context = await browser.newContext({
           ignoreHTTPSErrors: true,
@@ -403,7 +450,7 @@ async function main() {
       await page.keyboard.press('Enter');
       await expect(page.getByLabel('Process status')).toContainText('Exit 0');
     }
-    if (!killOnDisconnect) {
+    if (!killOnDisconnect && !hostEndsSession) {
       stage = 'retention-close';
       await expect(
         page.getByText('Session closed.', { exact: true }),

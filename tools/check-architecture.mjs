@@ -30,6 +30,8 @@ const required = [
   'apps/cli/internal/transport/tailcat/AGENTS.md',
   'apps/web/AGENTS.md',
   'protocol/AGENTS.md',
+  'protocol/mousecard-v1.md',
+  'protocol/tmouse-1.md',
   'tests/AGENTS.md',
   'third_party/AGENTS.md',
   'third_party/tailcat/LICENSE',
@@ -54,6 +56,25 @@ for (const path of required) {
   }
 }
 
+const protocolContract = readFileSync(
+  join(root, 'protocol/tmouse-1.md'),
+  'utf8',
+);
+for (const anchor of [
+  'Wire identifier `1` denotes TMOUSE/1.0',
+  'Wire identifier `2` denotes TMOUSE/1.1',
+  '### Fail-closed Leash compatibility',
+  '| `0x07` | `AUTH_CHALLENGE`',
+  '| `0x08` | `AUTH_PROOF`',
+  'tailmouse-access-key-v1\\0',
+  'tailmouse-access-proof-v1\\0',
+  '`AUTH_THROTTLED` additionally requires `retry_after_ms`',
+]) {
+  if (!protocolContract.includes(anchor)) {
+    failures.push(`protocol/tmouse-1.md is missing contract anchor: ${anchor}`);
+  }
+}
+
 function filesBelow(directory) {
   const found = [];
   let entries;
@@ -64,9 +85,14 @@ function filesBelow(directory) {
   }
   for (const entry of entries) {
     if (
-      ['.artifacts', '.git', 'coverage', 'dist', 'node_modules'].includes(
-        entry.name,
-      )
+      [
+        '.artifacts',
+        '.git',
+        'coverage',
+        'dist',
+        'node_modules',
+        'test-results',
+      ].includes(entry.name)
     ) {
       continue;
     }

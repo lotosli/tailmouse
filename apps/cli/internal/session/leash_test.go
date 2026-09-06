@@ -252,6 +252,104 @@ func TestLeashResetSnapshotAndGenerationBarrier(t *testing.T) {
 	assertTerminalCode(t, host.terminal.input(connection, input), protocol.CodeUnauthorized)
 }
 
+func TestLeashDisconnectDiscardsConnectionLocalWork(t *testing.T) {
+	host, connection, pump := terminalFixture(t, Config{}, nil)
+	terminalStates(t, host, connection)
+	control, err := protocol.ProcessControlFrame(protocol.ProcessControl{Generation: 1, Action: "interrupt"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resize := protocol.Frame{Type: protocol.TypeTermResize, Payload: []byte{0, 100, 0, 40}}
+	if err := host.terminal.input(connection, control); err != nil {
+		t.Fatal(err)
+	}
+	if err := host.terminal.input(connection, resize); err != nil {
+		t.Fatal(err)
+	}
+	host.terminal.barrier = true
+	host.terminal.barrierPing = []byte("old-generation-ping")
+
+	host.terminal.detach(connection)
+	if !host.Authority.Disconnect(connection.lease, time.Now()) {
+		t.Fatal("old active lease did not disconnect")
+	}
+	if _, ok := host.TakeLeashControl(); ok {
+		t.Fatal("disconnected stream retained process control")
+	}
+	if _, ok := host.TakeLeashSize(); ok {
+		t.Fatal("disconnected stream retained resize work")
+	}
+	if host.leashOutput(connection) != nil {
+		t.Fatal("disconnected stream retained its output subscription")
+	}
+	if _, ok, err := host.terminal.next(connection); ok || err != nil {
+		t.Fatal("disconnected stream retained output or generation work", err)
+	}
+	for _, frame := range []protocol.Frame{
+		{Type: protocol.TypeTermInput, Payload: []byte("late")},
+		resize,
+		control,
+	} {
+		assertTerminalCode(t, host.terminal.input(connection, frame), protocol.CodeUnauthorized)
+	}
+	host.terminal.mu.Lock()
+	retained := host.terminal.connection != nil || host.terminal.subscription != nil || host.terminal.history != nil || host.terminal.live != nil || host.terminal.control != nil || host.terminal.size != nil || host.terminal.interruptAck != nil || host.terminal.barrier || host.terminal.barrierPing != nil
+	host.terminal.mu.Unlock()
+	if retained {
+		t.Fatal("disconnect retained connection-local terminal state")
+	}
+
+	lease, err := host.Authority.Acquire(testHostID, "leash", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	replacement := &hostConnection{host: host, ctx: t.Context(), lease: lease, leashWake: make(chan struct{}, 1)}
+	host.terminal.attach(replacement)
+	t.Cleanup(func() { host.terminal.detach(replacement) })
+	frame, ok, err := host.terminal.next(replacement)
+	if err != nil || !ok || frame.Type != protocol.TypeTermReset {
+		t.Fatal("replacement did not begin with fresh generation reset", err)
+	}
+	clear(frame.Payload)
+	if pump.PendingInput() != 0 {
+		t.Fatal("late old-stream input entered the process queue")
+	}
+}
+
+func TestLeashRetainsOnlyFinalResultAndBoundedHistory(t *testing.T) {
+	data := bytes.Repeat([]byte("final-output"), 7000)
+	host, connection, pump := terminalFixture(t, Config{}, data)
+	exitCode := 37
+	if err := host.RetainLeash(protocol.ProcessState{Generation: 1, State: "exited", ExitCode: &exitCode}, pump); err != nil {
+		t.Fatal(err)
+	}
+	host.terminal.mu.Lock()
+	retainedPump := host.terminal.pump
+	retainedBytes := len(host.terminal.retained)
+	retainedDrop := host.terminal.retainedDropped
+	host.terminal.mu.Unlock()
+	if retainedPump != nil || retainedBytes != leash.MinScrollback || retainedDrop != uint64(len(data)-leash.MinScrollback) {
+		t.Fatal("retained result kept live Pump resources or the wrong bounded history")
+	}
+	if metrics := host.InspectMetrics(); metrics.OutputRingUsed != leash.MinScrollback || metrics.OutputDroppedBytes != uint64(len(data)-leash.MinScrollback) {
+		t.Fatalf("retained history metrics = %+v", metrics)
+	}
+	states := terminalStates(t, host, connection)
+	if len(states) != 1 || states[0].State != "exited" || states[0].ExitCode == nil || *states[0].ExitCode != 37 {
+		t.Fatalf("safe retained result = %+v", states)
+	}
+	if err := host.PublishLeash(protocol.ProcessState{Generation: 2, State: "starting"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	host.terminal.mu.Lock()
+	retainedBytes, retainedDrop = len(host.terminal.retained), host.terminal.retainedDropped
+	host.terminal.mu.Unlock()
+	if retainedBytes != 0 || retainedDrop != 0 {
+		t.Fatal("new generation retained the prior result history")
+	}
+	clear(data)
+}
+
 func terminalStates(t *testing.T, host *Host, connection *hostConnection) []protocol.ProcessState {
 	t.Helper()
 	var states []protocol.ProcessState

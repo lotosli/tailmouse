@@ -5,6 +5,7 @@ package session
 import (
 	"crypto/subtle"
 	"errors"
+	"io"
 	"slices"
 	"sync"
 	"time"
@@ -45,8 +46,10 @@ type Config struct {
 	TTL            time.Duration
 	ReconnectGrace time.Duration
 	Readonly       bool
+	NoPassword     bool
 	NoRestart      bool
 	NoTerminate    bool
+	entropy        io.Reader
 }
 
 // Lease is a host-local connection generation, not a reconnect credential.
@@ -72,17 +75,22 @@ type Session struct {
 	capabilities   []string
 	grace          time.Duration
 	nextLease      Lease
+	everActive     bool
 	cleanupStarted bool
 	snapshot       Snapshot
 }
 
 func New(config Config, now time.Time) (*Session, error) {
-	if (config.Mode != "escape" && config.Mode != "leash") || config.SessionID == [16]byte{} || config.TTL < 0 || config.ReconnectGrace < 0 {
+	if (config.Mode != "escape" && config.Mode != "leash") || config.SessionID == [16]byte{} || config.TTL < 0 || config.ReconnectGrace < 0 || (config.Mode != "leash" && config.NoPassword) {
 		return nil, ErrInvalidConfig
+	}
+	grace := config.ReconnectGrace
+	if config.Mode == "leash" {
+		grace = 0
 	}
 	session := &Session{
 		mode: config.Mode, identifier: config.SessionID, readonly: config.Readonly,
-		noRestart: config.NoRestart, noTerminate: config.NoTerminate, grace: config.ReconnectGrace,
+		noRestart: config.NoRestart, noTerminate: config.NoTerminate, grace: grace,
 		snapshot: Snapshot{State: Creating},
 	}
 	if config.TTL > 0 {
@@ -149,14 +157,8 @@ func (session *Session) Acquire(identifier [16]byte, mode string, now time.Time)
 	session.mu.Lock()
 	defer session.mu.Unlock()
 	session.expire(now)
-	if session.terminal() {
-		return 0, sessionError(protocol.CodeExpired)
-	}
-	if subtle.ConstantTimeCompare(identifier[:], session.identifier[:]) != 1 {
-		return 0, sessionError(protocol.CodeBadMouseCard)
-	}
-	if mode != session.mode {
-		return 0, sessionError(protocol.CodeModeMismatch)
+	if err := session.validatePeer(identifier, mode); err != nil {
+		return 0, err
 	}
 	if session.snapshot.State == Active {
 		return 0, sessionError(protocol.CodeSessionBusy)
@@ -164,14 +166,35 @@ func (session *Session) Acquire(identifier [16]byte, mode string, now time.Time)
 	if session.snapshot.State != Connecting && session.snapshot.State != Listening && session.snapshot.State != ReconnectGrace {
 		return 0, ErrInvalidTransition
 	}
-	if session.snapshot.State == ReconnectGrace {
+	if session.snapshot.State == ReconnectGrace || session.mode == "leash" && session.everActive {
 		session.snapshot.Reconnects++
 	}
 	session.nextLease++
 	session.snapshot.Owner = session.nextLease
 	session.snapshot.State = Active
 	session.snapshot.GraceDeadline = time.Time{}
+	session.everActive = true
 	return session.snapshot.Owner, nil
+}
+
+func (session *Session) ValidatePeer(identifier [16]byte, mode string, now time.Time) error {
+	session.mu.Lock()
+	defer session.mu.Unlock()
+	session.expire(now)
+	return session.validatePeer(identifier, mode)
+}
+
+func (session *Session) validatePeer(identifier [16]byte, mode string) error {
+	if session.terminal() {
+		return sessionError(protocol.CodeExpired)
+	}
+	if subtle.ConstantTimeCompare(identifier[:], session.identifier[:]) != 1 {
+		return sessionError(protocol.CodeBadMouseCard)
+	}
+	if mode != session.mode {
+		return sessionError(protocol.CodeModeMismatch)
+	}
+	return nil
 }
 
 // Disconnect ignores stale or repeated notifications from a superseded stream.
@@ -182,9 +205,14 @@ func (session *Session) Disconnect(lease Lease, now time.Time) bool {
 	if session.snapshot.State != Active || lease == 0 || session.snapshot.Owner != lease {
 		return false
 	}
-	session.snapshot.State = ReconnectGrace
 	session.snapshot.Owner = 0
-	session.snapshot.GraceDeadline = now.Add(session.grace)
+	if session.mode == "leash" {
+		session.snapshot.State = Listening
+		session.snapshot.GraceDeadline = time.Time{}
+	} else {
+		session.snapshot.State = ReconnectGrace
+		session.snapshot.GraceDeadline = now.Add(session.grace)
+	}
 	session.expire(now)
 	return true
 }

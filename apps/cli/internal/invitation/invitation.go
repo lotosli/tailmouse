@@ -20,7 +20,9 @@ import (
 
 const (
 	CardVersion          uint8  = 1
-	ProtocolVersion      uint16 = 1
+	EscapeProtocol       uint16 = 1
+	LeashProtocol        uint16 = 2
+	ProtocolVersion             = EscapeProtocol
 	VirtualPort          uint16 = 44321
 	MaxInvitationBytes          = 1400
 	MaxCardBytes                = 1050
@@ -122,9 +124,10 @@ func New(webBaseURL string, card MouseCard) (*Invitation, error) {
 
 // DisplayOptions contains only non-secret presentation inputs.
 type DisplayOptions struct {
-	Relay    string
-	NoQR     bool
-	Readonly bool
+	Relay      string
+	NoQR       bool
+	Readonly   bool
+	AccessMode string
 }
 
 // Render writes the deliberate invitation surface. The URL appears literally
@@ -137,7 +140,9 @@ func (invitation *Invitation) Render(
 	if len(invitation.url) == 0 {
 		return ErrErased
 	}
-	if output == nil || !validRelayLabel(options.Relay) {
+	if output == nil || !validRelayLabel(options.Relay) ||
+		(invitation.mode == ModeLeash && options.AccessMode != "code" && options.AccessMode != "link") ||
+		(invitation.mode == ModeEscape && options.AccessMode != "") {
 		return ErrDisplay
 	}
 
@@ -163,7 +168,11 @@ func (invitation *Invitation) Render(
 	); err != nil {
 		return ErrDisplay
 	}
-	rendered.WriteString("Anyone with this link can access this session until it expires.\nTreat it like a password.\n")
+	if invitation.mode == ModeEscape || options.AccessMode == "link" {
+		rendered.WriteString("Anyone with this link can access this session until it expires.\nTreat it like a password.\n")
+	} else {
+		rendered.WriteString("Keep this invitation private.\nThe separate access code is also required.\n")
+	}
 	if invitation.mode == ModeLeash {
 		if options.Readonly {
 			rendered.WriteString("Browser access is view-only.\n")
@@ -203,9 +212,14 @@ func validCard(card MouseCard) bool {
 		(card.Mode != ModeEscape && card.Mode != ModeLeash) ||
 		card.TailcatAddr == "" ||
 		card.Port != VirtualPort ||
-		card.ExpiresAt < 0 || card.ExpiresAt > MaxExpiryUnixSeconds ||
-		card.ProtocolMin != ProtocolVersion ||
-		card.ProtocolMax < card.ProtocolMin {
+		card.ExpiresAt < 0 || card.ExpiresAt > MaxExpiryUnixSeconds {
+		return false
+	}
+	expectedProtocol := EscapeProtocol
+	if card.Mode == ModeLeash {
+		expectedProtocol = LeashProtocol
+	}
+	if card.ProtocolMin != expectedProtocol || card.ProtocolMax != expectedProtocol {
 		return false
 	}
 	return card.SessionID != [16]byte{}

@@ -114,6 +114,13 @@ func TestOnlyOneValidHelloAcquiresEachGeneration(t *testing.T) {
 		if !session.Disconnect(session.Inspect(now).Owner, now) {
 			t.Fatal("owner could not disconnect")
 		}
+		state := session.Inspect(now)
+		if state.State != Listening || state.Owner != 0 || !state.GraceDeadline.IsZero() {
+			t.Fatal("Leash disconnect did not return the share directly to listening")
+		}
+	}
+	if session.Inspect(now).Reconnects != 1 {
+		t.Fatal("Leash replacement was not counted exactly once")
 	}
 }
 

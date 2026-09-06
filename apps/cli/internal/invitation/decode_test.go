@@ -16,7 +16,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
-func TestMouseCardProtocolRangeCorpus(t *testing.T) {
+func TestMouseCardModeProtocolCorpus(t *testing.T) {
 	_, source, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("cannot locate shared MouseCard corpus")
@@ -29,12 +29,13 @@ func TestMouseCardProtocolRangeCorpus(t *testing.T) {
 		Cases []struct {
 			ID          string `json:"id"`
 			Accept      bool   `json:"accept"`
+			Mode        Mode   `json:"mode"`
 			ProtocolMin uint16 `json:"protocolMin"`
 			ProtocolMax uint16 `json:"protocolMax"`
 			Hex         string `json:"hex"`
 		} `json:"cases"`
 	}
-	if err := json.Unmarshal(data, &corpus); err != nil || len(corpus.Cases) != 14 {
+	if err := json.Unmarshal(data, &corpus); err != nil || len(corpus.Cases) != 10 {
 		t.Fatal("invalid shared MouseCard corpus")
 	}
 	for _, fixture := range corpus.Cases {
@@ -50,8 +51,8 @@ func TestMouseCardProtocolRangeCorpus(t *testing.T) {
 				}
 				return
 			}
-			if err != nil || card.ProtocolMin != fixture.ProtocolMin || card.ProtocolMax != fixture.ProtocolMax {
-				t.Fatal("compatible range was not preserved")
+			if err != nil || card.Mode != fixture.Mode || card.ProtocolMin != fixture.ProtocolMin || card.ProtocolMax != fixture.ProtocolMax {
+				t.Fatal("exact mode-specific protocol identifier was not preserved")
 			}
 			if !bytes.Equal(mustEncodeCard(t, card), payload) {
 				t.Fatal("compatible card did not round-trip canonically")

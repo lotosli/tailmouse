@@ -125,9 +125,9 @@ func validateFixtureMetadata(t *testing.T, fixture fixtureCase) {
 	t.Helper()
 	validCategories := []string{"boundary", "compatibility", "fragmented", "illegal-state", "malformed", "oversized", "valid"}
 	validReceivers := []string{"browser", "host"}
-	validStates := []string{"active-escape", "active-leash", "await-client-hello", "await-server-welcome"}
-	validMessages := []string{"CLIENT_HELLO", "ERROR", "CLOSE", "GAME_INIT", "GAME_INPUT", "GAME_SNAPSHOT", "GAME_EVENT", "GAME_RESULT", "PING", "SERVER_WELCOME", "TERM_INPUT", "TERM_OUTPUT", "TERM_RESIZE", "TERM_RESET", "PROCESS_CONTROL", "PROCESS_STATE", "OUTPUT_DROPPED"}
-	validErrors := []string{"BAD_FRAME", "FRAME_TOO_LARGE", "MODE_MISMATCH", "PROTOCOL_MISMATCH"}
+	validStates := []string{"active-escape", "active-leash", "await-auth-proof", "await-client-hello", "await-server-welcome"}
+	validMessages := []string{"AUTH_CHALLENGE", "AUTH_PROOF", "CLIENT_HELLO", "ERROR", "CLOSE", "GAME_INIT", "GAME_INPUT", "GAME_SNAPSHOT", "GAME_EVENT", "GAME_RESULT", "PING", "SERVER_WELCOME", "TERM_INPUT", "TERM_OUTPUT", "TERM_RESIZE", "TERM_RESET", "PROCESS_CONTROL", "PROCESS_STATE", "OUTPUT_DROPPED"}
+	validErrors := []string{"AUTH_REQUIRED", "BAD_FRAME", "FRAME_TOO_LARGE", "MODE_MISMATCH", "PROTOCOL_MISMATCH"}
 	if fixture.Description == "" || !slices.Contains(validCategories, fixture.Category) ||
 		!slices.Contains(validReceivers, fixture.Receiver) || !slices.Contains(validStates, fixture.State) {
 		t.Fatalf("fixture %q has invalid metadata", fixture.ID)
@@ -141,7 +141,7 @@ func validateFixtureMetadata(t *testing.T, fixture fixtureCase) {
 	if !fixture.Expect.Accepted && !slices.Contains(validErrors, fixture.Expect.Error) {
 		t.Fatalf("fixture %q names an unknown expected error", fixture.ID)
 	}
-	if fixture.Expect.SelectedProtocol != 0 && fixture.Expect.SelectedProtocol != 1 {
+	if fixture.Expect.SelectedProtocol != 0 && fixture.Expect.SelectedProtocol != 1 && fixture.Expect.SelectedProtocol != 2 {
 		t.Fatalf("fixture %q selects an unsupported protocol", fixture.ID)
 	}
 }

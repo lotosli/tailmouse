@@ -65,6 +65,8 @@ func TestMessageRegistryNamesRulesAndRoutes(t *testing.T) {
 		{TypePing, "PING", PeerHost, StateActiveEscape, make([]byte, 16)},
 		{TypePong, "PONG", PeerBrowser, StateActiveLeash, make([]byte, 16)},
 		{TypeClose, "CLOSE", PeerHost, StateClosing, fixturePayload(t, "valid-close-normal")},
+		{TypeAuthChallenge, "AUTH_CHALLENGE", PeerHost, StateAwaitServerWelcome, fixturePayload(t, "valid-auth-challenge-v2")},
+		{TypeAuthProof, "AUTH_PROOF", PeerBrowser, StateAwaitAuthProof, fixturePayload(t, "valid-auth-proof-v2")},
 		{TypeTermReset, "TERM_RESET", PeerHost, StateActiveLeash, []byte(`{"generation":1,"cols":80,"rows":24}`)},
 		{TypeTermOutput, "TERM_OUTPUT", PeerHost, StateActiveLeash, []byte("a")},
 		{TypeTermInput, "TERM_INPUT", PeerBrowser, StateActiveLeash, []byte("a")},
@@ -249,10 +251,10 @@ func TestHandshakeValidationRejectsInvalidFields(t *testing.T) {
 		}
 	}
 
-	validWelcome := `{"protocol":1,"mode":"leash","session_state":"active","expires_at":1,"relay":{"mode":"official","host":"tc301a.ipn.dev","browser_path":"derp"},"capabilities":["terminal_output"]}`
+	validWelcome := `{"protocol":2,"mode":"leash","session_state":"active","expires_at":1,"relay":{"mode":"official","host":"tc301a.ipn.dev","browser_path":"derp"},"capabilities":["terminal_output"],"access_mode":"code"}`
 	welcomeCases := []string{
 		`{}`,
-		strings.Replace(validWelcome, `"protocol":1`, `"protocol":2`, 1),
+		strings.Replace(validWelcome, `"protocol":2`, `"protocol":1`, 1),
 		strings.Replace(validWelcome, `"mode":"leash"`, `"mode":"admin"`, 1),
 		strings.Replace(validWelcome, `"session_state":"active"`, `"session_state":"closed"`, 1),
 		strings.Replace(validWelcome, `"browser_path":"derp"`, `"browser_path":"udp"`, 1),
@@ -261,6 +263,8 @@ func TestHandshakeValidationRejectsInvalidFields(t *testing.T) {
 		strings.Replace(validWelcome, `["terminal_output"]`, `["terminate","resize"]`, 1),
 		strings.Replace(validWelcome, `["terminal_output"]`, `["terminal_output","terminal_output"]`, 1),
 		strings.Replace(validWelcome, `"browser_path":"derp"`, `"browser_path":"derp","extra":1`, 1),
+		strings.Replace(validWelcome, `"access_mode":"code"`, `"access_mode":"other"`, 1),
+		strings.Replace(validWelcome, `,"access_mode":"code"`, ``, 1),
 	}
 	for index, payload := range welcomeCases {
 		if _, err := validateServerWelcome([]byte(payload)); err == nil {
@@ -386,6 +390,7 @@ func fixtureState(t *testing.T, value string) State {
 	states := map[string]State{
 		"await-client-hello":   StateAwaitClientHello,
 		"await-server-welcome": StateAwaitServerWelcome,
+		"await-auth-proof":     StateAwaitAuthProof,
 		"active-escape":        StateActiveEscape,
 		"active-leash":         StateActiveLeash,
 	}
@@ -439,13 +444,19 @@ func snapshotWith(change func([]byte)) []byte {
 }
 
 func senderFor(message MessageType) Peer {
-	if message == TypeTermInput || message == TypeTermResize || message == TypeProcessControl || message == TypeGameInput || message == TypeGameEvent {
+	if message == TypeAuthProof || message == TypeTermInput || message == TypeTermResize || message == TypeProcessControl || message == TypeGameInput || message == TypeGameEvent {
 		return PeerBrowser
 	}
 	return PeerHost
 }
 
 func stateFor(message MessageType) State {
+	if message == TypeAuthChallenge {
+		return StateAwaitServerWelcome
+	}
+	if message == TypeAuthProof {
+		return StateAwaitAuthProof
+	}
 	if isTerminalMessage(message) {
 		return StateActiveLeash
 	}

@@ -1,8 +1,10 @@
 export interface BuildIdentity {
   readonly version: string;
   readonly tailcatRevision: string;
-  readonly protocolMin: number;
-  readonly protocolMax: number;
+  readonly protocols: Readonly<{
+    readonly escape: 1;
+    readonly leash: 2;
+  }>;
 }
 
 declare const __TAILMOUSE_BUILD__: BuildIdentity;

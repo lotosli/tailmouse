@@ -294,10 +294,18 @@ func TestPumpSnapshotLiveAndBrowserCancellation(t *testing.T) {
 		t.Fatal("browser cancellation ended process")
 	default:
 	}
+	if snapshot, err := pump.FinalSnapshot(); !errors.Is(err, ErrPumpRunning) || len(snapshot.Data) != 0 {
+		t.Fatal("running pump exposed a final retention snapshot")
+	}
 	close(source)
 	if err := <-done; err != nil {
 		t.Fatal(err)
 	}
+	final, err := pump.FinalSnapshot()
+	if err != nil || string(final.Data) != "beforeafter" || final.End != 11 || final.Dropped != 0 {
+		t.Fatal("final retention snapshot changed the completed raw history", err)
+	}
+	clear(final.Data)
 }
 
 func TestPumpInvalidInputAndSubscriptionBounds(t *testing.T) {

@@ -18,7 +18,7 @@ import (
 	"tailmouse/apps/cli/internal/escape"
 )
 
-const DefaultWebBaseURL = "https://tailmouse.dev/"
+const DefaultWebBaseURL = "https://link.tailmouse.com/"
 
 const (
 	ExitOK            = 0
@@ -49,6 +49,12 @@ type Error struct {
 }
 
 func (err *Error) Error() string {
+	if err.Field == "reconnect-grace" {
+		return fmt.Sprintf("invalid reconnect-grace in %s; remove this obsolete setting because Leash now returns to listening after a browser disconnect", err.Source)
+	}
+	if err.Field == "protected credential terminal" {
+		return "protected Leash requires a controlling terminal for the access code; run interactively or explicitly use --no-password"
+	}
 	return fmt.Sprintf("invalid %s in %s; see tailmouse --help", err.Field, err.Source)
 }
 
@@ -77,11 +83,13 @@ type Leash struct {
 	Argv             []string
 	Title            string
 	Readonly         bool
+	NoPassword       bool
 	NoRestart        bool
 	NoTerminate      bool
 	Cwd              string
 	Env              []string
 	PostExitTTL      time.Duration
+	PostExitHost     bool
 	ReconnectGrace   time.Duration
 	ScrollbackBytes  int
 	StartOn          string
@@ -109,13 +117,13 @@ type Options struct {
 func defaults(command string) Options {
 	ttl := 10 * time.Minute
 	if command == "leash" {
-		ttl = 4 * time.Hour
+		ttl = 0
 	}
 	return Options{
 		Command: command, WebBaseURL: DefaultWebBaseURL, TTL: ttl, Once: command == "escape",
 		Relay:   Relay{DERPPort: 443, STUNPort: 3478, RegionID: 900, RegionCode: "mouse", RegionName: "TailMouse Custom DERP"},
 		Escape:  Escape{Control: "touch", Map: "random", Round: escape.DefaultRound, PhoneRender: true, TerminalRender: true, ShowNet: true},
-		Leash:   Leash{PostExitTTL: 10 * time.Minute, ReconnectGrace: 30 * time.Second, ScrollbackBytes: 1 << 20, StartOn: "connect-or-enter", LocalInput: true},
+		Leash:   Leash{PostExitHost: true, ReconnectGrace: 30 * time.Second, ScrollbackBytes: 1 << 20, StartOn: "connect-or-enter", LocalInput: true},
 		Sources: make(map[string]Source),
 	}
 }
@@ -272,8 +280,11 @@ func validate(options Options) error {
 		}
 	}
 	if options.Command == "leash" {
-		if options.Leash.PostExitTTL < 0 || options.Leash.ReconnectGrace < 0 {
-			return bad("leash duration")
+		if options.SourceOf("reconnect-grace") != Default {
+			return bad("reconnect-grace")
+		}
+		if options.Leash.PostExitTTL < 0 || (options.Leash.PostExitHost && options.Leash.PostExitTTL != 0) {
+			return bad("post-exit-ttl")
 		}
 		if options.Leash.ScrollbackBytes < 64<<10 || options.Leash.ScrollbackBytes > 16<<20 {
 			return bad("scrollback-bytes")
@@ -282,7 +293,24 @@ func validate(options Options) error {
 			return bad("start-on")
 		}
 	}
+	if options.Command != "leash" && options.Leash.NoPassword {
+		return bad("no-password")
+	}
 	return nil
+}
+
+func parsePostExitTTL(value string) (time.Duration, bool, error) {
+	if value == "host" {
+		return 0, true, nil
+	}
+	if value == "0" {
+		return 0, false, nil
+	}
+	duration, err := time.ParseDuration(value)
+	if err != nil || duration <= 0 {
+		return 0, false, errors.New("invalid post-exit retention")
+	}
+	return duration, false, nil
 }
 
 func validateCommand(options Options) error {

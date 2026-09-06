@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"io"
 	"sync"
@@ -13,10 +14,15 @@ import (
 )
 
 const (
-	MaxConnections    = 8 // One owner plus bounded concurrent handshake attempts.
-	handshakeLimit    = 10 * time.Second
-	closeLimit        = 2 * time.Second
-	peerLivenessLimit = 30 * time.Second
+	MaxConnections           = 8 // Escape retains the original bounded handshake capacity.
+	MaxPendingAuthentication = 4
+	handshakeLimit           = 10 * time.Second
+	authenticationLimit      = 30 * time.Second
+	authenticationByteLimit  = 4096
+	authenticationFailures   = 10
+	authenticationCooldown   = 30 * time.Second
+	closeLimit               = 2 * time.Second
+	peerLivenessLimit        = 30 * time.Second
 )
 
 var ErrShutdown = errors.New("session stream shutdown did not complete gracefully")
@@ -45,6 +51,11 @@ type Host struct {
 	observe                                              func(Event) error
 	game                                                 *escapeGame
 	terminal                                             *leashTerminal
+	entropy                                              io.Reader
+	accessMode                                           string
+	accessCode                                           AccessCode
+	authFailures                                         int
+	authCooldownUntil                                    time.Time
 	bytesTX, bytesRX, framesTX, framesRX, protocolErrors atomic.Uint64
 }
 
@@ -66,16 +77,20 @@ const (
 )
 
 type hostConnection struct {
-	host      *Host
-	stream    io.ReadWriteCloser
-	ctx       context.Context
-	cancel    context.CancelFunc
-	writeSlot chan struct{}
-	gameWake  chan struct{}
-	leashWake chan struct{}
-	lease     Lease     // Protected by Host.mu.
-	closing   bool      // Protected by Host.mu.
-	lastPong  time.Time // Protected by Host.mu; initialized on accepted HELLO.
+	host              *Host
+	stream            io.ReadWriteCloser
+	ctx               context.Context
+	cancel            context.CancelFunc
+	writeSlot         chan struct{}
+	gameWake          chan struct{}
+	leashWake         chan struct{}
+	lease             Lease     // Protected by Host.mu.
+	closing           bool      // Protected by Host.mu.
+	authenticated     bool      // Protected by Host.mu.
+	preAdmissionBytes int       // Protected by Host.mu.
+	challenge         [32]byte  // Protected by Host.mu.
+	challengeIssued   bool      // Protected by Host.mu.
+	lastPong          time.Time // Protected by Host.mu; initialized on accepted HELLO.
 }
 
 type Metrics struct {
@@ -107,6 +122,8 @@ func (host *Host) InspectMetrics() Metrics {
 		metrics.ProcessGeneration, metrics.OutputDroppedBytes = terminal.state.Generation, terminal.dropped
 		if terminal.pump != nil {
 			metrics.OutputRingUsed = terminal.pump.RetainedOutputBytes()
+		} else {
+			metrics.OutputRingUsed = len(terminal.retained)
 		}
 		terminal.mu.Unlock()
 	}
@@ -125,8 +142,25 @@ func (host *Host) InspectMetrics() Metrics {
 }
 
 func (connection *hostConnection) Read(buffer []byte) (int, error) {
+	connection.host.mu.Lock()
+	if connection.host.mode == "leash" && connection.lease == 0 {
+		remaining := authenticationByteLimit - connection.preAdmissionBytes
+		if remaining <= 0 {
+			connection.host.mu.Unlock()
+			return 0, errAuthenticationBudget
+		}
+		if len(buffer) > remaining {
+			buffer = buffer[:remaining]
+		}
+	}
+	connection.host.mu.Unlock()
 	count, err := connection.stream.Read(buffer)
 	connection.host.bytesRX.Add(uint64(count))
+	connection.host.mu.Lock()
+	if connection.host.mode == "leash" && connection.lease == 0 {
+		connection.preAdmissionBytes += count
+	}
+	connection.host.mu.Unlock()
 	return count, err
 }
 
@@ -147,12 +181,36 @@ func NewHost(ctx context.Context, config Config, now time.Time, observe func(Eve
 		return nil, err
 	}
 	ctx, cancel := context.WithCancel(ctx)
-	return &Host{
+	entropy := config.entropy
+	if entropy == nil {
+		entropy = rand.Reader
+	}
+	host := &Host{
 		Authority: authority, mode: config.Mode, ctx: ctx, cancel: cancel, observe: observe,
 		ready: make(chan struct{}), changed: make(chan struct{}, 1), stopped: make(chan struct{}),
 		firstHello: make(chan struct{}), disconnected: make(chan struct{}, 1),
-		connections: make(map[*hostConnection]struct{}),
-	}, nil
+		connections: make(map[*hostConnection]struct{}), entropy: entropy,
+	}
+	if config.Mode == "leash" {
+		host.accessMode = "code"
+		if config.NoPassword {
+			host.accessMode = "link"
+		} else {
+			code, err := newAccessCode(entropy)
+			if err != nil {
+				cancel()
+				return nil, err
+			}
+			host.accessCode = code
+		}
+	}
+	return host, nil
+}
+
+func (host *Host) AccessCodeForDisplay() (AccessCode, bool) {
+	host.mu.Lock()
+	defer host.mu.Unlock()
+	return host.accessCode, host.accessMode == "code" && host.accessCode != (AccessCode{})
 }
 
 // FirstHello closes exactly once after a valid peer acquires authority. It is
@@ -179,6 +237,9 @@ func (host *Host) Listen(relayMode, relayHost string, now time.Time) error {
 	}
 	welcome := protocol.Welcome{Mode: host.mode, ExpiresAt: expires, RelayMode: relayMode,
 		RelayHost: relayHost, Capabilities: host.Authority.Capabilities()}
+	if host.mode == "leash" {
+		welcome.AccessMode = host.accessMode
+	}
 	if _, err := protocol.WelcomeFrame(welcome); err != nil {
 		return err
 	}
@@ -200,7 +261,8 @@ func (host *Host) Accept(stream io.ReadWriteCloser) bool {
 		return false
 	}
 	host.mu.Lock()
-	if host.closing || host.ctx.Err() != nil || len(host.connections) >= MaxConnections {
+	tooManyPending := host.mode == "leash" && host.pendingAuthenticationLocked() >= MaxPendingAuthentication
+	if host.closing || host.ctx.Err() != nil || len(host.connections) >= MaxConnections || tooManyPending {
 		host.mu.Unlock()
 		_ = stream.Close()
 		return false
@@ -250,21 +312,28 @@ func (host *Host) serve(connection *hostConnection) {
 		}
 		host.notify()
 		host.mu.Lock()
+		clear(connection.challenge[:])
+		connection.challengeIssued = false
+		connection.authenticated = false
 		delete(host.connections, connection)
 		if host.closing && len(host.connections) == 0 {
 			close(host.stopped)
 		}
 		host.mu.Unlock()
 	}()
+	admissionLimit := handshakeLimit
+	if host.mode == "leash" {
+		admissionLimit = authenticationLimit
+	}
+	admissionContext, cancelAdmission := context.WithTimeout(connection.ctx, admissionLimit)
+	defer cancelAdmission()
 	select {
 	case <-host.ready:
-	case <-connection.ctx.Done():
+	case <-admissionContext.Done():
 		return
 	}
 	_ = host.Authority.BeginConnect(time.Now()) // Busy peers still validate HELLO before rejection.
-	helloContext, cancel := context.WithTimeout(connection.ctx, handshakeLimit)
-	frame, err := protocol.ReadFrame(helloContext, connection, protocol.PeerHost, protocol.StateAwaitClientHello)
-	cancel()
+	frame, err := protocol.ReadFrame(admissionContext, connection, protocol.PeerHost, protocol.StateAwaitClientHello)
 	if err != nil {
 		if !errors.Is(err, io.EOF) && host.ctx.Err() == nil {
 			host.reject(connection, err, protocol.StateAwaitServerWelcome)
@@ -278,12 +347,86 @@ func (host *Host) serve(connection *hostConnection) {
 		host.reject(connection, err, protocol.StateAwaitServerWelcome)
 		return
 	}
+	if host.mode == "leash" {
+		if err := host.Authority.ValidatePeer(hello.SessionID, hello.Mode, time.Now()); err != nil {
+			hello.SessionID = [16]byte{}
+			host.reject(connection, err, protocol.StateAwaitServerWelcome)
+			return
+		}
+		if host.accessMode == "code" {
+			if err := host.authenticationThrottle(time.Now()); err != nil {
+				hello.SessionID = [16]byte{}
+				host.reject(connection, err, protocol.StateAwaitServerWelcome)
+				return
+			}
+			challenge, err := host.issueChallenge(connection)
+			if err != nil {
+				hello.SessionID = [16]byte{}
+				host.finish(InternalFailure)
+				return
+			}
+			challengeFrame, err := protocol.AuthChallengeFrame(challenge)
+			clear(challenge[:])
+			if err != nil {
+				hello.SessionID = [16]byte{}
+				host.finish(ProtocolFailure)
+				return
+			}
+			if err := connection.send(admissionContext, protocol.StateAwaitServerWelcome, challengeFrame); err != nil {
+				clear(challengeFrame.Payload)
+				hello.SessionID = [16]byte{}
+				return
+			}
+			clear(challengeFrame.Payload)
+			proofFrame, readErr := protocol.ReadFrame(admissionContext, connection, protocol.PeerHost, protocol.StateAwaitAuthProof)
+			if readErr != nil {
+				_, _ = host.consumeChallenge(connection)
+				hello.SessionID = [16]byte{}
+				if _, ok := protocol.ErrorCodeOf(readErr); ok && connection.ctx.Err() == nil && admissionContext.Err() == nil {
+					host.reject(connection, host.authenticationFailure(time.Now()), protocol.StateAwaitAuthProof)
+				}
+				return
+			}
+			host.framesRX.Add(1)
+			proof, proofErr := protocol.DecodeAuthProof(proofFrame)
+			clear(proofFrame.Payload)
+			issuedChallenge, issued := host.consumeChallenge(connection)
+			if proofErr != nil || !issued {
+				clear(proof[:])
+				clear(issuedChallenge[:])
+				hello.SessionID = [16]byte{}
+				host.reject(connection, host.authenticationFailure(time.Now()), protocol.StateAwaitAuthProof)
+				return
+			}
+			if err := host.authenticationThrottle(time.Now()); err != nil {
+				clear(proof[:])
+				clear(issuedChallenge[:])
+				hello.SessionID = [16]byte{}
+				host.reject(connection, err, protocol.StateAwaitAuthProof)
+				return
+			}
+			code, available := host.AccessCodeForDisplay()
+			verified := available && VerifyAccessProof(code, hello.SessionID, issuedChallenge, proof)
+			clear(code[:])
+			clear(proof[:])
+			clear(issuedChallenge[:])
+			if !verified {
+				hello.SessionID = [16]byte{}
+				host.reject(connection, host.authenticationFailure(time.Now()), protocol.StateAwaitAuthProof)
+				return
+			}
+			host.authenticationSucceeded(connection)
+		} else {
+			host.authenticationSucceeded(connection)
+		}
+	}
 	lease, err := host.Authority.Acquire(hello.SessionID, hello.Mode, time.Now())
 	hello.SessionID = [16]byte{}
 	if err != nil {
 		host.reject(connection, err, protocol.StateAwaitServerWelcome)
 		return
 	}
+	cancelAdmission()
 	host.mu.Lock()
 	connection.lease = lease
 	connection.lastPong = time.Now()
@@ -569,7 +712,12 @@ func (host *Host) waitForEOF(connection *hostConnection) bool {
 }
 
 func (host *Host) finish(outcome Outcome) {
-	_, _ = host.Authority.Finish(outcome)
+	changed, _ := host.Authority.Finish(outcome)
+	if changed {
+		host.mu.Lock()
+		host.clearAuthenticationLocked()
+		host.mu.Unlock()
+	}
 	host.notify()
 }
 
@@ -692,8 +840,12 @@ func (host *Host) Close(reason string) error {
 		}
 		<-host.stopped // Close of the stream contract unblocks Read and Write.
 		host.mu.Lock()
+		terminal := host.terminal
 		host.welcome = protocol.Welcome{}
 		host.mu.Unlock()
+		if terminal != nil {
+			terminal.close()
+		}
 	})
 	return host.closeErr
 }

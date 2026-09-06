@@ -23,9 +23,11 @@ type leashTerminal struct {
 	connection        *hostConnection
 	subscription      *leash.Subscription
 	history           []byte
+	retained          []byte
 	reset, stateDirty bool
 	interruptAck      *protocol.ProcessState
 	dropped, reported uint64
+	retainedDropped   uint64
 	live              []byte
 	barrier           bool
 	barrierPing       []byte
@@ -81,6 +83,8 @@ func (host *Host) PublishLeash(state protocol.ProcessState, pump *leash.Pump) er
 	changed := pump != terminal.pump || state.Generation != terminal.state.Generation
 	restart := state.Generation != terminal.state.Generation || terminal.pump != nil && pump != terminal.pump
 	if changed {
+		clear(terminal.retained)
+		terminal.retained, terminal.retainedDropped = nil, 0
 		terminal.dropped = 0
 		terminal.interruptAck = nil
 	} else if terminal.connection != nil && terminal.interruptAck == nil && terminal.stateDirty && terminal.state.State == "interrupting" && state.State == "running" {
@@ -99,6 +103,47 @@ func (host *Host) PublishLeash(state protocol.ProcessState, pump *leash.Pump) er
 	return nil
 }
 
+// RetainLeash replaces a fully drained generation with only its safe process
+// result and bounded history. It deliberately releases the Pump, its PTY
+// reference, input queue, live-delivery ring and subscriber state.
+func (host *Host) RetainLeash(state protocol.ProcessState, pump *leash.Pump) error {
+	if state.State != "exited" || pump == nil {
+		return ErrInvalidTransition
+	}
+	frame, err := protocol.ProcessStateFrame(state)
+	if err != nil {
+		return err
+	}
+	state, err = protocol.DecodeProcessState(frame)
+	clear(frame.Payload)
+	if err != nil {
+		return err
+	}
+	snapshot, err := pump.FinalSnapshot()
+	if err != nil {
+		return err
+	}
+	terminal := host.terminal
+	if terminal == nil {
+		clear(snapshot.Data)
+		return ErrInvalidTransition
+	}
+	terminal.mu.Lock()
+	defer terminal.mu.Unlock()
+	if terminal.pump != pump || terminal.state.Generation != state.Generation {
+		clear(snapshot.Data)
+		return ErrInvalidTransition
+	}
+	clear(terminal.retained)
+	terminal.retained, terminal.retainedDropped = snapshot.Data, snapshot.Dropped
+	terminal.state, terminal.pump = state, nil
+	terminal.dropped = snapshot.Dropped
+	terminal.interruptAck = nil
+	terminal.snapshotLocked()
+	terminal.wakeLocked()
+	return nil
+}
+
 func (terminal *leashTerminal) snapshotLocked() {
 	if terminal.subscription != nil {
 		terminal.subscription.Close()
@@ -111,6 +156,9 @@ func (terminal *leashTerminal) snapshotLocked() {
 		snapshot, subscription := terminal.pump.Subscribe()
 		terminal.history, terminal.subscription = snapshot.Data, subscription
 		terminal.dropped = max(terminal.dropped, snapshot.Dropped)
+	} else if len(terminal.retained) > 0 || terminal.retainedDropped > 0 {
+		terminal.history = bytes.Clone(terminal.retained)
+		terminal.dropped = max(terminal.dropped, terminal.retainedDropped)
 	}
 	terminal.reset, terminal.stateDirty = true, true
 	terminal.interruptAck = nil
@@ -139,7 +187,28 @@ func (terminal *leashTerminal) detach(connection *hostConnection) {
 	terminal.connection, terminal.subscription, terminal.history, terminal.live = nil, nil, nil, nil
 	terminal.barrier, terminal.barrierPing = false, nil
 	terminal.control = nil
+	if terminal.size != nil && terminal.size.lease == connection.lease {
+		terminal.size = nil
+	}
 	terminal.interruptAck = nil
+}
+
+func (terminal *leashTerminal) close() {
+	terminal.mu.Lock()
+	defer terminal.mu.Unlock()
+	if terminal.subscription != nil {
+		terminal.subscription.Close()
+	}
+	clear(terminal.history)
+	clear(terminal.retained)
+	clear(terminal.live)
+	clear(terminal.barrierPing)
+	terminal.state = protocol.ProcessState{}
+	terminal.pump, terminal.connection, terminal.subscription = nil, nil, nil
+	terminal.history, terminal.retained, terminal.live, terminal.barrierPing = nil, nil, nil, nil
+	terminal.control, terminal.size, terminal.interruptAck = nil, nil, nil
+	terminal.dropped, terminal.reported, terminal.retainedDropped = 0, 0, 0
+	terminal.barrier, terminal.reset, terminal.stateDirty = false, false, false
 }
 
 func (terminal *leashTerminal) wakeLocked() {

@@ -32,7 +32,7 @@ func TestModeDefaults(t *testing.T) {
 					t.Fatal("incorrect Escape defaults")
 				}
 			} else {
-				if options.TTL != 4*time.Hour || options.Once || options.Leash.PostExitTTL != 10*time.Minute || options.Leash.ReconnectGrace != 30*time.Second || options.Leash.ScrollbackBytes != 1<<20 || options.Leash.StartOn != "connect-or-enter" || !options.Leash.LocalInput || options.Leash.KillOnExpire || options.Leash.KillOnDisconnect {
+				if options.TTL != 0 || options.Once || options.Leash.PostExitTTL != 0 || !options.Leash.PostExitHost || options.Leash.NoPassword || options.Leash.ReconnectGrace != 30*time.Second || options.Leash.ScrollbackBytes != 1<<20 || options.Leash.StartOn != "connect-or-enter" || !options.Leash.LocalInput || options.Leash.KillOnExpire || options.Leash.KillOnDisconnect {
 					t.Fatal("incorrect Leash defaults")
 				}
 			}
@@ -74,7 +74,7 @@ func TestPerFieldPrecedence(t *testing.T) {
 
 func TestLeashFlagsPreserveLiteralArgv(t *testing.T) {
 	args := []string{"--no-qr", "leash", "--title", "A terminal", "--readonly", "--no-restart", "--no-terminate", "--cwd", "/tmp",
-		"--env", "A=one", "--env", "A=two=three", "--post-exit-ttl", "0", "--reconnect-grace", "10s", "--scrollback-bytes", "65536",
+		"--env", "A=one", "--env", "A=two=three", "--post-exit-ttl", "0", "--no-password", "--scrollback-bytes", "65536",
 		"--start-on", "now", "--kill-on-expire", "--kill-on-disconnect", "--local-input=false", "--", "echo", "$HOME", "*", "|", ">", "--ttl"}
 	options, _, err := Resolve(args, nil, t.TempDir())
 	if err != nil {
@@ -90,8 +90,80 @@ func TestLeashFlagsPreserveLiteralArgv(t *testing.T) {
 	if options.Leash.Argv[len(options.Leash.Argv)-1] != "--ttl" {
 		t.Fatal("argv aliases caller memory")
 	}
-	if !options.Leash.Readonly || !options.Leash.NoRestart || !options.Leash.NoTerminate || !options.Leash.KillOnExpire || !options.Leash.KillOnDisconnect || options.Leash.LocalInput || options.Leash.PostExitTTL != 0 || options.Leash.Title != "A terminal" || options.Leash.Cwd != "/tmp" {
+	if !options.Leash.Readonly || !options.Leash.NoPassword || !options.Leash.NoRestart || !options.Leash.NoTerminate || !options.Leash.KillOnExpire || !options.Leash.KillOnDisconnect || options.Leash.LocalInput || options.Leash.PostExitTTL != 0 || options.Leash.PostExitHost || options.Leash.Title != "A terminal" || options.Leash.Cwd != "/tmp" {
 		t.Fatal("Leash flags were lost")
+	}
+}
+
+func TestPhaseTwoLeashLifetimeAndAccessConfiguration(t *testing.T) {
+	maximum := "2562047h47m16.854775807s"
+	for _, test := range []struct {
+		value    string
+		host     bool
+		duration time.Duration
+	}{
+		{"host", true, 0},
+		{"0", false, 0},
+		{"1ns", false, time.Nanosecond},
+		{maximum, false, time.Duration(1<<63 - 1)},
+	} {
+		options, _, err := Resolve([]string{"leash", "--post-exit-ttl", test.value, "--", "echo"}, nil, t.TempDir())
+		if err != nil || options.Leash.PostExitHost != test.host || options.Leash.PostExitTTL != test.duration || options.SourceOf("post-exit-ttl") != Flag {
+			t.Fatalf("post-exit retention %q: options=%+v error=%v", test.value, options.Leash, err)
+		}
+	}
+	for _, value := range []string{"", "0s", "0.1ns", "-1ns", "2562047h47m16.854775808s", "forever"} {
+		if _, _, err := Resolve([]string{"leash", "--post-exit-ttl", value, "--", "echo"}, nil, t.TempDir()); ExitCode(err) != ExitConfig {
+			t.Fatalf("invalid post-exit retention %q was accepted", value)
+		}
+	}
+
+	dir := t.TempDir()
+	path := writeConfig(t, dir, "version=1\n[leash]\npost_exit_ttl='5m'\n")
+	options, _, err := Resolve([]string{"leash", "--config", path, "--post-exit-ttl=host", "--no-password", "--", "echo"}, []string{"TAILMOUSE_NO_PASSWORD=false"}, dir)
+	if err != nil || !options.Leash.PostExitHost || options.Leash.PostExitTTL != 0 || !options.Leash.NoPassword || options.SourceOf("post-exit-ttl") != Flag || options.SourceOf("no-password") != Flag {
+		t.Fatalf("Leash flag precedence or CLI-only access mode failed: %v", err)
+	}
+	options, _, err = Resolve([]string{"leash", "--config", path, "--", "echo"}, []string{"TAILMOUSE_NO_PASSWORD=true"}, dir)
+	if err != nil || options.Leash.PostExitHost || options.Leash.PostExitTTL != 5*time.Minute || options.Leash.NoPassword {
+		t.Fatalf("file retention or ignored unknown environment input failed: %v", err)
+	}
+	unknownNoPassword := writeConfig(t, t.TempDir(), "version=1\n[leash]\nno_password=true\n")
+	if _, _, err := Resolve([]string{"leash", "--config", unknownNoPassword, "--", "echo"}, nil, dir); ExitCode(err) != ExitConfig {
+		t.Fatal("configuration-file no-password setting was accepted")
+	}
+	if _, _, err := Resolve([]string{"escape", "--no-password"}, nil, dir); ExitCode(err) != ExitConfig {
+		t.Fatal("Escape accepted the Leash-only no-password flag")
+	}
+}
+
+func TestLeashReconnectGraceMigration(t *testing.T) {
+	dir := t.TempDir()
+	path := writeConfig(t, dir, "version=1\n[session]\nreconnect_grace='15s'\n")
+	for _, test := range []struct {
+		name string
+		args []string
+		env  []string
+	}{
+		{"flag", []string{"leash", "--reconnect-grace=15s", "--", "echo"}, nil},
+		{"environment", []string{"leash", "--", "echo"}, []string{"TAILMOUSE_RECONNECT_GRACE=15s"}},
+		{"empty environment", []string{"leash", "--", "echo"}, []string{"TAILMOUSE_RECONNECT_GRACE="}},
+		{"file", []string{"leash", "--config", path, "--", "echo"}, nil},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			_, _, err := Resolve(test.args, test.env, dir)
+			if ExitCode(err) != ExitConfig || !strings.Contains(err.Error(), "reconnect-grace") || !strings.Contains(err.Error(), "returns to listening") {
+				t.Fatalf("legacy setting did not produce migration guidance: %v", err)
+			}
+		})
+	}
+	options, _, err := Resolve([]string{"escape", "--config", path}, []string{"TAILMOUSE_RECONNECT_GRACE=20s"}, dir)
+	if err != nil || options.Leash.ReconnectGrace != 20*time.Second || options.SourceOf("reconnect-grace") != Environment {
+		t.Fatalf("Escape reconnect configuration changed: %v", err)
+	}
+	emptyPath := writeConfig(t, t.TempDir(), "version=1\n[session]\nreconnect_grace=''\n")
+	if _, _, err := Resolve([]string{"leash", "--config", emptyPath, "--", "echo"}, nil, dir); err != nil {
+		t.Fatalf("empty legacy file field should not configure a deadline: %v", err)
 	}
 }
 
@@ -293,7 +365,6 @@ region_name="Local relay"
 [session]
 escape_ttl="8m"
 leash_ttl="3h"
-reconnect_grace="15s"
 [leash]
 scrollback_bytes=16777216
 post_exit_ttl="5m"
@@ -304,7 +375,7 @@ local_input=false
 	if err != nil {
 		t.Fatal(err)
 	}
-	if options.TTL != 3*time.Hour || options.Leash.ScrollbackBytes != 16<<20 || options.Leash.PostExitTTL != 5*time.Minute || options.Leash.ReconnectGrace != 15*time.Second || options.Leash.LocalInput || options.Leash.StartOn != "connect" || options.Relay.DERPPort != 4443 || options.Relay.STUNPort != 3479 || options.Relay.RegionID != 901 || options.Relay.RegionCode != "local" || options.Relay.RegionName != "Local relay" || len(options.Relay.Hosts) != 2 {
+	if options.TTL != 3*time.Hour || options.Leash.ScrollbackBytes != 16<<20 || options.Leash.PostExitTTL != 5*time.Minute || options.Leash.PostExitHost || options.Leash.ReconnectGrace != 30*time.Second || options.Leash.LocalInput || options.Leash.StartOn != "connect" || options.Relay.DERPPort != 4443 || options.Relay.STUNPort != 3479 || options.Relay.RegionID != 901 || options.Relay.RegionCode != "local" || options.Relay.RegionName != "Local relay" || len(options.Relay.Hosts) != 2 {
 		t.Fatal("TOML values were lost")
 	}
 	if options.SourceOf("local-input") != File || options.SourceOf("ttl") != File {

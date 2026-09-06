@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"net"
 	"testing"
 	"testing/synctest"
@@ -29,25 +30,39 @@ func TestHostTruncatedHandshakeCannotAcquireAuthority(t *testing.T) {
 		if host.Authority.Inspect(time.Now()).Owner != 0 || host.InspectMetrics().FramesRX != 0 {
 			t.Fatal("truncated handshake dispatched data or acquired authority")
 		}
-		_, welcome := connectTestHost(t, host, "leash", testHostID, 1)
+		_, welcome := connectTestHost(t, host, "leash", testHostID, 2)
 		if welcome.Type != protocol.TypeServerWelcome {
 			t.Fatal("later valid handshake failed after rejected partial handshake")
 		}
 	})
 }
 
-func TestHostTruncatedFrameDoesNotExtendReconnectGrace(t *testing.T) {
+func TestHostTruncatedFrameKeepsLeashShareListening(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		host := newTestHost(t, "leash", false)
-		browser, _ := connectTestHost(t, host, "leash", testHostID, 1)
+		browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
 		if _, err := browser.Write([]byte{0}); err != nil {
 			t.Fatal(err)
 		}
 		_ = browser.Close()
 		synctest.Wait()
-		time.Sleep(time.Second)
-		if host.Wait(t.Context()) != GraceExpired {
-			t.Fatal("truncated stream changed the configured one-second reconnect grace")
+		ctx, cancel := context.WithCancel(t.Context())
+		done := make(chan Outcome, 1)
+		go func() { done <- host.Wait(ctx) }()
+		time.Sleep(4*time.Hour + time.Second)
+		synctest.Wait()
+		select {
+		case outcome := <-done:
+			t.Fatalf("truncated stream ended the live Leash share: %s", outcome)
+		default:
+		}
+		if snapshot := host.Authority.Inspect(time.Now()); snapshot.State != Listening || !snapshot.GraceDeadline.IsZero() {
+			t.Fatal("truncated stream did not return Leash to listening")
+		}
+		cancel()
+		synctest.Wait()
+		if outcome := <-done; outcome != LocalRevoke {
+			t.Fatalf("revoke outcome = %s", outcome)
 		}
 	})
 }
@@ -56,7 +71,7 @@ func TestHostTruncatedActiveFrameReleasesLeaseWithoutEndingSession(t *testing.T)
 	for _, prefix := range [][]byte{{0}, {0, 0, 0, 5}, {0, 0, 0, 5, byte(protocol.TypeTermInput)}, {0, 0, 0, 5, byte(protocol.TypeTermInput), 0}, {0, 0, 0, 5, byte(protocol.TypeTermInput), 0, 'o', 'l'}} {
 		synctest.Test(t, func(t *testing.T) {
 			host := newTestHost(t, "leash", false)
-			browser, _ := connectTestHost(t, host, "leash", testHostID, 1)
+			browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
 			before := host.InspectMetrics()
 			if _, err := browser.Write(prefix); err != nil {
 				t.Fatal(err)
@@ -69,7 +84,7 @@ func TestHostTruncatedActiveFrameReleasesLeaseWithoutEndingSession(t *testing.T)
 			if after.ActiveConnection || after.ProtocolErrors != before.ProtocolErrors || after.FramesRX != before.FramesRX {
 				t.Fatal("truncated transport retained authority, dispatched a partial frame or became a protocol failure")
 			}
-			replacement, welcome := connectTestHost(t, host, "leash", testHostID, 1)
+			replacement, welcome := connectTestHost(t, host, "leash", testHostID, 2)
 			if welcome.Type != protocol.TypeServerWelcome {
 				t.Fatal("fresh valid handshake could not replace the interrupted stream")
 			}
@@ -91,7 +106,7 @@ func TestHostInvalidActiveFrameRemainsTerminalAfterEOF(t *testing.T) {
 	} {
 		synctest.Test(t, func(t *testing.T) {
 			host := newTestHost(t, "leash", false)
-			browser, _ := connectTestHost(t, host, "leash", testHostID, 1)
+			browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
 			if _, err := browser.Write(wire); err != nil {
 				t.Fatal(err)
 			}

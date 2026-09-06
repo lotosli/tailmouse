@@ -25,7 +25,7 @@ func TestDecodeHelloRetainsOnlyAuthoritativeHandshakeInputs(t *testing.T) {
 	if err := json.Unmarshal(payload, &value); err != nil {
 		t.Fatal(err)
 	}
-	value["mode"], value["terminal"] = "leash", map[string]int{"cols": 120, "rows": 40}
+	value["mode"], value["protocol_min"], value["protocol_max"], value["terminal"] = "leash", 2, 2, map[string]int{"cols": 120, "rows": 40}
 	payload, _ = json.Marshal(value)
 	hello, err = DecodeHello(Frame{Type: TypeClientHello, Payload: payload})
 	if err != nil || hello.Mode != "leash" || hello.Columns != 120 || hello.Rows != 40 {
@@ -39,9 +39,9 @@ func TestDecodeHelloRetainsOnlyAuthoritativeHandshakeInputs(t *testing.T) {
 }
 
 func TestWelcomeFactoryValidatesAndCopiesAuthority(t *testing.T) {
-	welcome := Welcome{Mode: "leash", ExpiresAt: 0, RelayMode: "custom-host", RelayHost: "relay.example.com", Capabilities: []string{"terminal_output"}}
+	welcome := Welcome{Mode: "leash", ExpiresAt: 0, RelayMode: "custom-host", RelayHost: "relay.example.com", Capabilities: []string{"terminal_output"}, AccessMode: "code"}
 	frame, err := WelcomeFrame(welcome)
-	if err != nil || frame.SelectedProtocol != 1 || frame.Type != TypeServerWelcome {
+	if err != nil || frame.SelectedProtocol != 2 || frame.Type != TypeServerWelcome {
 		t.Fatal("welcome construction failed")
 	}
 	welcome.Capabilities[0] = "terminal_input"
@@ -49,7 +49,7 @@ func TestWelcomeFactoryValidatesAndCopiesAuthority(t *testing.T) {
 	if err := json.Unmarshal(frame.Payload, &value); err != nil {
 		t.Fatal(err)
 	}
-	if value.Capabilities[0] != "terminal_output" || value.ExpiresAt == nil || *value.ExpiresAt != 0 || value.Relay.BrowserPath != "derp" {
+	if value.Capabilities[0] != "terminal_output" || value.ExpiresAt == nil || *value.ExpiresAt != 0 || value.Relay.BrowserPath != "derp" || value.AccessMode == nil || *value.AccessMode != "code" {
 		t.Fatal("welcome shared mutable authority or lost lifetime/relay fields")
 	}
 	welcome.ExpiresAt = -1
@@ -60,6 +60,7 @@ func TestWelcomeFactoryValidatesAndCopiesAuthority(t *testing.T) {
 
 func TestSafeErrorVocabularyAndPeerTextRedaction(t *testing.T) {
 	codes := []ErrorCode{CodeBadMouseCard, CodeExpired, CodeModeMismatch, CodeProtocolMismatch, CodeSessionBusy,
+		CodeAuthRequired, CodeAuthFailed,
 		CodeUnauthorized, CodeFrameTooLarge, CodeBadFrame, CodeProcessNotRunning, CodeRestartDisabled,
 		CodeTerminateDisabled, CodeReadonly, CodeBackpressure, CodeInternal}
 	for _, code := range codes {
@@ -79,7 +80,7 @@ func TestSafeErrorVocabularyAndPeerTextRedaction(t *testing.T) {
 		if err := json.Unmarshal(decoded.Payload, &value); err != nil {
 			t.Fatal(err)
 		}
-		wantRetry := code == CodeSessionBusy || code == CodeProcessNotRunning || code == CodeBackpressure
+		wantRetry := code == CodeSessionBusy || code == CodeAuthFailed || code == CodeProcessNotRunning || code == CodeBackpressure
 		if value.Retryable == nil || *value.Retryable != wantRetry {
 			t.Fatal("stable retry policy changed")
 		}
@@ -89,6 +90,12 @@ func TestSafeErrorVocabularyAndPeerTextRedaction(t *testing.T) {
 			t.Fatal("peer text reached diagnostics")
 		}
 	}
+	throttled := ErrorFrame(&ProtocolError{Code: CodeAuthThrottled, RetryAfterMS: 30_000})
+	decodedThrottle := DecodeError(throttled)
+	var throttleError *ProtocolError
+	if !errors.As(decodedThrottle, &throttleError) || throttleError.Code != CodeAuthThrottled || throttleError.RetryAfterMS != 30_000 {
+		t.Fatal("authentication cooldown detail did not round-trip")
+	}
 	for _, failure := range []error{nil, errors.New("tcSyntheticUpstreamSecret"), &ProtocolError{Code: "tcSyntheticUnknownCode"}} {
 		frame := ErrorFrame(failure)
 		if bytes.Contains(frame.Payload, []byte("tcSynthetic")) {
@@ -96,6 +103,44 @@ func TestSafeErrorVocabularyAndPeerTextRedaction(t *testing.T) {
 		}
 		if code, _ := ErrorCodeOf(DecodeError(frame)); code != CodeInternal {
 			t.Fatal("unknown failure did not become INTERNAL")
+		}
+	}
+}
+
+func TestAuthenticationPayloadFactoriesAndStrictDecoders(t *testing.T) {
+	var challenge [32]byte
+	for index := range challenge {
+		challenge[index] = byte(index)
+	}
+	challengeFrame, err := AuthChallengeFrame(challenge)
+	if err != nil || challengeFrame.Type != TypeAuthChallenge || string(challengeFrame.Payload) != `{"scheme":"hmac-sha256-v1","challenge":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"}` {
+		t.Fatal("challenge factory changed the golden payload")
+	}
+	decodedChallenge, err := DecodeAuthChallenge(challengeFrame)
+	if err != nil || decodedChallenge != challenge {
+		t.Fatal("challenge did not round-trip")
+	}
+	proofFrame, err := AuthProofFrame(challenge)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decodedProof, err := DecodeAuthProof(proofFrame)
+	if err != nil || decodedProof != challenge {
+		t.Fatal("proof did not round-trip")
+	}
+	for _, frame := range []Frame{
+		{Type: TypeAuthChallenge, Payload: make([]byte, 513)},
+		{Type: TypeAuthProof, Payload: make([]byte, 513)},
+		{Type: TypeAuthChallenge, Payload: []byte(`{"scheme":"hmac-sha256-v1","challenge":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="}`)},
+		{Type: TypeAuthProof, Payload: []byte(`{"scheme":"hmac-sha256-v1","proof":"V0OMGOWhH9n8r+cwHjkH06dDCyNQrZQgrlxJXDmzl4s"}`)},
+		{Type: TypeAuthProof, Payload: []byte(`{"scheme":"hmac-sha256-v1","proof":"V0OMGOWhH9n8r-cwHjkH06dDCyNQrZQgrlxJXDmzl4s","proof":"V0OMGOWhH9n8r-cwHjkH06dDCyNQrZQgrlxJXDmzl4s"}`)},
+	} {
+		if frame.Type == TypeAuthChallenge {
+			if _, err := DecodeAuthChallenge(frame); err == nil {
+				t.Fatal("invalid challenge accepted")
+			}
+		} else if _, err := DecodeAuthProof(frame); err == nil {
+			t.Fatal("invalid proof accepted")
 		}
 	}
 }

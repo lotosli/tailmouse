@@ -13,9 +13,11 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 	"syscall"
@@ -177,7 +179,21 @@ func startLeashCLI(t *testing.T, mode string, flags ...string) *leashCLIFixture 
 	return startLeashCLIWithInput(t, mode, input, writeInput, io.Discard, flags...)
 }
 
+func startProtectedLeashCLI(t *testing.T, mode string, flags ...string) *leashCLIFixture {
+	t.Helper()
+	writeInput, input, err := nativepty.Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return startLeashCLIWithInputAccess(t, mode, input, writeInput, io.Discard, false, flags...)
+}
+
 func startLeashCLIWithInput(t *testing.T, mode string, input, writeInput *os.File, diagnostics io.Writer, flags ...string) *leashCLIFixture {
+	t.Helper()
+	return startLeashCLIWithInputAccess(t, mode, input, writeInput, diagnostics, true, flags...)
+}
+
+func startLeashCLIWithInputAccess(t *testing.T, mode string, input, writeInput *os.File, diagnostics io.Writer, linkOnly bool, flags ...string) *leashCLIFixture {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	readOutput, output, err := os.Pipe()
@@ -198,7 +214,11 @@ func startLeashCLIWithInput(t *testing.T, mode string, input, writeInput *os.Fil
 			t.Fatal(err)
 		}
 	}
-	args := append([]string{"leash", "--no-qr", "--post-exit-ttl=30ms"}, flags...)
+	args := []string{"leash", "--no-qr", "--post-exit-ttl=30ms"}
+	if linkOnly {
+		args = append(args, "--no-password")
+	}
+	args = append(args, flags...)
 	args = append(args, "--", binary, "-test.run=^TestLeashCLIChild$")
 	go func() { defer close(fixture.outputDone); _, _ = io.Copy(fixture.output, readOutput) }()
 	configDir := t.TempDir()
@@ -274,7 +294,7 @@ func (fixture *leashCLIFixture) connect(t *testing.T) net.Conn {
 	t.Cleanup(func() { browser.Close() })
 	browser.SetDeadline(time.Now().Add(8 * time.Second))
 	fixture.transport.config.OnConnection(server)
-	payload, _ := json.Marshal(map[string]any{"protocol_min": 1, "protocol_max": 1, "session_id": hex.EncodeToString(fixture.card.SessionID[:]), "mode": "leash", "client": map[string]string{"name": "test-browser", "version": "1", "platform": "test", "user_agent": ""}})
+	payload, _ := json.Marshal(map[string]any{"protocol_min": 2, "protocol_max": 2, "session_id": hex.EncodeToString(fixture.card.SessionID[:]), "mode": "leash", "client": map[string]string{"name": "test-browser", "version": "1", "platform": "test", "user_agent": ""}})
 	if err := protocol.WriteFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateAwaitClientHello, protocol.Frame{Type: protocol.TypeClientHello, Payload: payload}); err != nil {
 		t.Fatal(err)
 	}
@@ -284,6 +304,35 @@ func (fixture *leashCLIFixture) connect(t *testing.T) net.Conn {
 		t.Fatal("Leash handshake failed", err)
 	}
 	return browser
+}
+
+func (fixture *leashCLIFixture) readAccessCode(t *testing.T) session.AccessCode {
+	t.Helper()
+	readContext, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+	defer cancel()
+	pattern := regexp.MustCompile(`[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}(?:-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}){3}`)
+	var output bytes.Buffer
+	data := make([]byte, 256)
+	for {
+		if match := pattern.FindString(output.String()); match != "" {
+			code, err := session.CanonicalAccessCode(match)
+			clear(output.Bytes())
+			clear(data)
+			if err != nil {
+				t.Fatal("credential terminal emitted a noncanonical access code")
+			}
+			return code
+		}
+		if err := pollConsole(readContext, int(fixture.input.Fd()), unix.POLLIN); err != nil {
+			t.Fatal("credential terminal did not become readable", err)
+		}
+		count, err := unix.Read(int(fixture.input.Fd()), data)
+		if err != nil || count == 0 {
+			t.Fatal("credential terminal did not emit an access code", err)
+		}
+		_, _ = output.Write(data[:count])
+		clear(data[:count])
+	}
 }
 
 func terminalFrame(t *testing.T, fixture *leashCLIFixture, browser net.Conn) protocol.Frame {
@@ -348,6 +397,404 @@ func TestLeashCLIStartPoliciesAndInvitationOrdering(t *testing.T) {
 	}
 }
 
+func TestLeashCLIOnceOverridesHostLivedResultRetention(t *testing.T) {
+	fixture := startLeashCLI(t, "exit", "--start-on=now", "--once", "--post-exit-ttl=host", "--local-input=false")
+	fixture.result(t, 37)
+	if strings.Count(fixture.output.text(), "child-finished") != 1 {
+		t.Fatal("--once did not close after publishing the one child result")
+	}
+}
+
+func TestLeashCLIImmediateAndHostRetainedExitPolicies(t *testing.T) {
+	t.Run("literal zero", func(t *testing.T) {
+		fixture := startLeashCLI(t, "exit", "--start-on=now", "--post-exit-ttl=0", "--local-input=false")
+		fixture.result(t, 37)
+		if strings.Count(fixture.output.text(), "child-finished") != 1 {
+			t.Fatal("literal zero did not publish exactly one local result")
+		}
+	})
+
+	t.Run("restart retained result", func(t *testing.T) {
+		input, writer, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var diagnostics bytes.Buffer
+		fixture := startLeashCLIWithInput(t, "exit", input, writer, &diagnostics, "--json", "--start-on=now", "--post-exit-ttl=host", "--local-input=false")
+		fixture.awaitText(t, "child-finished")
+		browser := fixture.connect(t)
+		for {
+			frame := terminalFrame(t, fixture, browser)
+			if frame.Type != protocol.TypeProcessState {
+				continue
+			}
+			state, err := protocol.DecodeProcessState(frame)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if state.State == "exited" && state.Generation == 1 && state.ExitCode != nil && *state.ExitCode == 37 {
+				break
+			}
+		}
+		sendLeashControl(t, fixture, browser, "restart", 1)
+		for {
+			frame := terminalFrame(t, fixture, browser)
+			if frame.Type != protocol.TypeProcessState {
+				continue
+			}
+			state, err := protocol.DecodeProcessState(frame)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if state.State == "exited" && state.Generation == 2 && state.ExitCode != nil && *state.ExitCode == 37 {
+				break
+			}
+		}
+		fixture.signals <- syscall.SIGTERM
+		closeLeashBrowser(t, fixture, browser)
+		select {
+		case <-fixture.done:
+		case <-fixture.ctx.Done():
+			t.Fatal("Leash owner did not finish")
+		}
+		<-fixture.outputDone
+		if fixture.code != 37 {
+			t.Fatalf("retained-result restart exit = %d; safe diagnostics: %s", fixture.code, diagnostics.String())
+		}
+		if fixture.transport.closeCalls != 1 {
+			t.Fatal("Leash transport closure was not exactly once")
+		}
+		if strings.Count(fixture.output.text(), "child-finished") != 2 {
+			t.Fatal("retained-result restart did not create exactly one fresh generation")
+		}
+	})
+}
+
+func TestProtectedLeashCLIRejectsPreAdmissionStartTriggers(t *testing.T) {
+	fixture := startProtectedLeashCLI(t, "exit", "--start-on=connect", "--local-input=false")
+	writeHello := func(peer net.Conn, version int) {
+		payload, _ := json.Marshal(map[string]any{
+			"protocol_min": version, "protocol_max": version, "session_id": hex.EncodeToString(fixture.card.SessionID[:]), "mode": "leash",
+			"client": map[string]string{"name": "test-browser", "version": "1", "platform": "test", "user_agent": ""},
+		})
+		wire := make([]byte, 6+len(payload))
+		binary.BigEndian.PutUint32(wire, uint32(len(payload)+2))
+		wire[4] = byte(protocol.TypeClientHello)
+		copy(wire[6:], payload)
+		if _, err := peer.Write(wire); err != nil {
+			t.Fatal(err)
+		}
+		clear(wire)
+		clear(payload)
+	}
+
+	server, stalled := net.Pipe()
+	t.Cleanup(func() { _ = stalled.Close() })
+	_ = stalled.SetDeadline(time.Now().Add(3 * time.Second))
+	fixture.transport.config.OnConnection(server)
+	writeHello(stalled, 2)
+	challenge, err := protocol.ReadFrame(fixture.ctx, stalled, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+	if err != nil || challenge.Type != protocol.TypeAuthChallenge {
+		t.Fatal("protected CLI did not stop the peer at authentication", err)
+	}
+	clear(challenge.Payload)
+
+	_ = stalled.Close()
+	for attempt := 1; attempt <= 10; attempt++ {
+		server, failed := net.Pipe()
+		_ = failed.SetDeadline(time.Now().Add(3 * time.Second))
+		fixture.transport.config.OnConnection(server)
+		writeHello(failed, 2)
+		challenge, err = protocol.ReadFrame(fixture.ctx, failed, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+		if err != nil || challenge.Type != protocol.TypeAuthChallenge {
+			_ = failed.Close()
+			t.Fatal("protected CLI did not challenge the failed peer", err)
+		}
+		clear(challenge.Payload)
+		proof, proofErr := protocol.AuthProofFrame([32]byte{})
+		if proofErr != nil {
+			_ = failed.Close()
+			t.Fatal(proofErr)
+		}
+		if err := protocol.WriteFrame(fixture.ctx, failed, protocol.PeerBrowser, protocol.StateAwaitAuthProof, proof); err != nil {
+			clear(proof.Payload)
+			_ = failed.Close()
+			t.Fatal(err)
+		}
+		clear(proof.Payload)
+		rejection, readErr := protocol.ReadFrame(fixture.ctx, failed, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+		_ = failed.Close()
+		if readErr != nil || rejection.Type != protocol.TypeError {
+			t.Fatal("protected CLI did not reject the failed proof", readErr)
+		}
+		if code, _ := protocol.ErrorCodeOf(protocol.DecodeError(rejection)); code != protocol.CodeAuthFailed {
+			t.Fatalf("failed CLI proof %d returned %s", attempt, code)
+		}
+		clear(rejection.Payload)
+	}
+
+	server, throttled := net.Pipe()
+	defer throttled.Close()
+	_ = throttled.SetDeadline(time.Now().Add(3 * time.Second))
+	fixture.transport.config.OnConnection(server)
+	writeHello(throttled, 2)
+	rejection, err := protocol.ReadFrame(fixture.ctx, throttled, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+	if err != nil || rejection.Type != protocol.TypeError {
+		t.Fatal("protected CLI did not reject the cooldown attempt", err)
+	}
+	if code, _ := protocol.ErrorCodeOf(protocol.DecodeError(rejection)); code != protocol.CodeAuthThrottled {
+		t.Fatalf("cooldown attempt returned %s", code)
+	}
+	clear(rejection.Payload)
+
+	server, old := net.Pipe()
+	defer old.Close()
+	_ = old.SetDeadline(time.Now().Add(3 * time.Second))
+	fixture.transport.config.OnConnection(server)
+	writeHello(old, 1)
+	rejection, err = protocol.ReadFrame(fixture.ctx, old, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+	if err != nil || rejection.Type != protocol.TypeError {
+		t.Fatal("protected CLI did not reject the old peer", err)
+	}
+	clear(rejection.Payload)
+
+	deadline := time.NewTimer(50 * time.Millisecond)
+	defer deadline.Stop()
+	ticker := time.NewTicker(time.Millisecond)
+	defer ticker.Stop()
+	for {
+		if strings.Contains(fixture.output.text(), "child-finished") {
+			t.Fatal("failed, stalled, or old peer started the protected command")
+		}
+		select {
+		case <-deadline.C:
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+func TestProtectedConnectOrEnterStartsOneImmutableCommandUnderRace(t *testing.T) {
+	fixture := startProtectedLeashCLI(t, "wait", "--start-on=connect-or-enter")
+	accessCode := fixture.readAccessCode(t)
+
+	server, browser := net.Pipe()
+	defer browser.Close()
+	_ = browser.SetDeadline(time.Now().Add(3 * time.Second))
+	fixture.transport.config.OnConnection(server)
+	payload, _ := json.Marshal(map[string]any{
+		"protocol_min": 2, "protocol_max": 2, "session_id": hex.EncodeToString(fixture.card.SessionID[:]), "mode": "leash",
+		"client": map[string]string{"name": "race-browser", "version": "1", "platform": "test", "user_agent": ""},
+	})
+	if err := protocol.WriteFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateAwaitClientHello, protocol.Frame{Type: protocol.TypeClientHello, Payload: payload}); err != nil {
+		t.Fatal(err)
+	}
+	clear(payload)
+	challengeFrame, err := protocol.ReadFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+	if err != nil || challengeFrame.Type != protocol.TypeAuthChallenge {
+		t.Fatal("protected race fixture did not receive a challenge", err)
+	}
+	challenge, err := protocol.DecodeAuthChallenge(challengeFrame)
+	clear(challengeFrame.Payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proof := session.AccessProof(accessCode, fixture.card.SessionID, challenge)
+	clear(challenge[:])
+	proofFrame, err := protocol.AuthProofFrame(proof)
+	clear(proof[:])
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	start := make(chan struct{})
+	results := make(chan error, 2)
+	var triggers sync.WaitGroup
+	triggers.Go(func() {
+		<-start
+		results <- protocol.WriteFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateAwaitAuthProof, proofFrame)
+	})
+	triggers.Go(func() {
+		<-start
+		_, err := fixture.input.Write([]byte{'\r'})
+		results <- err
+	})
+	close(start)
+	triggers.Wait()
+	clear(proofFrame.Payload)
+	close(results)
+	for err := range results {
+		if err != nil {
+			t.Fatal("simultaneous valid start trigger failed", err)
+		}
+	}
+	welcome, err := protocol.ReadFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+	if err != nil || welcome.Type != protocol.TypeServerWelcome {
+		t.Fatal("authenticated race winner was not admitted", err)
+	}
+	clear(welcome.Payload)
+	fixture.awaitText(t, "child-ready")
+
+	server, busy := net.Pipe()
+	defer busy.Close()
+	_ = busy.SetDeadline(time.Now().Add(3 * time.Second))
+	fixture.transport.config.OnConnection(server)
+	payload, _ = json.Marshal(map[string]any{
+		"protocol_min": 2, "protocol_max": 2, "session_id": hex.EncodeToString(fixture.card.SessionID[:]), "mode": "leash",
+		"client": map[string]string{"name": "busy-browser", "version": "1", "platform": "test", "user_agent": ""},
+	})
+	if err := protocol.WriteFrame(fixture.ctx, busy, protocol.PeerBrowser, protocol.StateAwaitClientHello, protocol.Frame{Type: protocol.TypeClientHello, Payload: payload}); err != nil {
+		t.Fatal(err)
+	}
+	clear(payload)
+	challengeFrame, err = protocol.ReadFrame(fixture.ctx, busy, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+	if err != nil {
+		t.Fatal(err)
+	}
+	challenge, err = protocol.DecodeAuthChallenge(challengeFrame)
+	clear(challengeFrame.Payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proof = session.AccessProof(accessCode, fixture.card.SessionID, challenge)
+	clear(accessCode[:])
+	clear(challenge[:])
+	proofFrame, err = protocol.AuthProofFrame(proof)
+	clear(proof[:])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := protocol.WriteFrame(fixture.ctx, busy, protocol.PeerBrowser, protocol.StateAwaitAuthProof, proofFrame); err != nil {
+		t.Fatal(err)
+	}
+	clear(proofFrame.Payload)
+	rejection, err := protocol.ReadFrame(fixture.ctx, busy, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+	if err != nil || rejection.Type != protocol.TypeError {
+		t.Fatal("authenticated busy peer was not rejected", err)
+	}
+	if code, _ := protocol.ErrorCodeOf(protocol.DecodeError(rejection)); code != protocol.CodeSessionBusy {
+		t.Fatalf("busy peer returned %s", code)
+	}
+	clear(rejection.Payload)
+	_ = busy.Close()
+	_ = browser.Close()
+
+	if _, err := fixture.input.Write([]byte("qx")); err != nil {
+		t.Fatal(err)
+	}
+	fixture.result(t, 37)
+	if strings.Count(fixture.output.text(), "child-ready") != 1 {
+		t.Fatal("simultaneous local and authenticated triggers started more than one command")
+	}
+}
+
+func TestProtectedLeashWithoutControllingTerminalFailsBeforeSideEffects(t *testing.T) {
+	if os.Getenv("TAILMOUSE_NO_CREDENTIAL_TERMINAL_TEST") == "1" {
+		started := false
+		code := run(context.Background(), nil, []string{"leash", "--no-qr", "--", "must-not-run"}, nil, t.TempDir(), os.Stdout, os.Stderr,
+			func(context.Context, tailcattransport.Config) (transportServer, error) {
+				started = true
+				return nil, errors.New("transport must not start")
+			})
+		if started {
+			os.Exit(99)
+		}
+		os.Exit(code)
+	}
+	command := exec.Command(os.Args[0], "-test.run=^TestProtectedLeashWithoutControllingTerminalFailsBeforeSideEffects$")
+	command.Env = append(os.Environ(), "TAILMOUSE_NO_CREDENTIAL_TERMINAL_TEST=1")
+	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	var stdout, stderr bytes.Buffer
+	command.Stdout, command.Stderr = &stdout, &stderr
+	err := command.Run()
+	var exit *exec.ExitError
+	if !errors.As(err, &exit) || exit.ExitCode() != exitConfig {
+		t.Fatalf("noninteractive protected launch exit = %v", err)
+	}
+	if stdout.Len() != 0 || !strings.Contains(stderr.String(), "requires a controlling terminal") || !strings.Contains(stderr.String(), "--no-password") {
+		t.Fatal("noninteractive protected launch did not fail with bounded migration guidance")
+	}
+	assertSafeDiagnostics(t, stderr.String())
+}
+
+func TestProtectedCredentialUsesOnlyTerminalAndReportsRedactedState(t *testing.T) {
+	codePattern := regexp.MustCompile(`[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}(?:-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}){3}`)
+	for _, jsonMode := range []bool{false, true} {
+		name := "human"
+		if jsonMode {
+			name = "json"
+		}
+		t.Run(name, func(t *testing.T) {
+			master, slave, err := nativepty.Open()
+			if err != nil {
+				t.Fatal(err)
+			}
+			var diagnostics bytes.Buffer
+			flags := []string{"--start-on=connect", "--local-input=false"}
+			if jsonMode {
+				flags = append(flags, "--json")
+			}
+			fixture := startLeashCLIWithInputAccess(t, "wait", slave, master, &diagnostics, false, flags...)
+			readContext, cancelRead := context.WithTimeout(t.Context(), 2*time.Second)
+			defer cancelRead()
+			var terminalOutput bytes.Buffer
+			terminalBytes := make([]byte, 256)
+			for !strings.Contains(terminalOutput.String(), "Both the invitation and this code are required.") {
+				if err := pollConsole(readContext, int(master.Fd()), unix.POLLIN); err != nil {
+					t.Fatal("controlling terminal did not become readable", err)
+				}
+				count, readErr := unix.Read(int(master.Fd()), terminalBytes)
+				if readErr != nil || count == 0 {
+					t.Fatal("controlling terminal did not receive the credential area", readErr)
+				}
+				_, _ = terminalOutput.Write(terminalBytes[:count])
+				clear(terminalBytes[:count])
+			}
+			terminalText := terminalOutput.String()
+			clear(terminalBytes)
+			match := codePattern.FindString(terminalText)
+			if match == "" || strings.Count(terminalText, match) != 1 || !strings.Contains(terminalText, "TAILMOUSE ACCESS CODE") || !strings.Contains(terminalText, "Both the invitation and this code are required.") {
+				t.Fatal("controlling terminal credential area is incomplete")
+			}
+			fixture.signals <- syscall.SIGTERM
+			fixture.result(t, exitExpired)
+			ordinaryOutput, diagnosticOutput := fixture.output.text(), diagnostics.String()
+			if strings.Contains(ordinaryOutput, match) || strings.Contains(diagnosticOutput, match) || !strings.Contains(ordinaryOutput, "The separate access code is also required.") {
+				t.Fatal("access code crossed the dedicated controlling-terminal boundary")
+			}
+			if jsonMode {
+				found := false
+				for _, event := range decodeDiagnostics(t, diagnosticOutput) {
+					found = found || event.Event == "access_state" && event.AccessMode == "code" && event.Authentication == "waiting" && event.AccessCodePresented != nil && *event.AccessCodePresented
+				}
+				if !found {
+					t.Fatal("JSON diagnostics omitted the redacted protected-access state")
+				}
+			} else if !strings.Contains(diagnosticOutput, "access     protected; authentication waiting; code presented on controlling terminal") {
+				t.Fatal("human diagnostics omitted the protected-access state")
+			}
+			assertSafeDiagnostics(t, diagnosticOutput, match)
+		})
+	}
+}
+
+func TestLinkOnlyWarningPrecedesInvitationAndSurvivesQuiet(t *testing.T) {
+	fake := newFakeTransport()
+	combined := &cardCapture{card: make(chan invitation.MouseCard, 1)}
+	code := run(context.Background(), nil, []string{"leash", "--no-password", "--quiet", "--no-qr", "--start-on=connect", "--", "unused"}, nil, t.TempDir(), combined, combined, fake.start)
+	if code != config.ExitPTY || fake.closeCalls != 1 {
+		t.Fatal("link-only warning fixture did not reach bounded local-console rejection")
+	}
+	text := combined.String()
+	warning := "Warning: Password protection is disabled."
+	if strings.Count(text, warning) != 1 || strings.Index(text, warning) > strings.Index(text, "TAILMOUSE LEASH") {
+		t.Fatal("quiet suppressed or reordered the mandatory link-only warning")
+	}
+	if !strings.Contains(text, "Running a shell grants shell-level access.") || regexp.MustCompile(`[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}(?:-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}){3}`).MatchString(text) {
+		t.Fatal("link-only output lost its risk boundary or invented an access code")
+	}
+}
+
 func TestLeashCLILocalBytesAndFirstControlCReachOneChild(t *testing.T) {
 	fixture := startLeashCLI(t, "echo", "--start-on=now")
 	fixture.awaitText(t, "child-ready")
@@ -372,7 +819,7 @@ func TestLeashCLIEnterPreservesTrailingBytesFromTheSameRead(t *testing.T) {
 }
 
 func TestLeashCLIBrowserInputAndDisconnectSurvival(t *testing.T) {
-	fixture := startLeashCLI(t, "wait", "--start-on=connect", "--reconnect-grace=50ms")
+	fixture := startLeashCLI(t, "wait", "--start-on=connect")
 	browser := fixture.connect(t)
 	ready, running := false, false
 	for {
@@ -392,7 +839,7 @@ func TestLeashCLIBrowserInputAndDisconnectSurvival(t *testing.T) {
 		t.Fatal(err)
 	}
 	fixture.awaitText(t, "REMOTE_BYTES")
-	// A disconnect cancels only the stream. Local input remains usable after grace.
+	// A disconnect cancels only the stream. Local input remains usable.
 	browser.Close()
 	time.Sleep(100 * time.Millisecond)
 	if _, err := fixture.input.Write([]byte("qx")); err != nil {
@@ -443,7 +890,7 @@ func waitLeashRunning(t *testing.T, fixture *leashCLIFixture, browser net.Conn, 
 	}
 }
 
-func TestLeashCLIChildExitsDuringGraceAndReconnectRetainsResult(t *testing.T) {
+func TestLeashCLIChildExitsDuringBrowserAbsenceAndReconnectRetainsResult(t *testing.T) {
 	input, writer, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
@@ -478,6 +925,7 @@ func TestLeashCLIChildExitsDuringGraceAndReconnectRetainsResult(t *testing.T) {
 			t.Fatal("disconnected child did not exit")
 		}
 	}
+	diagnostics.awaitText(t, fixture.ctx, `"state":"exited"`)
 	browser = fixture.connect(t)
 	reset, exited := false, false
 	var retained bytes.Buffer
@@ -994,7 +1442,7 @@ func TestLeashCLIExplicitKillPoliciesAndStartupCodes(t *testing.T) {
 		fixture.signals <- syscall.SIGTERM
 		fixture.result(t, 143)
 	})
-	if code := run(context.Background(), nil, []string{"leash", "--no-qr", "--start-on=now", "--", "unused"}, nil, t.TempDir(), io.Discard, io.Discard, newFakeTransport().start); code != config.ExitPTY {
+	if code := run(context.Background(), nil, []string{"leash", "--no-password", "--no-qr", "--start-on=now", "--", "unused"}, nil, t.TempDir(), io.Discard, io.Discard, newFakeTransport().start); code != config.ExitPTY {
 		t.Fatal("non-file console was not rejected")
 	}
 }

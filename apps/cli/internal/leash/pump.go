@@ -128,6 +128,18 @@ func (pump *Pump) RetainedOutputBytes() int {
 	return int(min(pump.history.total, uint64(len(pump.history.data))))
 }
 
+// FinalSnapshot copies the bounded history only after both PTY directions have
+// joined. The process owner can then release the Pump and its larger live I/O
+// buffers while retaining the terminal result for a later browser.
+func (pump *Pump) FinalSnapshot() (Chunk, error) {
+	pump.outputMu.Lock()
+	defer pump.outputMu.Unlock()
+	if !pump.outputEnded {
+		return Chunk{}, ErrPumpRunning
+	}
+	return pump.history.Snapshot(), nil
+}
+
 func (pump *Pump) write(ctx context.Context) error {
 	var data [TerminalChunkBytes]byte
 	for {

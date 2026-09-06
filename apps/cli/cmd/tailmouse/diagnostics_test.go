@@ -30,7 +30,13 @@ func TestDiagnosticsHumanJSONQuietAndVerbose(t *testing.T) {
 			if err := log.begin(options, id, time.Unix(1234567890, 0)); err != nil {
 				t.Fatal(err)
 			}
+			if err := log.accessState("link", false, false); err != nil {
+				t.Fatal(err)
+			}
 			if err := log.listening(tailcattransport.Relay{Mode: tailcattransport.RelayOfficial, Host: "relay.example.com"}, true); err != nil {
+				t.Fatal(err)
+			}
+			if err := log.invitationPresented(); err != nil {
 				t.Fatal(err)
 			}
 			metrics := session.Metrics{LatencySnapshot: session.LatencySnapshot{Samples: 2, RTTMS: 42, JitterMS: 3, P50MS: 40, P95MS: 50}, BytesTX: 100, FramesTX: 2,
@@ -45,12 +51,12 @@ func TestDiagnosticsHumanJSONQuietAndVerbose(t *testing.T) {
 			}
 			assertSafeDiagnostics(t, output.String(), hex.EncodeToString(id[:]))
 			if mode == "quiet" {
-				if strings.Count(output.String(), "\n") != 2 || !strings.Contains(output.String(), "like a password") || !strings.Contains(output.String(), "No TTL") {
+				if strings.Count(output.String(), "\n") != 2 || !strings.Contains(output.String(), "Password protection is disabled") || !strings.Contains(output.String(), "No TTL") {
 					t.Fatal("quiet did not retain exactly the two mandatory warnings")
 				}
 			} else if options.JSON {
 				events := decodeDiagnostics(t, output.String())
-				foundRTT, foundDetails := false, false
+				foundRTT, foundDetails, foundAccess := false, false, false
 				for _, event := range events {
 					if event.Event == "rtt" {
 						foundRTT = true
@@ -67,15 +73,18 @@ func TestDiagnosticsHumanJSONQuietAndVerbose(t *testing.T) {
 							t.Fatal("verbose identity/source detail missing")
 						}
 					}
+					if event.Event == "access_state" {
+						foundAccess = event.AccessMode == "link" && event.Authentication == "waiting" && event.AccessCodePresented != nil && !*event.AccessCodePresented
+					}
 					if !regexp.MustCompile(`^[0-9a-f]{8}$`).MatchString(event.Session) {
 						t.Fatal("session identifier is not a bounded hash prefix")
 					}
 				}
-				if !foundRTT || foundDetails != options.Verbose || events[len(events)-1].Event != "session_closed" {
+				if !foundRTT || !foundAccess || foundDetails != options.Verbose || events[len(events)-1].Event != "session_closed" {
 					t.Fatal("JSON event sequence incomplete")
 				}
 			} else {
-				for _, expected := range []string{"mode       leash", "expires    2009-02-13T23:31:30Z", "relay      official / relay.example.com", "browser    waiting", "browser    active", "RTT        42.0 ms; jitter 3.0 ms; p50 40.0 ms; p95 50.0 ms", "output     23 bytes dropped in generation 4 (cumulative)", "browser    disconnected", "mode_complete"} {
+				for _, expected := range []string{"mode       leash", "expires    2009-02-13T23:31:30Z", "access     link-only; authentication not required", "relay      official / relay.example.com", "browser    waiting", "browser    active", "RTT        42.0 ms; jitter 3.0 ms; p50 40.0 ms; p95 50.0 ms", "output     23 bytes dropped in generation 4 (cumulative)", "browser    disconnected", "mode_complete"} {
 					if !strings.Contains(output.String(), expected) {
 						t.Fatal("human session diagnostics incomplete")
 					}
@@ -235,7 +244,7 @@ func TestSpectatorDiagnosticsRemainSafeAndRestoreLineEndings(t *testing.T) {
 }
 
 func TestDiagnosticFailureStopsStartupAndClosesOwnedTransport(t *testing.T) {
-	for _, failAt := range []int{1, 2, 3, 4} {
+	for _, failAt := range []int{1, 2, 3, 4, 5} {
 		fake := newFakeTransport()
 		writer := &failDiagnosticAt{at: failAt}
 		started := false
@@ -248,7 +257,7 @@ func TestDiagnosticFailureStopsStartupAndClosesOwnedTransport(t *testing.T) {
 			t.Fatal("sink failure did not stop immediately and clean owned resources")
 		}
 	}
-	for _, failAt := range []int{5, 6} {
+	for _, failAt := range []int{6, 7} {
 		fake := newFakeTransport()
 		output := &cardCapture{card: make(chan invitation.MouseCard, 1)}
 		peerDone := make(chan error, 1)
@@ -258,7 +267,7 @@ func TestDiagnosticFailureStopsStartupAndClosesOwnedTransport(t *testing.T) {
 		code := run(ctx, nil, []string{"escape", "--json", "--no-qr"}, nil, t.TempDir(), output, writer, fake.start)
 		select {
 		case err := <-peerDone:
-			if failAt == 6 && err != nil {
+			if failAt == 7 && err != nil {
 				t.Fatal("session did not finish before the final sink failure")
 			}
 		case <-ctx.Done():

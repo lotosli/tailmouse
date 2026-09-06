@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { BUILD } from '../build.ts';
 
 const fixtureURL = new URL(
   '../../../../protocol/fixtures/v1/frames.json',
@@ -18,6 +19,7 @@ const receivers = ['browser', 'host'];
 const states = [
   'active-escape',
   'active-leash',
+  'await-auth-proof',
   'await-client-hello',
   'await-server-welcome',
 ];
@@ -27,6 +29,12 @@ const credentialPatterns = [
 ];
 
 describe('shared TMOUSE/1 frame fixtures', () => {
+  it('reports mode-specific protocol identifiers without a continuous range', () => {
+    expect(BUILD.protocols).toEqual({ escape: 1, leash: 2 });
+    expect(BUILD).not.toHaveProperty('protocolMin');
+    expect(BUILD).not.toHaveProperty('protocolMax');
+  });
+
   it('uses the bounded v1 schema and contains every required category', () => {
     const raw = readFileSync(fixtureURL);
     expect(raw.byteLength).toBeLessThanOrEqual(256 * 1024);
@@ -114,7 +122,7 @@ function validateFixture(value: unknown): Fixture {
     expect(value.expect.message).toEqual(expect.any(String));
     expect(value.expect.error).toBeUndefined();
     if (value.expect.selected_protocol !== undefined) {
-      expect(value.expect.selected_protocol).toBe(1);
+      expect([1, 2]).toContain(value.expect.selected_protocol);
     }
   } else {
     expect(Object.keys(value.expect).sort()).toEqual(['accepted', 'error']);

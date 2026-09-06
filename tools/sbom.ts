@@ -212,8 +212,8 @@ function document(
     'Missing Tailcat revision.',
   );
   assert.match(sourceRevision, revisionPattern, 'Missing source revision.');
-  assert.equal(identity.protocolMin, 1);
-  assert.equal(identity.protocolMax, 1);
+  assert.equal(identity.protocols.escape, 1);
+  assert.equal(identity.protocols.leash, 2);
   assert.ok(
     files.length > 0 &&
       files.length <= 512 &&
@@ -273,7 +273,8 @@ function document(
             name: 'tailmouse:tailcat-revision',
             value: identity.tailcatRevision,
           },
-          { name: 'tailmouse:protocol-range', value: '1..1' },
+          { name: 'tailmouse:protocol-escape', value: '1' },
+          { name: 'tailmouse:protocol-leash', value: '2' },
           {
             name: 'tailmouse:dependency-scope',
             value:

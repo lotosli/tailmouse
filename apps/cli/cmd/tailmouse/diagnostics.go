@@ -20,24 +20,27 @@ import (
 // Only composition-root classifications and redacted session events enter this
 // record. It has no arbitrary error, URL, argv, environment or payload field.
 type diagnosticRecord struct {
-	TS           string                   `json:"ts"`
-	Event        string                   `json:"event"`
-	Session      string                   `json:"session,omitempty"`
-	Mode         string                   `json:"mode,omitempty"`
-	Host         string                   `json:"host,omitempty"`
-	Expires      string                   `json:"expires,omitempty"`
-	State        string                   `json:"state,omitempty"`
-	Reason       string                   `json:"reason,omitempty"`
-	Message      string                   `json:"message,omitempty"`
-	Code         int                      `json:"code,omitempty"`
-	Version      string                   `json:"version,omitempty"`
-	Tailcat      string                   `json:"tailcat_revision,omitempty"`
-	Sources      map[string]config.Source `json:"sources,omitempty"`
-	Generation   uint32                   `json:"generation,omitempty"`
-	PID          *uint64                  `json:"pid,omitempty"`
-	ExitCode     *int                     `json:"exit_code,omitempty"`
-	Signal       *string                  `json:"signal,omitempty"`
-	DroppedBytes *uint64                  `json:"bytes,omitempty"`
+	TS                  string                   `json:"ts"`
+	Event               string                   `json:"event"`
+	Session             string                   `json:"session,omitempty"`
+	Mode                string                   `json:"mode,omitempty"`
+	Host                string                   `json:"host,omitempty"`
+	Expires             string                   `json:"expires,omitempty"`
+	State               string                   `json:"state,omitempty"`
+	AccessMode          string                   `json:"access_mode,omitempty"`
+	Authentication      string                   `json:"authentication,omitempty"`
+	AccessCodePresented *bool                    `json:"access_code_presented,omitempty"`
+	Reason              string                   `json:"reason,omitempty"`
+	Message             string                   `json:"message,omitempty"`
+	Code                int                      `json:"code,omitempty"`
+	Version             string                   `json:"version,omitempty"`
+	Tailcat             string                   `json:"tailcat_revision,omitempty"`
+	Sources             map[string]config.Source `json:"sources,omitempty"`
+	Generation          uint32                   `json:"generation,omitempty"`
+	PID                 *uint64                  `json:"pid,omitempty"`
+	ExitCode            *int                     `json:"exit_code,omitempty"`
+	Signal              *string                  `json:"signal,omitempty"`
+	DroppedBytes        *uint64                  `json:"bytes,omitempty"`
 	*session.LatencySnapshot
 	Metrics *session.Metrics     `json:"metrics,omitempty"`
 	Result  *protocol.GameResult `json:"result,omitempty"`
@@ -50,7 +53,7 @@ type diagnostics struct {
 	quiet                  bool
 	verbose                bool
 	rawTerminal, spectator bool
-	session                string
+	session, mode          string
 	err                    error // First sink failure; never formatted into a diagnostic.
 }
 
@@ -89,6 +92,7 @@ func (log *diagnostics) processState(state protocol.ProcessState) error {
 func (log *diagnostics) begin(options config.Options, identifier [16]byte, expires time.Time) error {
 	hash := sha256.Sum256(identifier[:])
 	log.session = hex.EncodeToString(hash[:4])
+	log.mode = options.Command
 	expiry := "none"
 	if !expires.IsZero() {
 		expiry = expires.UTC().Format(time.RFC3339)
@@ -103,6 +107,27 @@ func (log *diagnostics) begin(options config.Options, identifier [16]byte, expir
 	return log.write(diagnosticRecord{Event: "diagnostic_details", Version: buildVersion, Tailcat: tailcatRevision, Sources: sources}, false, true)
 }
 
+func (log *diagnostics) accessState(accessMode string, presented, readonly bool) error {
+	if accessMode != "code" && accessMode != "link" || accessMode == "code" && !presented || accessMode == "link" && presented {
+		return errors.New("invalid access diagnostic state")
+	}
+	if accessMode == "link" {
+		message := "Password protection is disabled. Anyone with the full invitation can control the selected terminal process; running a shell grants shell-level access."
+		if readonly {
+			message = "Password protection is disabled. Anyone with the full invitation has view-only access until the share ends."
+		}
+		if err := log.write(diagnosticRecord{Event: "warning", Reason: "link_only_access", Message: message, AccessMode: accessMode}, true, false); err != nil {
+			return err
+		}
+	}
+	return log.write(diagnosticRecord{Event: "access_state", State: "waiting", AccessMode: accessMode,
+		Authentication: "waiting", AccessCodePresented: &presented}, false, false)
+}
+
+func (log *diagnostics) invitationPresented() error {
+	return log.write(diagnosticRecord{Event: "invitation_presented", State: "ready"}, false, false)
+}
+
 // Relay fields have passed Host.Listen's strict WELCOME metadata validation.
 func (log *diagnostics) listening(relay tailcattransport.Relay, noTTL bool) error {
 	if err := log.write(diagnosticRecord{Event: "relay_selected", Mode: string(relay.Mode), Host: relay.Host}, false, false); err != nil {
@@ -111,11 +136,13 @@ func (log *diagnostics) listening(relay tailcattransport.Relay, noTTL bool) erro
 	if err := log.write(diagnosticRecord{Event: "browser_waiting", State: "waiting"}, false, false); err != nil {
 		return err
 	}
-	if err := log.write(diagnosticRecord{Event: "warning", Reason: "bearer_link", Message: "Treat the invitation link like a password. Browser traffic is DERP-only."}, true, false); err != nil {
-		return err
+	if log.mode == "escape" {
+		if err := log.write(diagnosticRecord{Event: "warning", Reason: "bearer_link", Message: "Treat the invitation link like a password. Browser traffic is DERP-only."}, true, false); err != nil {
+			return err
+		}
 	}
 	if noTTL {
-		return log.write(diagnosticRecord{Event: "warning", Reason: "no_ttl", Message: "No TTL; avoid publicly sharing this bearer link."}, true, false)
+		return log.write(diagnosticRecord{Event: "warning", Reason: "no_ttl", Message: "No TTL; keep the invitation private until the Host share ends."}, true, false)
 	}
 	return nil
 }
@@ -222,6 +249,13 @@ func humanDiagnostic(record diagnosticRecord) string {
 		return fmt.Sprintf("relay      %s / %s", record.Mode, record.Host)
 	case "browser_waiting", "browser_connected", "browser_disconnected":
 		return "browser    " + record.State
+	case "access_state":
+		if record.AccessMode == "code" {
+			return "access     protected; authentication waiting; code presented on controlling terminal"
+		}
+		return "access     link-only; authentication not required"
+	case "invitation_presented":
+		return "invitation ready"
 	case "rtt":
 		return fmt.Sprintf("RTT        %.1f ms; jitter %.1f ms; p50 %.1f ms; p95 %.1f ms", record.RTTMS, record.JitterMS, record.P50MS, record.P95MS)
 	case "process_state":

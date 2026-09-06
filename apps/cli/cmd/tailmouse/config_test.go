@@ -92,6 +92,36 @@ func TestRunInformationalCommandsHaveNoSideEffects(t *testing.T) {
 	}
 }
 
+func TestRunRejectsLeashReconnectGraceBeforeSideEffects(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "legacy.toml")
+	if err := os.WriteFile(path, []byte("version=1\n[session]\nreconnect_grace='15s'\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		name string
+		args []string
+		env  []string
+	}{
+		{"flag", []string{"leash", "--reconnect-grace=15s", "--", "must-not-run"}, nil},
+		{"environment", []string{"leash", "--", "must-not-run"}, []string{"TAILMOUSE_RECONNECT_GRACE=15s"}},
+		{"file", []string{"leash", "--config", path, "--", "must-not-run"}, nil},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			called := false
+			var stderr bytes.Buffer
+			code := run(context.Background(), nil, test.args, test.env, directory, io.Discard, &stderr,
+				func(context.Context, tailcattransport.Config) (transportServer, error) {
+					called = true
+					return nil, errors.New("must not start")
+				})
+			if code != exitConfig || called || !strings.Contains(stderr.String(), "reconnect-grace") || !strings.Contains(stderr.String(), "returns to listening") {
+				t.Fatalf("legacy reconnect setting crossed the configuration boundary: code=%d called=%v", code, called)
+			}
+		})
+	}
+}
+
 type failingWriter struct{}
 
 func (failingWriter) Write([]byte) (int, error) { return 0, errors.New("output unavailable") }
@@ -132,7 +162,7 @@ func TestCLIProcessConfigurationBoundary(t *testing.T) {
 		{"leash help after delimiter-shaped title", []string{"leash", "--title", "--", "--help"}, 0, "Leash flags", ""},
 		{"leash help after delimiter-shaped config path", []string{"leash", "--config", "--", "--help"}, 0, "Leash flags", ""},
 		{"title value does not replace child separator", []string{"leash", "--title", "--", "must-not-run"}, 2, "", "leash command after --"},
-		{"version bypasses invalid config", []string{"version"}, 0, "TMOUSE protocol 1..1", ""},
+		{"version bypasses invalid config", []string{"version"}, 0, "TMOUSE Escape protocol 1\nTMOUSE Leash protocol 2", ""},
 		{"path environment", []string{"config", "path"}, 0, path, ""},
 		{"path flag precedence", []string{"config", "path", "--config", missing}, 0, missing, ""},
 		{"invalid file before transport", []string{"escape"}, 2, "", "version (expected 1)"},

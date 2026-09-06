@@ -111,7 +111,7 @@ func TestLeashDropDiagnosticsRepeatCumulativeSnapshotAndResetGeneration(t *testi
 				t.Fatal(err)
 			}
 			for range 2 {
-				browser, _ := connectTestHost(t, host, "leash", testHostID, 1)
+				browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
 				var count uint64
 				for {
 					frame, err := protocol.ReadFrame(t.Context(), browser, protocol.PeerBrowser, protocol.StateActiveLeash)

@@ -113,7 +113,7 @@ func TestHostDiagnosticFailureChoosesInternalOutcomeAndJoinsWorkers(t *testing.T
 			if err := host.Listen("official", "relay.example.com", time.Now()); err != nil {
 				t.Fatal(err)
 			}
-			browser, _ := connectTestHost(t, host, "leash", testHostID, 1)
+			browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
 			if kind == TerminalOutputDropped {
 				for {
 					frame, err := protocol.ReadFrame(t.Context(), browser, protocol.PeerBrowser, protocol.StateActiveLeash)
@@ -177,6 +177,33 @@ func connectTestHost(t *testing.T, host *Host, mode string, id [16]byte, version
 	if err != nil {
 		t.Fatal(err)
 	}
+	if frame.Type == protocol.TypeAuthChallenge {
+		challenge, err := protocol.DecodeAuthChallenge(frame)
+		clear(frame.Payload)
+		if err != nil {
+			t.Fatal(err)
+		}
+		code, ok := host.AccessCodeForDisplay()
+		if !ok {
+			t.Fatal("protected test host did not retain its access code")
+		}
+		proof := AccessProof(code, id, challenge)
+		clear(code[:])
+		clear(challenge[:])
+		proofFrame, err := protocol.AuthProofFrame(proof)
+		clear(proof[:])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateAwaitAuthProof, proofFrame); err != nil {
+			t.Fatal(err)
+		}
+		clear(proofFrame.Payload)
+		frame, err = protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	return browser, frame
 }
 
@@ -209,7 +236,28 @@ func TestFirstHelloRetainsStartTriggerBeforeWelcomeAndAfterDisconnect(t *testing
 		if !host.Accept(server) {
 			t.Fatal("host rejected test connection")
 		}
-		writeTestHello(t, browser, "leash", testHostID, 1)
+		writeTestHello(t, browser, "leash", testHostID, 2)
+		challengeFrame, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+		if err != nil || challengeFrame.Type != protocol.TypeAuthChallenge {
+			t.Fatal("protected host did not request proof", err)
+		}
+		select {
+		case <-first:
+			t.Fatal("preliminary HELLO supplied a start trigger before authentication")
+		default:
+		}
+		challenge, _ := protocol.DecodeAuthChallenge(challengeFrame)
+		clear(challengeFrame.Payload)
+		code, _ := host.AccessCodeForDisplay()
+		proof := AccessProof(code, testHostID, challenge)
+		proofFrame, _ := protocol.AuthProofFrame(proof)
+		clear(code[:])
+		clear(challenge[:])
+		clear(proof[:])
+		if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateAwaitAuthProof, proofFrame); err != nil {
+			t.Fatal(err)
+		}
+		clear(proofFrame.Payload)
 		// WELCOME cannot complete because this peer never reads it. A diagnostic
 		// callback after that write would lose the required startup notification.
 		synctest.Wait()
@@ -223,15 +271,15 @@ func TestFirstHelloRetainsStartTriggerBeforeWelcomeAndAfterDisconnect(t *testing
 		}
 		_ = browser.Close()
 		synctest.Wait()
-		if snapshot := host.Authority.Inspect(time.Now()); snapshot.State != ReconnectGrace {
-			t.Fatal("test browser did not disconnect")
+		if snapshot := host.Authority.Inspect(time.Now()); snapshot.State != Listening || !snapshot.GraceDeadline.IsZero() {
+			t.Fatal("test browser did not return Leash to listening")
 		}
 		select {
 		case <-first:
 		default:
 			t.Fatal("disconnect lost the historical start notification")
 		}
-		replacement, response := connectTestHost(t, host, "leash", testHostID, 1)
+		replacement, response := connectTestHost(t, host, "leash", testHostID, 2)
 		if response.Type != protocol.TypeServerWelcome || host.FirstHello() != first {
 			t.Fatal("reconnect replaced the one-shot startup trigger")
 		}
@@ -246,10 +294,10 @@ func TestFirstHelloRequiresValidUnexpiredAuthority(t *testing.T) {
 		version    int
 		expired    bool
 	}{
-		{"wrong identity", "leash", [16]byte{8}, 1, false},
+		{"wrong identity", "leash", [16]byte{8}, 2, false},
 		{"wrong mode", "escape", testHostID, 1, false},
-		{"wrong protocol", "leash", testHostID, 2, false},
-		{"expired", "leash", testHostID, 1, true},
+		{"wrong protocol", "leash", testHostID, 1, false},
+		{"expired", "leash", testHostID, 2, true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
@@ -355,7 +403,7 @@ func TestHostNegotiatesAuthorityAndNormalClose(t *testing.T) {
 
 func TestHostRejectsPeersWithoutChangingTheOwner(t *testing.T) {
 	host := newTestHost(t, "leash", true)
-	owner, welcome := connectTestHost(t, host, "leash", testHostID, 1)
+	owner, welcome := connectTestHost(t, host, "leash", testHostID, 2)
 	if !bytes.Contains(welcome.Payload, []byte(`"capabilities":["terminal_output"]`)) {
 		t.Fatal("readonly capability manifest was not authoritative")
 	}
@@ -366,10 +414,10 @@ func TestHostRejectsPeersWithoutChangingTheOwner(t *testing.T) {
 		version int
 		code    protocol.ErrorCode
 	}{
-		{"leash", testHostID, 1, protocol.CodeSessionBusy},
+		{"leash", testHostID, 2, protocol.CodeSessionBusy},
 		{"escape", testHostID, 1, protocol.CodeModeMismatch},
-		{"leash", [16]byte{8}, 1, protocol.CodeBadMouseCard},
-		{"leash", testHostID, 2, protocol.CodeProtocolMismatch},
+		{"leash", [16]byte{8}, 2, protocol.CodeBadMouseCard},
+		{"leash", testHostID, 1, protocol.CodeProtocolMismatch},
 	} {
 		browser, response := connectTestHost(t, host, test.mode, test.id, test.version)
 		if code, ok := protocol.ErrorCodeOf(protocol.DecodeError(response)); !ok || code != test.code {
@@ -391,8 +439,8 @@ func TestHostRejectsPeersWithoutChangingTheOwner(t *testing.T) {
 		t.Fatal("readonly input was not rejected at the host")
 	}
 	_ = owner.Close()
-	waitHostState(t, host, ReconnectGrace)
-	replacement, response := connectTestHost(t, host, "leash", testHostID, 1)
+	waitHostState(t, host, Listening)
+	replacement, response := connectTestHost(t, host, "leash", testHostID, 2)
 	if response.Type != protocol.TypeServerWelcome {
 		t.Fatal("replacement did not negotiate a fresh welcome")
 	}
@@ -530,15 +578,39 @@ func TestHostTimersAndCancellationSelectTerminalOutcomes(t *testing.T) {
 			}
 		})
 	}
-	host := newTestHost(t, "leash", false)
-	host.Authority.grace = 10 * time.Millisecond
-	browser, _ := connectTestHost(t, host, "leash", testHostID, 1)
-	_ = browser.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	if outcome := host.Wait(ctx); outcome != GraceExpired {
-		t.Fatalf("grace outcome = %s", outcome)
-	}
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(t.Context())
+		host, err := NewHost(ctx, Config{Mode: "leash", SessionID: testHostID, ReconnectGrace: 10 * time.Millisecond}, time.Now(), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := host.Listen("official", "relay.example.com", time.Now()); err != nil {
+			t.Fatal(err)
+		}
+		browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
+		_ = browser.Close()
+		synctest.Wait()
+		done := make(chan Outcome, 1)
+		go func() { done <- host.Wait(ctx) }()
+		time.Sleep(4*time.Hour + 30*time.Second)
+		synctest.Wait()
+		select {
+		case outcome := <-done:
+			t.Fatalf("browser absence ended a Host-lived Leash share: %s", outcome)
+		default:
+		}
+		if snapshot := host.Authority.Inspect(time.Now()); snapshot.State != Listening || !snapshot.ExpiresAt.IsZero() || !snapshot.GraceDeadline.IsZero() {
+			t.Fatal("Host-lived Leash installed a hidden absence or four-hour deadline")
+		}
+		cancel()
+		synctest.Wait()
+		if outcome := <-done; outcome != LocalRevoke {
+			t.Fatalf("local revoke outcome = %s", outcome)
+		}
+		if err := host.Close("local_revoke"); err != nil {
+			t.Fatal(err)
+		}
+	})
 }
 
 func TestActiveHostExpiryRevokesAuthorityBeforeGracefulClose(t *testing.T) {

@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,20 +17,26 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
+	nativepty "github.com/creack/pty"
+	"golang.org/x/sys/unix"
 	"tailmouse/apps/cli/internal/invitation"
+	"tailmouse/apps/cli/internal/protocol"
+	"tailmouse/apps/cli/internal/session"
 	tailcattransport "tailmouse/apps/cli/internal/transport/tailcat"
 )
 
 // Run with pnpm test:leash. All cases use the real CLI owner, native PTY,
 // loopback DERP, recorded Tailcat Wasm and production Web build.
 func TestHermeticLeashBrowser(t *testing.T) {
-	for _, scenario := range []string{"cli", "vim", "shell", "long-task", "reconnect", "retained-exit", "browser-crash", "browser-crash-kill"} {
+	for _, scenario := range []string{"cli", "protected", "old-peer", "vim", "shell", "long-task", "reconnect", "retained-exit", "expiry", "revocation", "browser-crash", "browser-crash-kill"} {
 		t.Run(scenario, func(t *testing.T) { testNativeBrowser(t, scenario, nil) })
 	}
 }
@@ -80,6 +88,7 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 	t.Helper()
 	isNetwork := scenario == "network" || scenario == "network-memory"
 	isEscape := scenario == "escape-idle"
+	isProtected := scenario == "protected"
 	_, source, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("cannot locate browser integration source")
@@ -141,7 +150,7 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 	} else if scenario == "long-task" {
 		// A standard shell task emits progress while disconnected, then exposes
 		// an interactive prompt on the same terminal before completing.
-		script := `printf 'long-task-ready\n'; i=0; while [ "$i" -lt 100 ]; do i=$((i + 1)); printf 'long-task-progress:%s\n' "$i"; sleep 0.2; done; printf 'long-task-input\n'; IFS= read -r answer; printf 'long-task-complete:%s\n' "$answer"`
+		script := `printf 'long-task-ready\n'; i=0; while [ "$i" -lt 200 ]; do i=$((i + 1)); printf 'long-task-progress:%s\n' "$i"; sleep 0.2; done; printf 'long-task-input\n'; IFS= read -r answer; printf 'long-task-complete:%s\n' "$answer"`
 		argv = []string{"/bin/sh", "-c", script}
 		title, wantCode = "Native long task acceptance", 0
 	}
@@ -161,12 +170,21 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 		staticHandler = startupStaticHandler(t, dist)
 	}
 	deadline := 60 * time.Second
+	if scenario == "long-task" {
+		deadline = 100 * time.Second
+	}
 	if scenario == "startup" || isNetwork || isEscape {
 		deadline = 90 * time.Second
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), deadline)
 	t.Cleanup(cancel)
-	input, inputWriter, err := os.Pipe()
+	revokeSignal := make(chan os.Signal, 1)
+	var input, inputWriter *os.File
+	if isProtected {
+		inputWriter, input, err = nativepty.Open()
+	} else {
+		input, inputWriter, err = os.Pipe()
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,6 +261,18 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 			w.WriteHeader(http.StatusNoContent)
 		})
 		staticHandler = mux
+	} else if scenario == "revocation" {
+		mux := http.NewServeMux()
+		mux.Handle("/", staticHandler)
+		mux.HandleFunc("POST /__test/revoke", func(w http.ResponseWriter, _ *http.Request) {
+			select {
+			case revokeSignal <- syscall.SIGTERM:
+				w.WriteHeader(http.StatusNoContent)
+			default:
+				w.WriteHeader(http.StatusConflict)
+			}
+		})
+		staticHandler = mux
 	}
 	static := httptest.NewServer(staticHandler)
 	t.Cleanup(static.Close)
@@ -267,9 +297,20 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 	if scenario == "retained-exit" {
 		retention = "5s" // Includes a fresh browser context and real Wasm startup.
 	}
-	args := []string{"leash", "--derp-host=localhost", "--no-qr", "--start-on=connect", "--post-exit-ttl=" + retention, "--cwd=" + directory, "--title=" + title, "--"}
+	args := []string{"leash", "--derp-host=localhost", "--no-qr", "--start-on=connect", "--post-exit-ttl=" + retention, "--cwd=" + directory, "--title=" + title}
+	if !isProtected {
+		args = append(args, "--no-password")
+	}
+	args = append(args, "--")
 	if scenario == "browser-crash-kill" {
 		args = append(args[:len(args)-1], "--kill-on-disconnect", "--")
+		wantCode = 143
+	}
+	if scenario == "expiry" {
+		args = append(args[:len(args)-1], "--ttl=3s", "--kill-on-expire", "--")
+		wantCode = 143
+	}
+	if scenario == "revocation" {
 		wantCode = 143
 	}
 	args = append(args, argv...)
@@ -280,11 +321,15 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 		wantCode = exitOK
 	}
 	go func() {
+		var interrupts <-chan os.Signal
+		if scenario == "revocation" {
+			interrupts = revokeSignal
+		}
 		code := runWithSignals(ctx, input, args, environment, directory, output, io.Discard, func(ctx context.Context, config tailcattransport.Config) (transportServer, error) {
 			var err error
 			nativeTransport, err = start(ctx, config)
 			return nativeTransport, err
-		}, nil)
+		}, interrupts)
 		output.Close()
 		input.Close()
 		done <- code
@@ -331,18 +376,40 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 	case <-ctx.Done():
 		t.Fatal("native fixture invitation deadline exceeded")
 	}
+	var oldAddress []byte
+	var oldSessionID [16]byte
+	if scenario == "old-peer" {
+		oldAddress = []byte(card.TailcatAddr)
+		oldSessionID = card.SessionID
+		defer clear(oldAddress)
+	}
 	encoded, err := invitation.Encode(card)
 	card = invitation.MouseCard{}
 	if err != nil {
 		t.Fatal("native invitation could not be consumed")
 	}
+	var accessCode session.AccessCode
+	if isProtected {
+		accessCode = readBrowserIntegrationAccessCode(t, ctx, inputWriter)
+	}
+	if scenario == "old-peer" {
+		rejectOldLeashPeer(t, ctx, oldAddress, oldSessionID)
+		capture.mu.Lock()
+		started := bytes.Contains(capture.capture.Bytes(), []byte("child-ready"))
+		capture.mu.Unlock()
+		if started {
+			t.Fatal("old Leash peer started the protected task")
+		}
+	}
 	request, err := json.Marshal(struct {
-		BaseURL  string                               `json:"baseURL"`
-		Fragment string                               `json:"fragment"`
-		Scenario string                               `json:"scenario"`
-		HostPID  int                                  `json:"hostPID"`
-		Profile  *tailcattransport.TestNetworkProfile `json:"profile,omitempty"`
-	}{static.URL, base64.RawURLEncoding.EncodeToString(encoded), scenario, os.Getpid(), profile})
+		BaseURL    string                               `json:"baseURL"`
+		Fragment   string                               `json:"fragment"`
+		Scenario   string                               `json:"scenario"`
+		HostPID    int                                  `json:"hostPID"`
+		Profile    *tailcattransport.TestNetworkProfile `json:"profile,omitempty"`
+		AccessCode string                               `json:"accessCode,omitempty"`
+	}{static.URL, base64.RawURLEncoding.EncodeToString(encoded), scenario, os.Getpid(), profile, string(accessCode[:])})
+	clear(accessCode[:])
 	clear(encoded)
 	if err != nil {
 		t.Fatal("browser request could not be encoded")
@@ -542,5 +609,81 @@ func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.
 		}
 	case <-waitForExit.Done():
 		t.Fatal("native owner did not finish after browser acceptance")
+	}
+}
+
+func readBrowserIntegrationAccessCode(t *testing.T, ctx context.Context, terminal *os.File) session.AccessCode {
+	t.Helper()
+	pattern := regexp.MustCompile(`[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}(?:-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}){3}`)
+	output := make([]byte, 0, 1024)
+	chunk := make([]byte, 256)
+	defer clear(chunk)
+	defer clear(output)
+	for len(output) < 4096 {
+		if err := pollConsole(ctx, int(terminal.Fd()), unix.POLLIN); err != nil {
+			t.Fatal("protected credential terminal did not become readable")
+		}
+		count, err := unix.Read(int(terminal.Fd()), chunk)
+		if err != nil || count == 0 {
+			t.Fatal("protected credential terminal could not be read")
+		}
+		output = append(output, chunk[:count]...)
+		clear(chunk[:count])
+		if match := pattern.Find(output); match != nil {
+			code, err := session.CanonicalAccessCode(string(match))
+			if err != nil {
+				t.Fatal("protected credential terminal emitted an invalid code")
+			}
+			return code
+		}
+	}
+	t.Fatal("protected credential terminal exceeded its output bound")
+	return session.AccessCode{}
+}
+
+func rejectOldLeashPeer(t *testing.T, parent context.Context, address []byte, sessionID [16]byte) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(parent, 20*time.Second)
+	defer cancel()
+	connection, closeClient, err := tailcattransport.DialLocalTestStream(ctx, address, invitation.VirtualPort)
+	if err != nil {
+		t.Fatal("old Leash client could not reach the hermetic Host")
+	}
+	defer func() {
+		if err := closeClient(); err != nil {
+			t.Error("old Leash client did not close")
+		}
+	}()
+	defer connection.Close()
+	payload, err := json.Marshal(map[string]any{
+		"protocol_min": 1,
+		"protocol_max": 1,
+		"session_id":   hex.EncodeToString(sessionID[:]),
+		"mode":         "leash",
+		"client": map[string]string{
+			"name": "old-browser", "version": "1", "platform": "test", "user_agent": "",
+		},
+	})
+	if err != nil {
+		t.Fatal("old Leash HELLO could not be encoded")
+	}
+	defer clear(payload)
+	wire := make([]byte, 6+len(payload))
+	defer clear(wire)
+	binary.BigEndian.PutUint32(wire[:4], uint32(len(payload)+2))
+	wire[4] = byte(protocol.TypeClientHello)
+	copy(wire[6:], payload)
+	if written, err := connection.Write(wire); err != nil || written != len(wire) {
+		t.Fatal("old Leash HELLO could not be sent")
+	}
+	response, err := protocol.ReadFrame(ctx, connection, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
+	if err != nil {
+		t.Fatal("old Leash rejection could not be read")
+	}
+	defer clear(response.Payload)
+	failure := protocol.DecodeError(response)
+	var protocolFailure *protocol.ProtocolError
+	if !errors.As(failure, &protocolFailure) || protocolFailure.Code != protocol.CodeProtocolMismatch {
+		t.Fatal("old Leash peer was not rejected as a protocol mismatch")
 	}
 }

@@ -5,9 +5,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { App } from './app.tsx';
 import {
+  authChallengeFrame,
+  closeFrame,
+  encodeFrame,
+  errorFrame,
+  Message,
+  type Frame,
+} from './protocol/frame.ts';
+import {
   dialTailcat,
   loadTailcat,
   TailcatTransportError,
+  type ByteStream,
 } from './transport/tailcat/adapter.ts';
 
 vi.mock('./transport/tailcat/adapter.ts', { spy: true });
@@ -34,14 +43,14 @@ afterEach(async () => {
 
 async function mount(invited: boolean) {
   const bytes = encode({
-    a: 1,
+    a: 2,
     e: 0,
     m: 'leash',
     p: 44321,
     s: new Uint8Array(16).fill(7),
     t: 'tcSyntheticCacheSchedulingCredential',
     v: 1,
-    z: 1,
+    z: 2,
   });
   const fragment = btoa(String.fromCharCode(...bytes))
     .replaceAll('+', '-')
@@ -59,20 +68,132 @@ async function mount(invited: boolean) {
 }
 
 describe('invitation safety notice', () => {
-  it('explains bearer access without implying an extra password prompt', async () => {
+  it('does not claim a protection mode before the Host reports one', async () => {
     vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(
       {} as ServiceWorkerRegistration,
     );
     await mount(true);
     await expect
       .element(page.getByText(/^Treat this invitation link like a password\./u))
-      .toHaveTextContent(
-        "Anyone with it can use the host's shared permissions until expiry or revocation; no separate password is required.",
-      );
+      .toHaveTextContent('The host may also require a separate access code.');
     expect(root.querySelector('input[type="password"]')).toBeNull();
     expect(root.textContent).not.toContain(
       'tcSyntheticCacheSchedulingCredential',
     );
+  });
+
+  it('uses a fresh protected stream only after explicit access-code submission', async () => {
+    const discovery = hostPeer(authChallengeFrame(new Uint8Array(32).fill(3)));
+    const admission = hostPeer(
+      authChallengeFrame(new Uint8Array(32).fill(4)),
+      leashWelcome('code'),
+    );
+    vi.mocked(dialTailcat)
+      .mockResolvedValueOnce(discovery.stream)
+      .mockResolvedValueOnce(admission.stream);
+    vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(
+      {} as ServiceWorkerRegistration,
+    );
+    await mount(true);
+
+    await expect
+      .element(page.getByRole('textbox', { name: 'Access code' }))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole('alert'))
+      .toHaveTextContent('Enter the host access code to continue.');
+    expect(discovery.writes.map((bytes) => bytes[4])).toEqual([
+      Message.CLIENT_HELLO,
+    ]);
+
+    const field = page.getByRole('textbox', { name: 'Access code' });
+    await userEvent.fill(field, '2345-6789-abcd-efgh');
+    await userEvent.click(page.getByRole('button', { name: 'Connect' }));
+    await expect
+      .element(
+        page
+          .getByLabelText('Connection')
+          .getByText('Connected', { exact: true }),
+      )
+      .toBeVisible();
+    expect(admission.writes.map((bytes) => bytes[4])).toEqual([
+      Message.CLIENT_HELLO,
+      Message.AUTH_PROOF,
+    ]);
+    expect(root.querySelector('input[type="password"]')).toBeNull();
+    expect(location.href).not.toContain('2345');
+    expect(root.textContent).not.toContain('2345');
+    await expect
+      .element(page.getByText('Password protected', { exact: true }))
+      .toBeVisible();
+  });
+
+  it('shows Host-authoritative link-only access without a password field', async () => {
+    const peer = hostPeer(leashWelcome('link'));
+    vi.mocked(dialTailcat).mockResolvedValueOnce(peer.stream);
+    vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(
+      {} as ServiceWorkerRegistration,
+    );
+    await mount(true);
+    await expect
+      .element(
+        page
+          .getByLabelText('Connection')
+          .getByText('Connected', { exact: true }),
+      )
+      .toBeVisible();
+    await expect
+      .element(page.getByText(/^No password — link grants access\./u))
+      .toBeVisible();
+    expect(root.querySelector('input[type="password"]')).toBeNull();
+  });
+
+  it('keeps failed proofs explicit and disables attempts for Host cooldown', async () => {
+    const discovery = hostPeer(authChallengeFrame(new Uint8Array(32).fill(5)));
+    const rejected = hostPeer(
+      authChallengeFrame(new Uint8Array(32).fill(6)),
+      errorFrame('AUTH_FAILED'),
+    );
+    const throttled = hostPeer(
+      authChallengeFrame(new Uint8Array(32).fill(7)),
+      errorFrame('AUTH_THROTTLED', 1500),
+    );
+    vi.mocked(dialTailcat)
+      .mockResolvedValueOnce(discovery.stream)
+      .mockResolvedValueOnce(rejected.stream)
+      .mockResolvedValueOnce(throttled.stream);
+    vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(
+      {} as ServiceWorkerRegistration,
+    );
+    await mount(true);
+
+    const submit = async (code: string): Promise<void> => {
+      await userEvent.fill(
+        page.getByRole('textbox', { name: 'Access code' }),
+        code,
+      );
+      await userEvent.click(page.getByRole('button', { name: 'Connect' }));
+    };
+    await submit('23456789ABCDEFGH');
+    await expect
+      .element(page.getByRole('alert'))
+      .toHaveTextContent('Authentication failed.');
+    expect((root.querySelector('#access-code') as HTMLInputElement).value).toBe(
+      '',
+    );
+
+    await submit('23456789ABCDEFGH');
+    await expect
+      .element(page.getByRole('alert'))
+      .toHaveTextContent('Authentication attempts are temporarily limited.');
+    await expect
+      .element(page.getByText(/^Retry in [12] seconds\.$/u))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole('button', { name: 'Connect' }))
+      .toBeDisabled();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(dialTailcat).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -203,3 +324,59 @@ describe('application static-cache scheduling', () => {
     expect(root.childElementCount).toBe(0);
   });
 });
+
+function leashWelcome(accessMode: 'code' | 'link'): Frame {
+  return {
+    type: Message.SERVER_WELCOME,
+    payload: new TextEncoder().encode(
+      JSON.stringify({
+        protocol: 2,
+        mode: 'leash',
+        session_state: 'active',
+        expires_at: 0,
+        relay: {
+          mode: 'official',
+          host: 'relay.example.com',
+          browser_path: 'derp',
+        },
+        capabilities: ['terminal_input', 'terminal_output'],
+        access_mode: accessMode,
+      }),
+    ),
+  };
+}
+
+function hostPeer(first: Frame, afterProof?: Frame) {
+  const chunks: Array<Uint8Array | null> = [];
+  const writes: Uint8Array[] = [];
+  let reader: ((chunk: Uint8Array | null) => void) | undefined;
+  const push = (chunk: Uint8Array | null): void => {
+    if (reader !== undefined) {
+      const resolve = reader;
+      reader = undefined;
+      resolve(chunk);
+    } else {
+      chunks.push(chunk);
+    }
+  };
+  const stream = {
+    read: async (): Promise<Uint8Array | null> => {
+      if (chunks.length > 0) return chunks.shift()!;
+      return new Promise((resolve) => {
+        reader = resolve;
+      });
+    },
+    write: async (bytes: Uint8Array): Promise<void> => {
+      writes.push(bytes.slice());
+      if (bytes[4] === Message.CLIENT_HELLO) {
+        push(encodeFrame('host', 'await-server-welcome', first));
+      } else if (bytes[4] === Message.AUTH_PROOF && afterProof !== undefined) {
+        push(encodeFrame('host', 'await-server-welcome', afterProof));
+      } else if (bytes[4] === Message.CLOSE) {
+        push(encodeFrame('host', 'active-leash', closeFrame('normal')));
+      }
+    },
+    close: vi.fn(async () => push(null)),
+  } satisfies ByteStream;
+  return { stream, writes };
+}

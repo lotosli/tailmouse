@@ -27,7 +27,7 @@ func TestHostNotifiesOversizedPrefixBeforeBodyAndCloses(t *testing.T) {
 				var browser net.Conn
 				state := protocol.StateAwaitServerWelcome
 				if scenario.active {
-					browser, _ = connectTestHost(t, host, "leash", testHostID, 1)
+					browser, _ = connectTestHost(t, host, "leash", testHostID, 2)
 					state = protocol.StateActiveLeash
 				} else {
 					var server net.Conn

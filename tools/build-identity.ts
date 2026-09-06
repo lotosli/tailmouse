@@ -5,8 +5,10 @@ import { join } from 'node:path';
 export interface BuildIdentity {
   readonly version: string;
   readonly tailcatRevision: string;
-  readonly protocolMin: 1;
-  readonly protocolMax: 1;
+  readonly protocols: Readonly<{
+    readonly escape: 1;
+    readonly leash: 2;
+  }>;
 }
 
 export function buildIdentity(
@@ -57,7 +59,6 @@ export function buildIdentity(
   return Object.freeze({
     version,
     tailcatRevision,
-    protocolMin: 1,
-    protocolMax: 1,
+    protocols: Object.freeze({ escape: 1, leash: 2 }),
   });
 }

@@ -1,8 +1,10 @@
 package protocol
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"slices"
 )
 
@@ -38,26 +40,72 @@ type Welcome struct {
 	ExpiresAt            int64
 	RelayMode, RelayHost string
 	Capabilities         []string
+	AccessMode           string
 }
 
 func WelcomeFrame(welcome Welcome) (Frame, error) {
 	expires := float64(welcome.ExpiresAt)
+	protocolIdentifier := float64(1)
+	var accessMode *string
+	if welcome.Mode == "leash" {
+		protocolIdentifier = 2
+		accessMode = &welcome.AccessMode
+	}
 	value := serverWelcome{
-		Protocol: 1, Mode: welcome.Mode, SessionState: "active", ExpiresAt: &expires,
+		Protocol: protocolIdentifier, Mode: welcome.Mode, SessionState: "active", ExpiresAt: &expires,
 		Relay:        welcomeRelay{Mode: welcome.RelayMode, Host: welcome.RelayHost, BrowserPath: "derp"},
 		Capabilities: welcome.Capabilities,
+		AccessMode:   accessMode,
 	}
 	payload, _ := json.Marshal(value)
 	if _, err := validateServerWelcome(payload); err != nil {
 		return Frame{}, err
 	}
-	return Frame{Type: TypeServerWelcome, Payload: payload, SelectedProtocol: 1}, nil
+	return Frame{Type: TypeServerWelcome, Payload: payload, SelectedProtocol: uint16(protocolIdentifier)}, nil
+}
+
+func authenticationFrame(message MessageType, field string, value [32]byte) (Frame, error) {
+	payloadValue := authenticationPayload{Scheme: "hmac-sha256-v1"}
+	encoded := base64.RawURLEncoding.EncodeToString(value[:])
+	if field == "challenge" {
+		payloadValue.Challenge = encoded
+	} else {
+		payloadValue.Proof = encoded
+	}
+	payload, _ := json.Marshal(payloadValue)
+	if _, err := decodeAuthenticationPayload(payload, field); err != nil {
+		return Frame{}, err
+	}
+	return Frame{Type: message, Payload: payload}, nil
+}
+
+func AuthChallengeFrame(challenge [32]byte) (Frame, error) {
+	return authenticationFrame(TypeAuthChallenge, "challenge", challenge)
+}
+
+func DecodeAuthChallenge(frame Frame) ([32]byte, error) {
+	if frame.Type != TypeAuthChallenge || len(frame.Payload) > 512 {
+		return [32]byte{}, &ProtocolError{Code: CodeBadFrame}
+	}
+	return decodeAuthenticationPayload(frame.Payload, "challenge")
+}
+
+func AuthProofFrame(proof [32]byte) (Frame, error) {
+	return authenticationFrame(TypeAuthProof, "proof", proof)
+}
+
+func DecodeAuthProof(frame Frame) ([32]byte, error) {
+	if frame.Type != TypeAuthProof || len(frame.Payload) > 512 {
+		return [32]byte{}, &ProtocolError{Code: CodeBadFrame}
+	}
+	return decodeAuthenticationPayload(frame.Payload, "proof")
 }
 
 type errorPayload struct {
-	Code      ErrorCode `json:"code"`
-	Message   string    `json:"message"`
-	Retryable *bool     `json:"retryable"`
+	Code         ErrorCode `json:"code"`
+	Message      string    `json:"message"`
+	Retryable    *bool     `json:"retryable"`
+	RetryAfterMS *float64  `json:"retry_after_ms,omitempty"`
 }
 
 type safeFailure struct {
@@ -77,6 +125,12 @@ func failureFor(code ErrorCode) (safeFailure, bool) {
 		return safeFailure{"No supported protocol version overlaps.", false}, true
 	case CodeSessionBusy:
 		return safeFailure{"Another browser is controlling this session.", true}, true
+	case CodeAuthRequired:
+		return safeFailure{"Authentication is required before access.", false}, true
+	case CodeAuthFailed:
+		return safeFailure{"Authentication failed.", true}, true
+	case CodeAuthThrottled:
+		return safeFailure{"Authentication attempts are temporarily limited.", true}, true
 	case CodeUnauthorized:
 		return safeFailure{"This session does not grant that action.", false}, true
 	case CodeFrameTooLarge:
@@ -109,18 +163,38 @@ func ErrorFrame(err error) Frame {
 		code = CodeInternal
 		failure, _ = failureFor(code)
 	}
-	payload, _ := json.Marshal(errorPayload{code, failure.message, &failure.retryable})
+	value := errorPayload{Code: code, Message: failure.message, Retryable: &failure.retryable}
+	if code == CodeAuthThrottled {
+		var protocolError *ProtocolError
+		if !errors.As(err, &protocolError) || protocolError.RetryAfterMS < 1 || protocolError.RetryAfterMS > 30_000 {
+			code = CodeInternal
+			failure, _ = failureFor(code)
+			value = errorPayload{Code: code, Message: failure.message, Retryable: &failure.retryable}
+		} else {
+			retryAfter := float64(protocolError.RetryAfterMS)
+			value.RetryAfterMS = &retryAfter
+		}
+	}
+	payload, _ := json.Marshal(value)
 	return Frame{Type: TypeError, Payload: payload}
 }
 
 func validateError(payload []byte) error {
 	object, err := strictJSONObject(payload)
 	var value errorPayload
-	if err != nil || !exactKeys(object, "code", "message", "retryable") || strictUnmarshal(payload, &value) != nil ||
+	if err != nil || strictUnmarshal(payload, &value) != nil ||
 		!boundedText(value.Message, 1, 256) || value.Retryable == nil {
 		return &ProtocolError{Code: CodeBadFrame}
 	}
 	if _, ok := failureFor(value.Code); !ok {
+		return &ProtocolError{Code: CodeBadFrame}
+	}
+	if value.Code == CodeAuthThrottled {
+		if !exactKeys(object, "code", "message", "retry_after_ms", "retryable") || value.RetryAfterMS == nil ||
+			!integerBetween(*value.RetryAfterMS, 1, 30_000) {
+			return &ProtocolError{Code: CodeBadFrame}
+		}
+	} else if !exactKeys(object, "code", "message", "retryable") || value.RetryAfterMS != nil {
 		return &ProtocolError{Code: CodeBadFrame}
 	}
 	return nil
@@ -137,7 +211,11 @@ func DecodeError(frame Frame) error {
 	}
 	var value errorPayload
 	_ = json.Unmarshal(frame.Payload, &value)
-	return &ProtocolError{Code: value.Code}
+	failure := &ProtocolError{Code: value.Code}
+	if value.RetryAfterMS != nil {
+		failure.RetryAfterMS = uint32(*value.RetryAfterMS)
+	}
+	return failure
 }
 
 type closePayload struct {

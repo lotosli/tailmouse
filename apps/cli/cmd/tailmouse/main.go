@@ -88,7 +88,7 @@ func runWithSignals(ctx context.Context, stdin *os.File, args, environ []string,
 	}
 	switch options.Command {
 	case "version":
-		if _, err := fmt.Fprintf(stdout, "TailMouse %s\nTMOUSE protocol 1..1\nTailcat revision %s\n", buildVersion, tailcatRevision); err != nil {
+		if _, err := fmt.Fprintf(stdout, "TailMouse %s\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTailcat revision %s\n", buildVersion, tailcatRevision); err != nil {
 			return exitInternal
 		}
 		return exitOK
@@ -113,7 +113,16 @@ func runWithSignals(ctx context.Context, stdin *os.File, args, environ []string,
 			return exitConfig
 		}
 	}
-	return runSession(ctx, stdin, options, command, stdout, stderr, start, interrupts, stopStartup)
+	var credential *credentialTerminal
+	if options.Command == "leash" && !options.Leash.NoPassword {
+		credential, err = openCredentialTerminal(stdin)
+		if err != nil {
+			_ = newDiagnostics(options, stderr).configurationFailure(&config.Error{Field: "protected credential terminal", Source: config.Default})
+			return exitConfig
+		}
+		defer credential.Close()
+	}
+	return runSession(ctx, stdin, options, command, credential, stdout, stderr, start, interrupts, stopStartup)
 }
 
 // Startup has one signal consumer. Joining it before Leash takes ownership
@@ -143,7 +152,7 @@ func startupSignals(ctx context.Context, cancel context.CancelFunc, interrupts <
 	return func() { once.Do(func() { close(done); <-stopped }) }
 }
 
-func runSession(ctx context.Context, stdin *os.File, options config.Options, command *leash.Command, stdout, stderr io.Writer, start transportStarter, interrupts <-chan os.Signal, stopStartup func()) (code int) {
+func runSession(ctx context.Context, stdin *os.File, options config.Options, command *leash.Command, credential *credentialTerminal, stdout, stderr io.Writer, start transportStarter, interrupts <-chan os.Signal, stopStartup func()) (code int) {
 	log := newDiagnostics(options, stderr)
 	reason := "internal_error"
 	var childResult bool
@@ -160,7 +169,7 @@ func runSession(ctx context.Context, stdin *os.File, options config.Options, com
 	defer clear(identifier[:])
 	host, err := session.NewHost(ctx, session.Config{
 		Mode: options.Command, SessionID: identifier, TTL: options.TTL,
-		ReconnectGrace: options.Leash.ReconnectGrace, Readonly: options.Leash.Readonly,
+		ReconnectGrace: options.Leash.ReconnectGrace, Readonly: options.Leash.Readonly, NoPassword: options.Leash.NoPassword,
 		NoRestart: options.Leash.NoRestart, NoTerminate: options.Leash.NoTerminate,
 	}, time.Now(), log.observe)
 	if err != nil {
@@ -201,8 +210,9 @@ func runSession(ctx context.Context, stdin *os.File, options config.Options, com
 			}
 		})
 	}
-	// Both mode loops keep their console until application, mode and transport
-	// cleanup finishes. A nil cleanup closes access only (or the startup path).
+	// Active mode loops keep their console until application, mode and transport
+	// cleanup finishes. Retained Leash results restore it when the child exits.
+	// A nil cleanup closes access only (or the startup path).
 	shutdown := func(outcome session.Outcome, cleanup func() session.Outcome) {
 		switch outcome {
 		case session.ModeComplete:
@@ -278,6 +288,30 @@ func runSession(ctx context.Context, stdin *os.File, options config.Options, com
 		if err := log.processState(protocol.ProcessState{Generation: 1, State: "waiting"}); err != nil {
 			return exitInternal
 		}
+		accessMode := "link"
+		presented := false
+		if !options.Leash.NoPassword {
+			accessMode = "code"
+			accessCode, available := host.AccessCodeForDisplay()
+			if !available || credential == nil {
+				clear(accessCode[:])
+				reason = "credential_presentation"
+				_ = log.configurationFailure(&config.Error{Field: "protected credential terminal", Source: config.Default})
+				return exitConfig
+			}
+			presentationErr := credential.Present(accessCode, options.Leash.Readonly)
+			clear(accessCode[:])
+			closeErr := credential.Close()
+			if presentationErr != nil || closeErr != nil {
+				reason = "credential_presentation"
+				_ = log.configurationFailure(&config.Error{Field: "protected credential terminal", Source: config.Default})
+				return exitConfig
+			}
+			presented = true
+		}
+		if err := log.accessState(accessMode, presented, options.Leash.Readonly); err != nil {
+			return exitInternal
+		}
 	}
 	startContext := ctx
 	if !snapshot.ExpiresAt.IsZero() {
@@ -322,9 +356,13 @@ func runSession(ctx context.Context, stdin *os.File, options config.Options, com
 	if !snapshot.ExpiresAt.IsZero() {
 		expires = snapshot.ExpiresAt.Unix()
 	}
+	protocolIdentifier := invitation.EscapeProtocol
+	if options.Command == "leash" {
+		protocolIdentifier = invitation.LeashProtocol
+	}
 	card := invitation.MouseCard{
 		Version: invitation.CardVersion, Mode: invitation.Mode(options.Command), TailcatAddr: string(address), Port: invitation.VirtualPort,
-		SessionID: identifier, ExpiresAt: expires, ProtocolMin: 1, ProtocolMax: 1,
+		SessionID: identifier, ExpiresAt: expires, ProtocolMin: protocolIdentifier, ProtocolMax: protocolIdentifier,
 	}
 	cardInvitation, err = invitation.New(options.WebBaseURL, card)
 	card.TailcatAddr, card.SessionID = "", [16]byte{}
@@ -338,9 +376,19 @@ func runSession(ctx context.Context, stdin *os.File, options config.Options, com
 	if relay.Mode == tailcattransport.RelayOfficial {
 		relayLabel = "official"
 	}
-	if err := cardInvitation.Render(stdout, time.Now(), invitation.DisplayOptions{Relay: relayLabel, NoQR: options.NoQR, Readonly: options.Leash.Readonly}); err != nil {
+	accessMode := ""
+	if options.Command == "leash" {
+		accessMode = "code"
+		if options.Leash.NoPassword {
+			accessMode = "link"
+		}
+	}
+	if err := cardInvitation.Render(stdout, time.Now(), invitation.DisplayOptions{Relay: relayLabel, NoQR: options.NoQR, Readonly: options.Leash.Readonly, AccessMode: accessMode}); err != nil {
 		reason = "invitation_display"
 		return exitInvitation
+	}
+	if err := log.invitationPresented(); err != nil {
+		return exitInternal
 	}
 	var outcome session.Outcome
 	if options.Command == "escape" {

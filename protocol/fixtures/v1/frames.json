@@ -2,6 +2,206 @@
   "schema": "tailmouse.tmouse-fixtures/v1",
   "cases": [
     {
+      "id": "valid-client-hello-v2",
+      "category": "valid",
+      "description": "A phase-two Leash client selects only mode-specific identifier 2.",
+      "receiver": "host",
+      "state": "await-client-hello",
+      "wire": {
+        "hex": "000000ba01007b2270726f746f636f6c5f6d696e223a322c2270726f746f636f6c5f6d6178223a322c2273657373696f6e5f6964223a223030303130323033303430353036303730383039306130623063306430653066222c226d6f6465223a226c65617368222c22636c69656e74223a7b226e616d65223a227461696c6d6f7573652d776562222c2276657273696f6e223a22302e322e30222c22706c6174666f726d223a2274657374222c22757365725f6167656e74223a22227d7d"
+      },
+      "expect": {
+        "accepted": true,
+        "message": "CLIENT_HELLO",
+        "selected_protocol": 2
+      }
+    },
+    {
+      "id": "old-leash-client-hello-v1",
+      "category": "compatibility",
+      "description": "An identifier-1 Leash peer fails closed before authentication or terminal disclosure.",
+      "receiver": "host",
+      "state": "await-client-hello",
+      "wire": {
+        "hex": "000000ba01007b2270726f746f636f6c5f6d696e223a312c2270726f746f636f6c5f6d6178223a312c2273657373696f6e5f6964223a223030303130323033303430353036303730383039306130623063306430653066222c226d6f6465223a226c65617368222c22636c69656e74223a7b226e616d65223a227461696c6d6f7573652d776562222c2276657273696f6e223a22302e312e30222c22706c6174666f726d223a2274657374222c22757365725f6167656e74223a22227d7d"
+      },
+      "expect": {
+        "accepted": false,
+        "error": "PROTOCOL_MISMATCH"
+      }
+    },
+    {
+      "id": "valid-auth-challenge-v2",
+      "category": "valid",
+      "description": "The protected Host sends the exact synthetic 32-byte challenge after identifier-2 HELLO.",
+      "receiver": "browser",
+      "state": "await-server-welcome",
+      "wire": {
+        "hex": "0000005707007b22736368656d65223a22686d61632d7368613235362d7631222c226368616c6c656e6765223a2241414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838227d"
+      },
+      "expect": {
+        "accepted": true,
+        "message": "AUTH_CHALLENGE"
+      }
+    },
+    {
+      "id": "valid-auth-proof-v2",
+      "category": "valid",
+      "description": "The browser sends the exact synthetic challenge-bound proof once.",
+      "receiver": "host",
+      "state": "await-auth-proof",
+      "wire": {
+        "hex": "0000005308007b22736368656d65223a22686d61632d7368613235362d7631222c2270726f6f66223a2256304f4d474f576848396e38722d6377486a6b483036644443794e51725a5167726c784a58446d7a6c3473227d"
+      },
+      "expect": {
+        "accepted": true,
+        "message": "AUTH_PROOF"
+      }
+    },
+    {
+      "id": "valid-server-welcome-v2",
+      "category": "valid",
+      "description": "An admitted protected Leash stream receives identifier 2 and Host-authoritative code access mode.",
+      "receiver": "browser",
+      "state": "await-server-welcome",
+      "wire": {
+        "hex": "000000c902007b2270726f746f636f6c223a322c226d6f6465223a226c65617368222c2273657373696f6e5f7374617465223a22616374697665222c22657870697265735f6174223a302c2272656c6179223a7b226d6f6465223a226f6666696369616c222c22686f7374223a227463333032612e69706e2e646576222c2262726f777365725f70617468223a2264657270227d2c226361706162696c6974696573223a5b227465726d696e616c5f6f7574707574225d2c226163636573735f6d6f6465223a22636f6465227d"
+      },
+      "expect": {
+        "accepted": true,
+        "message": "SERVER_WELCOME",
+        "selected_protocol": 2
+      }
+    },
+    {
+      "id": "valid-error-auth-throttled",
+      "category": "valid",
+      "description": "Cooldown reports only its bounded current remaining milliseconds.",
+      "receiver": "browser",
+      "state": "await-server-welcome",
+      "wire": {
+        "hex": "0000008003007b22636f6465223a22415554485f5448524f54544c4544222c226d657373616765223a2241757468656e7469636174696f6e20617474656d707473206172652074656d706f726172696c79206c696d697465642e222c22726574727961626c65223a747275652c2272657472795f61667465725f6d73223a33303030307d"
+      },
+      "expect": {
+        "accepted": true,
+        "message": "ERROR"
+      }
+    },
+    {
+      "id": "auth-challenge-padded-base64url",
+      "category": "malformed",
+      "description": "Authentication bytes require canonical unpadded base64url.",
+      "receiver": "browser",
+      "state": "await-server-welcome",
+      "wire": {
+        "hex": "0000005807007b22736368656d65223a22686d61632d7368613235362d7631222c226368616c6c656e6765223a2241414543417751464267634943516f4c4441304f4478415245684d554652595847426b61477877644868383d227d"
+      },
+      "expect": {
+        "accepted": false,
+        "error": "BAD_FRAME"
+      }
+    },
+    {
+      "id": "auth-proof-invalid-base64url",
+      "category": "malformed",
+      "description": "Authentication proof rejects characters outside base64url.",
+      "receiver": "host",
+      "state": "await-auth-proof",
+      "wire": {
+        "hex": "0000005308007b22736368656d65223a22686d61632d7368613235362d7631222c2270726f6f66223a2256304f4d474f576848396e38722b6377486a6b483036644443794e51725a5167726c784a58446d7a6c3473227d"
+      },
+      "expect": {
+        "accepted": false,
+        "error": "BAD_FRAME"
+      }
+    },
+    {
+      "id": "auth-challenge-wrong-direction",
+      "category": "illegal-state",
+      "description": "A browser cannot send a challenge while the Host awaits proof.",
+      "receiver": "host",
+      "state": "await-auth-proof",
+      "wire": {
+        "hex": "0000005707007b22736368656d65223a22686d61632d7368613235362d7631222c226368616c6c656e6765223a2241414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838227d"
+      },
+      "expect": {
+        "accepted": false,
+        "error": "BAD_FRAME"
+      }
+    },
+    {
+      "id": "auth-proof-duplicate-after-admission",
+      "category": "illegal-state",
+      "description": "A second proof is illegal after the stream leaves its one-proof state.",
+      "receiver": "host",
+      "state": "active-leash",
+      "wire": {
+        "hex": "0000005308007b22736368656d65223a22686d61632d7368613235362d7631222c2270726f6f66223a2256304f4d474f576848396e38722d6377486a6b483036644443794e51725a5167726c784a58446d7a6c3473227d"
+      },
+      "expect": {
+        "accepted": false,
+        "error": "BAD_FRAME"
+      }
+    },
+    {
+      "id": "terminal-input-before-authentication",
+      "category": "illegal-state",
+      "description": "Terminal actions before proof acceptance fail as authentication-required.",
+      "receiver": "host",
+      "state": "await-auth-proof",
+      "wire": {
+        "hex": "00000003120061"
+      },
+      "expect": {
+        "accepted": false,
+        "error": "AUTH_REQUIRED"
+      }
+    },
+    {
+      "id": "auth-challenge-payload-over-limit",
+      "category": "oversized",
+      "description": "Authentication payload length is rejected at 513 bytes before payload allocation.",
+      "receiver": "browser",
+      "state": "await-server-welcome",
+      "wire": {
+        "prefix_hex": "000002030700",
+        "repeat_hex": "61",
+        "repeat_count": 513
+      },
+      "expect": {
+        "accepted": false,
+        "error": "FRAME_TOO_LARGE"
+      }
+    },
+    {
+      "id": "auth-throttled-missing-retry",
+      "category": "malformed",
+      "description": "AUTH_THROTTLED requires one bounded remaining duration.",
+      "receiver": "browser",
+      "state": "await-server-welcome",
+      "wire": {
+        "hex": "0000006903007b22636f6465223a22415554485f5448524f54544c4544222c226d657373616765223a2241757468656e7469636174696f6e20617474656d707473206172652074656d706f726172696c79206c696d697465642e222c22726574727961626c65223a747275657d"
+      },
+      "expect": {
+        "accepted": false,
+        "error": "BAD_FRAME"
+      }
+    },
+    {
+      "id": "auth-failed-forbidden-retry-detail",
+      "category": "malformed",
+      "description": "Authentication failures other than cooldown expose no retry duration.",
+      "receiver": "browser",
+      "state": "await-server-welcome",
+      "wire": {
+        "hex": "0000005f03007b22636f6465223a22415554485f4641494c4544222c226d657373616765223a2241757468656e7469636174696f6e206661696c65642e222c22726574727961626c65223a747275652c2272657472795f61667465725f6d73223a317d"
+      },
+      "expect": {
+        "accepted": false,
+        "error": "BAD_FRAME"
+      }
+    },
+    {
       "id": "terminal-title-markup-byte-limit",
       "category": "boundary",
       "description": "A maximum-byte plain-text title does not require HTML escaping in framed JSON.",
@@ -2642,16 +2842,15 @@
     {
       "id": "compatible-client-range-selects-v1",
       "category": "compatibility",
-      "description": "A range containing v1 selects the supported overlap.",
+      "description": "An Escape range wider than exact identifier 1 is rejected without inferring compatibility.",
       "receiver": "host",
       "state": "await-client-hello",
       "wire": {
         "hex": "000000cf01007b2270726f746f636f6c5f6d696e223a312c2270726f746f636f6c5f6d6178223a322c2273657373696f6e5f6964223a223030303130323033303430353036303730383039306130623063306430653066222c226d6f6465223a22657363617065222c22636c69656e74223a7b226e616d65223a227461696c6d6f7573652d776562222c2276657273696f6e223a22302e312e30222c22706c6174666f726d223a2274657374222c22757365725f6167656e74223a2273796e7468657469632d746573742d6167656e74227d7d"
       },
       "expect": {
-        "accepted": true,
-        "message": "CLIENT_HELLO",
-        "selected_protocol": 1
+        "accepted": false,
+        "error": "PROTOCOL_MISMATCH"
       }
     },
     {

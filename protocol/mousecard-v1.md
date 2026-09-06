@@ -28,8 +28,8 @@ The payload is one definite-length CBOR map with exactly eight text keys. Encode
 | `p` | TailMouse virtual TCP port | unsigned integer | exactly `44321`                                                                          |
 | `s` | Session identifier         | byte string      | exactly 16 cryptographically random bytes; all-zero is invalid                           |
 | `e` | Expiration                 | unsigned integer | Unix seconds in `0..9007199254740991`; `0` means host lifetime, otherwise a future value |
-| `a` | Minimum protocol           | unsigned integer | `1..65535`, not greater than `z`; range must include a locally supported identifier      |
-| `z` | Maximum protocol           | unsigned integer | `1..65535`, not less than `a`; range must include a locally supported identifier         |
+| `a` | Minimum protocol           | unsigned integer | exactly `1` for Escape and exactly `2` for phase-two Leash                               |
+| `z` | Maximum protocol           | unsigned integer | exactly equal to `a` for the selected mode                                               |
 
 The card must not contain command, argv, cwd, environment, username, log, process, terminal content, relay credentials beyond the opaque ConnBlob, capability, or authorization fields.
 
@@ -43,7 +43,7 @@ A v1 decoder must:
 4. reject an expired nonzero `e` as `EXPIRED` and other card failures as `BAD_MOUSE_CARD` without returning any original payload text;
 5. retain the opaque `t` value only for the bounded Tailcat dial lifetime and erase application references during teardown.
 
-Changing `m` does not grant another mode. The host compares the HELLO session ID and mode with its authoritative session and returns `MODE_MISMATCH` on disagreement. Protocol overlap is negotiated from the authenticated host state; the card range is only connection metadata. The current local identifier is 1, so valid overlapping cards have `a=1` and `z>=1`; `1..2` and `1..65535` do not grant implementation of another codec. HELLO and accepted WELCOME remain version 1. The shared `fixtures/v1/mousecards.json` corpus is consumed by both Go and TypeScript tests, including canonical wider ranges and invalid/non-overlapping values. Native CLI invitations still advertise the actually implemented `1..1` range.
+Changing `m` does not grant another mode. The host compares the HELLO session ID and mode with its authoritative session and returns `MODE_MISMATCH` on disagreement. Protocol selection is mode-specific connection metadata: Escape cards use only `a=1,z=1`, while phase-two Leash cards use only `a=2,z=2`. A decoder rejects mixed-mode identifiers, wider ranges, and old Leash identifier 1 before transport. No global `1..2` range is advertised or inferred. The shared `fixtures/v1/mousecards.json` corpus is consumed by both Go and TypeScript tests and includes exact pairs, mixed-mode pairs, wider ranges, and a recognizable access-code field that must be rejected.
 
 ## QR presentation
 

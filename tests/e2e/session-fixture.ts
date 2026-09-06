@@ -20,6 +20,8 @@ export const address = 'tcSyntheticPlaywrightCredential';
 // Canonical CBOR for the synthetic MouseCard returned by invitationURL.
 export const cardFixture =
   'qGFhAWFlGnE_swBhbWZlc2NhcGVhcBmtIWFzUAkJCQkJCQkJCQkJCQkJCQlhdHgfdGNTeW50aGV0aWNQbGF5d3JpZ2h0Q3JlZGVudGlhbGF2AWF6AQ';
+export const leashCardFixture =
+  'qGFhAmFlGnE_swBhbWVsZWFzaGFwGa0hYXNQCQkJCQkJCQkJCQkJCQkJCWF0eB90Y1N5bnRoZXRpY1BsYXl3cmlnaHRDcmVkZW50aWFsYXYBYXoC';
 
 export async function installTailcatBridge(
   page: Page,
@@ -151,10 +153,11 @@ export function runtimeScript(
                   if (options.rejection) {
                     frame(3, { code: options.rejection, message: 'tcSyntheticPeerSecret', retryable: true });
                   } else {
-                    frame(2, { protocol: 1, mode: hello.mode, session_state: 'active', expires_at: 0,
+                    frame(2, { protocol: hello.mode === 'escape' ? 1 : 2, mode: hello.mode, session_state: 'active', expires_at: 0,
                       relay: { mode: 'official', host: 'relay.example.com', browser_path: 'derp' },
                       capabilities: hello.mode === 'escape' ? ['dash', 'game_input', 'game_view'] :
                         options.readonly ? ['terminal_output'] : ['interrupt', 'resize', 'restart', 'terminal_input', 'terminal_output', 'terminate'],
+                      ...(hello.mode === 'leash' ? { access_mode: 'link' } : {}),
                     });
                     if (options.game && hello.mode === 'escape') {
                       globalThis.testGameRestart();
@@ -212,14 +215,5 @@ export function runtimeScript(
 }
 
 export function invitationURL(mode: 'escape' | 'leash' = 'escape'): string {
-  if (mode === 'escape') return `/#/v1/${cardFixture}`;
-  const bytes = Buffer.from(cardFixture, 'base64url');
-  const offset = bytes.indexOf('escape');
-  bytes[offset - 1] = 0x65;
-  const leash = Buffer.concat([
-    bytes.subarray(0, offset),
-    Buffer.from('leash'),
-    bytes.subarray(offset + 6),
-  ]);
-  return `/#/v1/${leash.toString('base64url')}`;
+  return `/#/v1/${mode === 'escape' ? cardFixture : leashCardFixture}`;
 }

@@ -20,8 +20,7 @@ test('build identity verifies the gitlink and distinguishes development from cle
   assert.deepEqual(buildIdentity(fixture.root), {
     version: `0.0.0-dev.${source.slice(0, 12)}`,
     tailcatRevision: revision,
-    protocolMin: 1,
-    protocolMax: 1,
+    protocols: { escape: 1, leash: 2 },
   });
   assert.equal(buildIdentity(fixture.root, '0.1.0').version, '0.1.0');
   for (const invalid of [
@@ -149,7 +148,7 @@ test('the host builder preserves portable release flags and fails before claimin
       export function run(command, args, options) {
         appendFileSync(${JSON.stringify(commands)}, JSON.stringify({ command, args, env: options.env }) + '\\n');
         if (command === 'go' && ${JSON.stringify(failure)} === 'compile') throw new Error('Synthetic compile failure');
-        return { stdout: ${JSON.stringify(failure === 'identity' ? 'invalid identity' : `TailMouse 0.0.0-test\nTailcat revision ${'a'.repeat(40)}\nTMOUSE protocol 1..1\n`)} };
+        return { stdout: ${JSON.stringify(failure === 'identity' ? 'invalid identity' : `TailMouse 0.0.0-test\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTailcat revision ${'a'.repeat(40)}\n`)} };
       }
     `,
     );

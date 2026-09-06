@@ -14,7 +14,7 @@ offset  size  field
 6       ...   payload
 ```
 
-`length` includes type, flags, and payload. It must be between 2 and 1,048,576 inclusive. A decoder validates the four-byte length before allocating the remainder. EOF after any part of a frame is rejected as `BAD_FRAME`; no partial payload is dispatched. The local decoder distinguishes transport truncation from invalid complete input without adding a wire field or error code. Before successful HELLO/WELCOME, the existing strict handshake rejection remains. On an established connection only, EOF or transport read failure within an otherwise not-yet-invalid header, envelope or payload is connection loss: discard partial bytes and connection-local input, close the stream and release its lease under the existing disconnect policy. The browser may offer an explicit user-initiated fresh-stream handshake using its memory-only invitation, within unchanged TTL, grace and capabilities. It must not automatically retry, resume a frame or replay old input. Complete malformed input, already detected framing/size/direction/state/capability violations and terminal peer ERROR frames remain terminal; peer error text or retry hints cannot select this local recovery path. In v1, flags must be zero. Unknown types, nonzero flags, illegal directions, and messages illegal in the current state are `BAD_FRAME` unless the registry names a more specific error.
+`length` includes type, flags, and payload. It must be between 2 and 1,048,576 inclusive. A decoder validates the four-byte length before allocating the remainder. EOF after any part of a frame is rejected as `BAD_FRAME`; no partial payload is dispatched. The local decoder distinguishes transport truncation from invalid complete input without adding a wire field or error code. Before successful admission, the strict handshake or authentication rejection remains. On an established connection only, EOF or transport read failure within an otherwise not-yet-invalid header, envelope or payload is connection loss: discard partial bytes and connection-local input, close the stream and release its lease under the mode's disconnect policy. The browser may offer an explicit user-initiated fresh-stream handshake using its memory-only invitation and, for protected Leash, its memory-only access code. It must not automatically retry, resume a frame, reuse an authentication proof or replay old input. Complete malformed input, already detected framing/size/direction/state/capability violations and terminal peer ERROR frames remain terminal; peer error text or retry hints cannot select this local recovery path. In TMOUSE/1, flags must be zero. Unknown types, nonzero flags, illegal directions, and messages illegal in the current state are `BAD_FRAME` unless the registry names a more specific error.
 
 For `TERM_INPUT` and `TERM_OUTPUT`, `length` is at most 32,768 bytes, so the raw payload is at most 32,766 bytes. Senders split larger terminal byte sequences into ordered frames. Empty terminal payloads are invalid.
 
@@ -22,33 +22,53 @@ Control JSON payloads are at most 16,384 bytes and must decode to one object wit
 
 ## Version compatibility
 
-Wire identifier `1` denotes the initial TMOUSE/1.0 contract. `protocol_min`, `protocol_max` and WELCOME `protocol` use bounded numeric wire identifiers, not application build versions. The current implementation and artifact metadata support only `1..1`. A wider compatible MouseCard range permits negotiation but never changes the client's implemented range or this contract's strict field/type rules.
+Wire identifier `1` denotes TMOUSE/1.0 and is the only Escape contract. Wire identifier `2` denotes TMOUSE/1.1 and is the only phase-two Leash contract. `protocol_min`, `protocol_max` and WELCOME `protocol` use bounded numeric wire identifiers, not application build versions. Support is mode-specific: a build that implements Escape identifier 1 and Leash identifier 2 does not advertise or accept either identifier for the other mode, even though its complete identifier set contains adjacent numbers.
 
-For a later published same-major minor, assign and document its wire identifier together with exact negotiation and cross-version fixtures. Browser releases support the latest two available same-major minors; the initial candidate has only one and does not fabricate a preceding codec. Backward compatibility is achieved by negotiating an implemented common contract, not by ignoring unknown mandatory fields or treating any higher identifier as automatically supported. Breaking changes require a distinct version and explicit migration/rejection evidence. No additional minor is defined or reserved by this initial contract.
+Escape MouseCards and HELLO ranges are exactly `1..1`; phase-two Leash MouseCards and HELLO ranges are exactly `2..2`. A wider range is rejected before transport because a numeric interval cannot express the mode-specific set and must never create an authentication downgrade. Backward compatibility exists only where the selected mode has an explicitly implemented common contract. Receivers do not ignore unknown mandatory fields or treat a higher identifier as implemented.
+
+### Fail-closed Leash compatibility
+
+| Invitation and Host           | Browser implementation    | Outcome                                                                                        |
+| ----------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- |
+| Escape identifier 1           | Identifier 1 Escape       | Negotiate TMOUSE/1.0 with the unchanged Escape handshake.                                      |
+| Leash identifier 2, protected | Identifier 2 Leash        | Complete challenge/proof authentication before admission.                                      |
+| Leash identifier 2, link-only | Identifier 2 Leash        | Admit after HELLO without a challenge and report link-only access in WELCOME.                  |
+| Leash identifier 2            | Identifier 1-only browser | Reject the MouseCard as `PROTOCOL_MISMATCH` before dialing.                                    |
+| Leash identifier 1            | Phase-two browser         | Reject the MouseCard as `PROTOCOL_MISMATCH` before dialing; do not offer legacy bearer access. |
+| Leash identifier 1 peer       | Identifier 2 Host         | Reject before terminal disclosure, active-slot allocation or process startup.                  |
+
+A future same-major minor receives a new documented wire identifier plus exact negotiation and cross-version fixtures before release metadata changes. Breaking changes require a distinct version and explicit migration/rejection evidence.
 
 ## Connection states
 
-Each new Tailcat stream starts in `await-client-hello` on the host and `await-server-welcome` in the browser.
+Each new Tailcat stream starts in `await-client-hello` on the host and `await-server-response` in the browser.
 
 ```text
-await-client-hello -> active-escape | active-leash -> closing -> closed
-await-server-welcome -> active-escape | active-leash -> closing -> closed
+identifier 1 host: await-client-hello -> active-escape -> closing -> closed
+identifier 2 protected host: await-client-hello -> await-auth-proof -> active-leash -> closing -> closed
+identifier 2 link-only host: await-client-hello -> active-leash -> closing -> closed
+
+identifier 1 browser: await-server-response -> active-escape -> closing -> closed
+identifier 2 protected browser: await-server-response -> await-auth-input -> await-auth-result -> active-leash -> closing -> closed
+identifier 2 link-only browser: await-server-response -> active-leash -> closing -> closed
 ```
 
-The browser's first frame must be `CLIENT_HELLO`. The host replies with exactly one `SERVER_WELCOME` or one `ERROR` and then closes on rejection. No mode message is legal before `SERVER_WELCOME`. Reconnect uses a new Tailcat stream and repeats the complete handshake; it never resumes a partial frame or connection-local queue.
+The browser's first frame must be `CLIENT_HELLO`. An identifier-1 Escape Host replies with exactly one `SERVER_WELCOME` or one `ERROR`. An identifier-2 protected Leash Host replies with one `AUTH_CHALLENGE`, then accepts exactly one `AUTH_PROOF` before replying with `SERVER_WELCOME` or `ERROR`. An identifier-2 link-only Host sends no authentication frame and replies with `SERVER_WELCOME` or `ERROR`. No mode message, task metadata, capability or active-slot ownership is legal before WELCOME. A replacement uses a new Tailcat stream and repeats the complete handshake and authentication; it never resumes a partial frame or connection-local queue.
 
-`CLOSE` moves the sender to `closing`; it sends no later application frame. The receiver may finish one already accepted write, may reply with `CLOSE`, and then closes the stream. Transport EOF without `CLOSE` enters host reconnect-grace policy rather than inventing a protocol result.
+`CLOSE` moves the sender to `closing`; it sends no later application frame. The receiver may finish one already accepted write, may reply with `CLOSE`, and then closes the stream. Transport EOF without `CLOSE` follows the mode's connection-loss policy rather than inventing a protocol result. Escape retains its reconnect grace. Phase-two Leash releases connection-local work and returns the live Host share to listening without starting a browser-absence deadline.
 
 ## Message registry
 
 |   Type | Name              | Direction       | Encoding | Payload limit | Legal state                                               |
 | -----: | ----------------- | --------------- | -------- | ------------: | --------------------------------------------------------- |
 | `0x01` | `CLIENT_HELLO`    | Browser to host | JSON     |          4096 | first frame only                                          |
-| `0x02` | `SERVER_WELCOME`  | Host to browser | JSON     |          4096 | response to valid HELLO only                              |
-| `0x03` | `ERROR`           | Either          | JSON     |          1024 | host rejection during handshake; either peer while active |
+| `0x02` | `SERVER_WELCOME`  | Host to browser | JSON     |          4096 | admitted response to HELLO or valid proof                 |
+| `0x03` | `ERROR`           | Either          | JSON     |          1024 | Host rejection before admission; either peer while active |
 | `0x04` | `PING`            | Either          | binary   |            16 | active                                                    |
 | `0x05` | `PONG`            | Either          | binary   |            16 | active                                                    |
 | `0x06` | `CLOSE`           | Either          | JSON     |           512 | active or closing                                         |
+| `0x07` | `AUTH_CHALLENGE`  | Host to browser | JSON     |           512 | identifier 2 protected Leash after valid HELLO            |
+| `0x08` | `AUTH_PROOF`      | Browser to host | JSON     |           512 | identifier 2 protected Leash once in `await-auth-proof`   |
 | `0x10` | `TERM_RESET`      | Host to browser | JSON     |          1024 | active-leash                                              |
 | `0x11` | `TERM_OUTPUT`     | Host to browser | bytes    |        32,766 | active-leash                                              |
 | `0x12` | `TERM_INPUT`      | Browser to host | bytes    |        32,766 | active-leash with `terminal_input`                        |
@@ -66,12 +86,12 @@ An exact-size binary payload with any other size is `BAD_FRAME`. Receiving a mod
 
 ## Handshake JSON
 
-`CLIENT_HELLO` has this exact shape; `terminal` is omitted for escape and may be omitted for leash until the browser has measured its viewport.
+`CLIENT_HELLO` has this exact shape; `terminal` is omitted for Escape and may be omitted for Leash until the browser has measured its viewport. The shown Leash form selects identifier 2; Escape uses `protocol_min` and `protocol_max` of 1.
 
 ```json
 {
-  "protocol_min": 1,
-  "protocol_max": 1,
+  "protocol_min": 2,
+  "protocol_max": 2,
   "session_id": "000102030405060708090a0b0c0d0e0f",
   "mode": "leash",
   "client": {
@@ -90,16 +110,50 @@ An exact-size binary payload with any other size is `BAD_FRAME`. Receiving a mod
 - Client `name`, `version`, and `platform` are non-empty and at most 64, 32, and 32 UTF-8 bytes respectively. `user_agent` is at most 512 UTF-8 bytes and may be empty. None is an authority input.
 - Terminal `cols` is 20 through 500 and `rows` is 5 through 200.
 
-The host selects the highest mutually supported version. v1 currently has overlap only when both ranges contain 1. A valid HELLO atomically acquires the session's single browser slot before any mode side effect.
+The Host accepts only the exact identifier defined for the selected mode. A valid Escape HELLO may atomically acquire the single browser slot. A valid Leash HELLO performs only preliminary session, mode and protocol validation: it does not acquire the active slot, disclose task state or trigger browser-mediated startup.
 
-`SERVER_WELCOME` has this exact shape:
+### Identifier-2 access authentication
+
+A protected Leash Host creates a fresh 32-byte cryptographically random challenge for each valid HELLO. `AUTH_CHALLENGE` is the exact compact JSON object below. `challenge` is canonical unpadded base64url whose decoded value is exactly 32 bytes.
 
 ```json
 {
-  "protocol": 1,
+  "scheme": "hmac-sha256-v1",
+  "challenge": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"
+}
+```
+
+The browser accepts access-code input case-insensitively, removes only ASCII space and hyphen separators, uppercases the result and requires exactly 16 symbols from `23456789ABCDEFGHJKLMNPQRSTUVWXYZ`. It derives:
+
+```text
+key = SHA-256(UTF-8("tailmouse-access-key-v1\0" + canonical_code))
+message = UTF-8("tailmouse-access-proof-v1\0") || session_id_bytes || challenge_bytes
+proof = HMAC-SHA-256(key, message)
+```
+
+`session_id_bytes` is the exact 16-byte MouseCard session identifier. For the synthetic code `2345-6789-ABCD-EFGH`, the session ID and challenge shown above, `AUTH_PROOF` is the exact compact JSON object below. `proof` is canonical unpadded base64url whose decoded value is exactly 32 bytes.
+
+```json
+{
+  "scheme": "hmac-sha256-v1",
+  "proof": "V0OMGOWhH9n8r-cwHjkH06dDCyNQrZQgrlxJXDmzl4s"
+}
+```
+
+The Host compares all 32 proof bytes without data-dependent early exit and consumes a challenge on the first proof attempt. A challenge and proof are valid only on their issuing stream. Wrong-length, malformed, unknown-field, unknown-scheme, duplicate, replayed, cross-stream or cross-session authentication data fails closed. The access code itself is never transmitted.
+
+Each stream has a 30-second authentication deadline and may deliver at most 4096 bytes before admission. One share permits at most four concurrent unauthenticated streams. Ten failed proofs across that share start one non-extending 30-second cooldown; further attempts receive `AUTH_THROTTLED` with the current remaining duration. Cooldown rejection does not extend the deadline. Cooldown completion or a valid proof resets the failure count. Every rejection releases its connection state without ending the share, stopping the task or changing an active browser.
+
+A protected Host attempts active-slot acquisition only after a valid proof. If another admitted stream owns the slot, the new stream receives `SESSION_BUSY` and no task data. A Host launched explicitly in link-only mode creates no code or challenge and attempts slot acquisition immediately after a valid identifier-2 HELLO. Browser input, invitation fields, missing old-peer support and authentication failure cannot select link-only mode.
+
+Identifier-2 `SERVER_WELCOME` has this exact shape:
+
+```json
+{
+  "protocol": 2,
   "mode": "leash",
   "session_state": "active",
-  "expires_at": 1788252800,
+  "expires_at": 0,
   "relay": {
     "mode": "official",
     "host": "tc302a.ipn.dev",
@@ -112,15 +166,17 @@ The host selects the highest mutually supported version. v1 currently has overla
     "terminal_input",
     "terminal_output",
     "terminate"
-  ]
+  ],
+  "access_mode": "code"
 }
 ```
 
-- `protocol` is the selected version and `mode` is authoritative.
+- `protocol` is the mode's selected identifier and `mode` is authoritative. Identifier 1 WELCOME retains the TMOUSE/1.0 field set and omits `access_mode`; identifier 2 requires it.
 - `session_state` is `active` for a newly accepted stream.
 - `expires_at` is safe-integer Unix seconds from 0 through 9,007,199,254,740,991; zero means host lifetime.
 - Relay `mode` is `official`, `custom-host`, or `custom-map`; `host` is a validated diagnostic hostname of at most 253 ASCII bytes; browser path is exactly `derp` in v1.
-- Capabilities are unique strings in lexicographic order. Escape may grant `dash`, `game_input`, and `game_view`. Leash may grant `interrupt`, `resize`, `restart`, `terminal_input`, `terminal_output`, and `terminate`. The host checks the applicable capability again before every side effect.
+- Capabilities are unique strings in lexicographic order. Escape may grant `dash`, `game_input`, and `game_view`. Leash may grant `interrupt`, `resize`, `restart`, `terminal_input`, `terminal_output`, and `terminate`. The Host checks the applicable capability again before every side effect.
+- Identifier-2 `access_mode` is exactly `code` for a successfully authenticated protected share or `link` for an explicit link-only share. It is Host-authoritative and appears only after admission.
 
 ## Common binary payloads
 
@@ -240,7 +296,7 @@ The result message is exactly `The cat was always <rtt_p50_ms>ms too late.` for 
 }
 ```
 
-The code must be from the stable error table below. Message is non-empty, at most 256 UTF-8 bytes, and must contain no credential, URL, token, terminal bytes, browser input, command environment, or upstream error. Retryable means only that a user-initiated bounded retry can be meaningful; it never authorizes automatic retry or a side effect.
+The code must be from the stable error table below. Message is non-empty, at most 256 UTF-8 bytes, and must contain no credential, URL, token, access code, derived key, challenge, proof, terminal bytes, browser input, command environment, or upstream error. Retryable means only that a user-initiated bounded retry can be meaningful; it never authorizes automatic retry or a side effect. Every code except `AUTH_THROTTLED` has exactly these three fields. `AUTH_THROTTLED` additionally requires `retry_after_ms`, an integer from 1 through 30000 containing the current non-extending cooldown remainder; other codes reject that field.
 
 `CLOSE` is `{"reason":"mode_complete","message":"Session closed."}`. Reason is `normal`, `mode_complete`, `local_revoke`, `expired`, `protocol_error`, or `transport_error`. Message follows the same redaction and 256-byte limit as ERROR.
 
@@ -253,6 +309,9 @@ The code must be from the stable error table below. Message is non-empty, at mos
 | `MODE_MISMATCH`           | Invitation mode does not match the host session.     | false     |
 | `PROTOCOL_MISMATCH`       | No supported protocol version overlaps.              | false     |
 | `SESSION_BUSY`            | Another browser is controlling this session.         | true      |
+| `AUTH_REQUIRED`           | Access authentication is required.                   | false     |
+| `AUTH_FAILED`             | Access authentication failed.                        | true      |
+| `AUTH_THROTTLED`          | Access attempts are temporarily limited.             | true      |
 | `UNAUTHORIZED_CAPABILITY` | This session does not grant that action.             | false     |
 | `FRAME_TOO_LARGE`         | Frame exceeds the supported limit.                   | false     |
 | `BAD_FRAME`               | Frame is malformed or invalid in this state.         | false     |

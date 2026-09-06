@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  authChallengeFrame,
+  authProofFrame,
   closeFrame,
   decodeClose,
+  decodeAuthChallenge,
+  decodeAuthProof,
   decodeError,
   decodeWelcome,
   encodeFrame,
@@ -52,6 +56,15 @@ describe('TMOUSE/1 typed control boundary', () => {
       client: { name: 'tailmouse-web', platform: 'web', user_agent: '' },
     });
     expect(identifier[15]).toBe(15);
+    expect(
+      JSON.parse(
+        new TextDecoder().decode(helloFrame(identifier, 'leash').payload),
+      ),
+    ).toMatchObject({
+      protocol_min: 2,
+      protocol_max: 2,
+      mode: 'leash',
+    });
     expect(() => helloFrame(new Uint8Array(16), 'escape')).toThrowError(
       new ProtocolError('BAD_MOUSE_CARD'),
     );
@@ -62,7 +75,7 @@ describe('TMOUSE/1 typed control boundary', () => {
 
   it('returns immutable host authority and rejects a card-mode mismatch', () => {
     const welcome = {
-      protocol: 1,
+      protocol: 2,
       mode: 'leash',
       session_state: 'active',
       expires_at: 0,
@@ -72,6 +85,7 @@ describe('TMOUSE/1 typed control boundary', () => {
         browser_path: 'derp',
       },
       capabilities: ['terminal_output'],
+      access_mode: 'code',
     };
     const frame = jsonFrame(Message.SERVER_WELCOME, welcome);
     const result = decodeWelcome(frame, 'leash');
@@ -84,6 +98,7 @@ describe('TMOUSE/1 typed control boundary', () => {
         browserPath: 'derp',
       },
       capabilities: ['terminal_output'],
+      accessMode: 'code',
     });
     welcome.capabilities.push('terminal_input');
     expect(result.capabilities).toEqual(['terminal_output']);
@@ -98,7 +113,8 @@ describe('TMOUSE/1 typed control boundary', () => {
       { ...welcome, capabilities: ['unknown'] },
       { ...welcome, capabilities: [] },
       { ...welcome, expires_at: -1 },
-      { ...welcome, protocol: 2 },
+      { ...welcome, protocol: 1 },
+      { ...welcome, access_mode: 'other' },
       {
         ...welcome,
         relay: { ...welcome.relay, host: 'https://secret.example/' },
@@ -129,6 +145,8 @@ describe('TMOUSE/1 typed control boundary', () => {
       'MODE_MISMATCH',
       'PROTOCOL_MISMATCH',
       'SESSION_BUSY',
+      'AUTH_REQUIRED',
+      'AUTH_FAILED',
       'UNAUTHORIZED_CAPABILITY',
       'FRAME_TOO_LARGE',
       'BAD_FRAME',
@@ -149,7 +167,12 @@ describe('TMOUSE/1 typed control boundary', () => {
       expect(error.code).toBe(code);
       expect(error.message).not.toContain('tcSyntheticPeerSecret');
       expect(error.retryable).toBe(
-        ['SESSION_BUSY', 'PROCESS_NOT_RUNNING', 'BACKPRESSURE'].includes(code),
+        [
+          'SESSION_BUSY',
+          'AUTH_FAILED',
+          'PROCESS_NOT_RUNNING',
+          'BACKPRESSURE',
+        ].includes(code),
       );
       const outbound = errorFrame(code);
       const wire = encodeFrame('browser', 'active-leash', outbound);
@@ -159,6 +182,18 @@ describe('TMOUSE/1 typed control boundary', () => {
         'tcSyntheticPeerSecret',
       );
     }
+    const throttled = errorFrame('AUTH_THROTTLED', 30_000);
+    expect(decodeError(throttled)).toMatchObject({
+      code: 'AUTH_THROTTLED',
+      retryable: true,
+      retryAfterMS: 30_000,
+    });
+    expect(() => errorFrame('AUTH_THROTTLED')).toThrowError(
+      new ProtocolError('BAD_FRAME'),
+    );
+    expect(() => errorFrame('AUTH_FAILED', 1)).toThrowError(
+      new ProtocolError('BAD_FRAME'),
+    );
     for (const code of ['CANCELED', 'tcSyntheticUnknownCode']) {
       expect(() => errorFrame(code as never)).toThrowError(
         new ProtocolError('BAD_FRAME'),
@@ -182,6 +217,41 @@ describe('TMOUSE/1 typed control boundary', () => {
     expect(() =>
       decodeError({ type: Message.ERROR, payload: new Uint8Array(1025) }),
     ).toThrowError(new ProtocolError('BAD_FRAME'));
+  });
+
+  it('uses exact bounded challenge and proof payloads', () => {
+    const challenge = Uint8Array.from({ length: 32 }, (_, index) => index);
+    const challengeFrame = authChallengeFrame(challenge);
+    expect(new TextDecoder().decode(challengeFrame.payload)).toBe(
+      '{"scheme":"hmac-sha256-v1","challenge":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"}',
+    );
+    expect(decodeAuthChallenge(challengeFrame)).toEqual(challenge);
+    const proofFrame = authProofFrame(challenge);
+    expect(decodeAuthProof(proofFrame)).toEqual(challenge);
+    for (const frame of [
+      { type: Message.AUTH_CHALLENGE, payload: new Uint8Array(513) },
+      { type: Message.AUTH_PROOF, payload: new Uint8Array(513) },
+      jsonFrame(Message.AUTH_CHALLENGE, {
+        scheme: 'hmac-sha256-v1',
+        challenge: 'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=',
+      }),
+      jsonFrame(Message.AUTH_PROOF, {
+        scheme: 'hmac-sha256-v1',
+        proof: 'V0OMGOWhH9n8r+cwHjkH06dDCyNQrZQgrlxJXDmzl4s',
+      }),
+      {
+        type: Message.AUTH_PROOF,
+        payload: new TextEncoder().encode(
+          '{"scheme":"hmac-sha256-v1","proof":"V0OMGOWhH9n8r-cwHjkH06dDCyNQrZQgrlxJXDmzl4s","proof":"V0OMGOWhH9n8r-cwHjkH06dDCyNQrZQgrlxJXDmzl4s"}',
+        ),
+      },
+    ] as const) {
+      const decode =
+        frame.type === Message.AUTH_CHALLENGE
+          ? decodeAuthChallenge
+          : decodeAuthProof;
+      expect(() => decode(frame)).toThrowError(new ProtocolError('BAD_FRAME'));
+    }
   });
 
   it('accepts only bounded CLOSE reasons and never returns the peer message', () => {

@@ -15,7 +15,7 @@ func TestHelpDocumentsCommandsBoundariesAndModeFlags(t *testing.T) {
 		}
 		text := output.String()
 		for _, required := range []string{"tailmouse leash", "tailmouse escape", "tailmouse version", "tailmouse config path",
-			"--squeak", "--verbose", "TAILMOUSE_CONFIG", "flags > environment > config.toml > defaults", "passwords"} {
+			"--squeak", "--verbose", "TAILMOUSE_CONFIG", "flags > environment > config.toml > defaults", "passwords", "https://link.tailmouse.com/"} {
 			if !strings.Contains(text, required) {
 				t.Fatalf("%q help missing %q", command, required)
 			}
@@ -24,7 +24,8 @@ func TestHelpDocumentsCommandsBoundariesAndModeFlags(t *testing.T) {
 			strings.Contains(text, "Leash flags:") != (command == "leash" || command == "") {
 			t.Fatal("help selected the wrong mode")
 		}
-		if command == "leash" && (!strings.Contains(text, "not native GUI") || !strings.Contains(text, "no shell expansion")) {
+		if command == "leash" && (!strings.Contains(text, "not native GUI") || !strings.Contains(text, "no shell expansion") ||
+			!strings.Contains(text, "--no-password") || !strings.Contains(text, "host (default)") || !strings.Contains(text, "Obsolete for Leash")) {
 			t.Fatal("leash help omitted its authority or terminal boundary")
 		}
 	}

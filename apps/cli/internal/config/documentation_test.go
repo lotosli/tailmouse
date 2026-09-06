@@ -77,13 +77,13 @@ func TestDocumentedTOML(t *testing.T) {
 		}
 		wantTTL := 10 * time.Minute
 		if command == "leash" {
-			wantTTL = 4 * time.Hour
+			wantTTL = 0
 		}
 		if options.WebBaseURL != "https://web.example.invalid/" || options.SourceOf("web-base-url") != File ||
 			options.TTL != wantTTL || options.SourceOf("ttl") != File ||
 			len(options.Relay.Hosts) != 0 || options.Relay.MapURL != "" ||
 			options.Relay.DERPPort != 443 || options.Relay.STUNPort != 3478 || options.Relay.RegionID != 900 ||
-			options.Leash.ReconnectGrace != 30*time.Second || options.Leash.PostExitTTL != 10*time.Minute ||
+			options.Leash.ReconnectGrace != 30*time.Second || options.Leash.PostExitTTL != 0 || !options.Leash.PostExitHost ||
 			options.Leash.ScrollbackBytes != 1<<20 || options.Leash.StartOn != "connect-or-enter" || !options.Leash.LocalInput {
 			t.Fatal("documented configuration does not match its described settings")
 		}

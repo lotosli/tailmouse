@@ -25,6 +25,8 @@ export const Message = {
   PING: 0x04,
   PONG: 0x05,
   CLOSE: 0x06,
+  AUTH_CHALLENGE: 0x07,
+  AUTH_PROOF: 0x08,
   TERM_RESET: 0x10,
   TERM_OUTPUT: 0x11,
   TERM_INPUT: 0x12,
@@ -44,6 +46,7 @@ export type Peer = 'host' | 'browser';
 export type ProtocolState =
   | 'await-client-hello'
   | 'await-server-welcome'
+  | 'await-auth-proof'
   | 'active-escape'
   | 'active-leash'
   | 'closing';
@@ -81,6 +84,8 @@ const rules = new Map<MessageType, MessageRule>([
   [Message.PING, rule('PING', 16, 16, 16)],
   [Message.PONG, rule('PONG', 16, 16, 16)],
   [Message.CLOSE, rule('CLOSE', 2, 512)],
+  [Message.AUTH_CHALLENGE, rule('AUTH_CHALLENGE', 2, 512)],
+  [Message.AUTH_PROOF, rule('AUTH_PROOF', 2, 512)],
   [Message.TERM_RESET, rule('TERM_RESET', 2, 1024)],
   [Message.TERM_OUTPUT, rule('TERM_OUTPUT', 1, MAX_TERMINAL_PAYLOAD)],
   [Message.TERM_INPUT, rule('TERM_INPUT', 1, MAX_TERMINAL_PAYLOAD)],
@@ -326,7 +331,12 @@ function validateRoute(
       type === Message.CLIENT_HELLO) ||
     (state === 'await-server-welcome' &&
       sender === 'host' &&
-      (type === Message.SERVER_WELCOME || type === Message.ERROR)) ||
+      (type === Message.SERVER_WELCOME ||
+        type === Message.ERROR ||
+        type === Message.AUTH_CHALLENGE)) ||
+    (state === 'await-auth-proof' &&
+      ((sender === 'browser' && type === Message.AUTH_PROOF) ||
+        (sender === 'host' && type === Message.ERROR))) ||
     (state === 'closing' &&
       (type === Message.CLOSE || type === Message.ERROR)) ||
     (state === 'active-escape' &&
@@ -335,6 +345,13 @@ function validateRoute(
       (isCommon(type) || isTerminalForSender(type, sender)))
   ) {
     return;
+  }
+  if (
+    state === 'await-auth-proof' &&
+    sender === 'browser' &&
+    (isTerminal(type) || isEscape(type))
+  ) {
+    throw new ProtocolError('AUTH_REQUIRED');
   }
   if (
     (state === 'active-escape' && isTerminal(type)) ||
@@ -406,6 +423,14 @@ function validatePayload(
   if (type === Message.SERVER_WELCOME) return validateServerWelcome(payload);
   if (type === Message.ERROR) {
     validateError(payload);
+    return undefined;
+  }
+  if (type === Message.AUTH_CHALLENGE) {
+    decodeAuthenticationPayload(payload, 'challenge');
+    return undefined;
+  }
+  if (type === Message.AUTH_PROOF) {
+    decodeAuthenticationPayload(payload, 'proof');
     return undefined;
   }
   if (type === Message.CLOSE) {
@@ -480,24 +505,27 @@ function validateClientHello(payload: Uint8Array): number {
   ) {
     throw new ProtocolError('BAD_FRAME');
   }
-  if (value.protocol_min > 1 || value.protocol_max < 1) {
+  const expectedProtocol = value.mode === 'escape' ? 1 : 2;
+  if (
+    value.protocol_min !== expectedProtocol ||
+    value.protocol_max !== expectedProtocol
+  ) {
     throw new ProtocolError('PROTOCOL_MISMATCH');
   }
-  return 1;
+  return expectedProtocol;
 }
 
 function validateServerWelcome(payload: Uint8Array): number {
   const value = strictObject(payload);
+  const commonKeys = [
+    'capabilities',
+    'expires_at',
+    'mode',
+    'protocol',
+    'relay',
+    'session_state',
+  ];
   if (
-    !exactKeys(value, [
-      'capabilities',
-      'expires_at',
-      'mode',
-      'protocol',
-      'relay',
-      'session_state',
-    ]) ||
-    value.protocol !== 1 ||
     (value.mode !== 'escape' && value.mode !== 'leash') ||
     value.session_state !== 'active' ||
     !integerBetween(value.expires_at, 0, Number.MAX_SAFE_INTEGER) ||
@@ -514,7 +542,16 @@ function validateServerWelcome(payload: Uint8Array): number {
   ) {
     throw new ProtocolError('BAD_FRAME');
   }
-  return 1;
+  if (
+    value.mode === 'escape'
+      ? !exactKeys(value, commonKeys) || value.protocol !== 1
+      : !exactKeys(value, ['access_mode', ...commonKeys]) ||
+        value.protocol !== 2 ||
+        (value.access_mode !== 'code' && value.access_mode !== 'link')
+  ) {
+    throw new ProtocolError('BAD_FRAME');
+  }
+  return value.protocol as 1 | 2;
 }
 
 function validCapabilities(
@@ -552,6 +589,7 @@ export interface Welcome {
     readonly browserPath: 'derp';
   };
   readonly capabilities: readonly string[];
+  readonly accessMode?: 'code' | 'link';
 }
 
 export function decodeWelcome(
@@ -568,7 +606,7 @@ export function decodeWelcome(
   const value = strictObject(frame.payload);
   if (value.mode !== expectedMode) throw new ProtocolError('MODE_MISMATCH');
   const relay = value.relay as Record<string, unknown>;
-  return Object.freeze({
+  const welcome: Welcome = {
     mode: expectedMode,
     expiresAt: value.expires_at as number,
     relay: Object.freeze({
@@ -577,7 +615,11 @@ export function decodeWelcome(
       browserPath: 'derp' as const,
     }),
     capabilities: Object.freeze([...(value.capabilities as string[])]),
-  });
+    ...(expectedMode === 'leash'
+      ? { accessMode: value.access_mode as 'code' | 'link' }
+      : {}),
+  };
+  return Object.freeze(welcome);
 }
 
 export function helloFrame(
@@ -589,8 +631,8 @@ export function helloFrame(
   }
   const payload = new TextEncoder().encode(
     JSON.stringify({
-      protocol_min: 1,
-      protocol_max: 1,
+      protocol_min: mode === 'escape' ? 1 : 2,
+      protocol_max: mode === 'escape' ? 1 : 2,
       session_id: Array.from(sessionID, (value) =>
         value.toString(16).padStart(2, '0'),
       ).join(''),
@@ -606,6 +648,80 @@ export function helloFrame(
   return { type: Message.CLIENT_HELLO, payload };
 }
 
+type AuthenticationField = 'challenge' | 'proof';
+
+function decodeAuthenticationPayload(
+  payload: Uint8Array,
+  field: AuthenticationField,
+): Uint8Array {
+  const value = strictObject(payload);
+  if (
+    !exactKeys(value, [field, 'scheme']) ||
+    value.scheme !== 'hmac-sha256-v1' ||
+    typeof value[field] !== 'string' ||
+    !/^[A-Za-z0-9_-]{43}$/u.test(value[field])
+  ) {
+    throw new ProtocolError('BAD_FRAME');
+  }
+  let decoded: Uint8Array;
+  try {
+    const base64 = value[field].replaceAll('-', '+').replaceAll('_', '/');
+    const binary = atob(base64.padEnd(44, '='));
+    decoded = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  } catch {
+    throw new ProtocolError('BAD_FRAME');
+  }
+  const canonical = btoa(String.fromCharCode(...decoded))
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replaceAll('=', '');
+  if (decoded.byteLength !== 32 || canonical !== value[field]) {
+    decoded.fill(0);
+    throw new ProtocolError('BAD_FRAME');
+  }
+  return decoded;
+}
+
+function authenticationFrame(
+  type: typeof Message.AUTH_CHALLENGE | typeof Message.AUTH_PROOF,
+  field: AuthenticationField,
+  value: Uint8Array,
+): Frame {
+  if (value.byteLength !== 32) throw new ProtocolError('BAD_FRAME');
+  const encoded = btoa(String.fromCharCode(...value))
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replaceAll('=', '');
+  const payload = new TextEncoder().encode(
+    JSON.stringify({ scheme: 'hmac-sha256-v1', [field]: encoded }),
+  );
+  const decoded = decodeAuthenticationPayload(payload, field);
+  decoded.fill(0);
+  return { type, payload };
+}
+
+export function authChallengeFrame(challenge: Uint8Array): Frame {
+  return authenticationFrame(Message.AUTH_CHALLENGE, 'challenge', challenge);
+}
+
+export function decodeAuthChallenge(frame: Frame): Uint8Array {
+  if (frame.type !== Message.AUTH_CHALLENGE || frame.payload.byteLength > 512) {
+    throw new ProtocolError('BAD_FRAME');
+  }
+  return decodeAuthenticationPayload(frame.payload, 'challenge');
+}
+
+export function authProofFrame(proof: Uint8Array): Frame {
+  return authenticationFrame(Message.AUTH_PROOF, 'proof', proof);
+}
+
+export function decodeAuthProof(frame: Frame): Uint8Array {
+  if (frame.type !== Message.AUTH_PROOF || frame.payload.byteLength > 512) {
+    throw new ProtocolError('BAD_FRAME');
+  }
+  return decodeAuthenticationPayload(frame.payload, 'proof');
+}
+
 function wireErrorCode(
   value: unknown,
 ): value is Exclude<ProtocolErrorCode, 'CANCELED'> {
@@ -619,10 +735,17 @@ function wireErrorCode(
 function validateError(payload: Uint8Array): Record<string, unknown> {
   const value = strictObject(payload);
   if (
-    !exactKeys(value, ['code', 'message', 'retryable']) ||
     !wireErrorCode(value.code) ||
     !boundedText(value.message, 1, 256) ||
     typeof value.retryable !== 'boolean'
+  ) {
+    throw new ProtocolError('BAD_FRAME');
+  }
+  if (
+    value.code === 'AUTH_THROTTLED'
+      ? !exactKeys(value, ['code', 'message', 'retry_after_ms', 'retryable']) ||
+        !integerBetween(value.retry_after_ms, 1, 30_000)
+      : !exactKeys(value, ['code', 'message', 'retryable'])
   ) {
     throw new ProtocolError('BAD_FRAME');
   }
@@ -636,14 +759,26 @@ export function decodeError(frame: Frame): ProtocolError {
     throw new ProtocolError('BAD_FRAME');
   }
   const value = validateError(frame.payload);
-  return new ProtocolError(value.code as ProtocolErrorCode);
+  return new ProtocolError(
+    value.code as ProtocolErrorCode,
+    value.code === 'AUTH_THROTTLED'
+      ? (value.retry_after_ms as number)
+      : undefined,
+  );
 }
 
 export function errorFrame(
   code: Exclude<ProtocolErrorCode, 'CANCELED'>,
+  retryAfterMS?: number,
 ): Frame {
   if (!wireErrorCode(code)) throw new ProtocolError('BAD_FRAME');
-  const error = new ProtocolError(code);
+  if (
+    (code === 'AUTH_THROTTLED' && !integerBetween(retryAfterMS, 1, 30_000)) ||
+    (code !== 'AUTH_THROTTLED' && retryAfterMS !== undefined)
+  ) {
+    throw new ProtocolError('BAD_FRAME');
+  }
+  const error = new ProtocolError(code, retryAfterMS);
   return {
     type: Message.ERROR,
     payload: new TextEncoder().encode(
@@ -651,6 +786,7 @@ export function errorFrame(
         code,
         message: error.message,
         retryable: error.retryable,
+        ...(code === 'AUTH_THROTTLED' ? { retry_after_ms: retryAfterMS } : {}),
       }),
     ),
   };

@@ -6,6 +6,9 @@ export type ProtocolErrorCode =
   | 'BAD_MOUSE_CARD'
   | 'EXPIRED'
   | 'SESSION_BUSY'
+  | 'AUTH_REQUIRED'
+  | 'AUTH_FAILED'
+  | 'AUTH_THROTTLED'
   | 'UNAUTHORIZED_CAPABILITY'
   | 'PROCESS_NOT_RUNNING'
   | 'RESTART_DISABLED'
@@ -25,6 +28,9 @@ export const errorMessages: Record<ProtocolErrorCode, string> = {
   BAD_MOUSE_CARD: 'Invitation is invalid or unsupported.',
   EXPIRED: 'Session has expired.',
   SESSION_BUSY: 'Another browser is controlling this session.',
+  AUTH_REQUIRED: 'Authentication is required before access.',
+  AUTH_FAILED: 'Authentication failed.',
+  AUTH_THROTTLED: 'Authentication attempts are temporarily limited.',
   UNAUTHORIZED_CAPABILITY: 'This session does not grant that action.',
   PROCESS_NOT_RUNNING: 'No process is available for that action.',
   RESTART_DISABLED: 'Restart is disabled for this session.',
@@ -36,16 +42,20 @@ export const errorMessages: Record<ProtocolErrorCode, string> = {
 export class ProtocolError extends Error {
   readonly code: ProtocolErrorCode;
   readonly retryable: boolean;
+  readonly retryAfterMS: number | undefined;
 
-  constructor(code: ProtocolErrorCode) {
+  constructor(code: ProtocolErrorCode, retryAfterMS?: number) {
     super(errorMessages[code]);
     this.name = 'ProtocolError';
     this.code = code;
     this.retryable = [
       'SESSION_BUSY',
+      'AUTH_FAILED',
+      'AUTH_THROTTLED',
       'PROCESS_NOT_RUNNING',
       'BACKPRESSURE',
     ].includes(code);
+    this.retryAfterMS = code === 'AUTH_THROTTLED' ? retryAfterMS : undefined;
   }
 }
 

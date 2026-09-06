@@ -29,6 +29,9 @@ const (
 	CodeBadMouseCard      ErrorCode = "BAD_MOUSE_CARD"
 	CodeExpired           ErrorCode = "EXPIRED"
 	CodeSessionBusy       ErrorCode = "SESSION_BUSY"
+	CodeAuthRequired      ErrorCode = "AUTH_REQUIRED"
+	CodeAuthFailed        ErrorCode = "AUTH_FAILED"
+	CodeAuthThrottled     ErrorCode = "AUTH_THROTTLED"
 	CodeUnauthorized      ErrorCode = "UNAUTHORIZED_CAPABILITY"
 	CodeReadonly          ErrorCode = "READONLY"
 	CodeRestartDisabled   ErrorCode = "RESTART_DISABLED"
@@ -39,8 +42,9 @@ const (
 )
 
 type ProtocolError struct {
-	Code      ErrorCode
-	truncated bool
+	Code         ErrorCode
+	RetryAfterMS uint32
+	truncated    bool
 }
 
 func (err *ProtocolError) Error() string {
@@ -71,6 +75,8 @@ const (
 	TypePing          MessageType = 0x04
 	TypePong          MessageType = 0x05
 	TypeClose         MessageType = 0x06
+	TypeAuthChallenge MessageType = 0x07
+	TypeAuthProof     MessageType = 0x08
 
 	TypeTermReset      MessageType = 0x10
 	TypeTermOutput     MessageType = 0x11
@@ -101,6 +107,10 @@ func (message MessageType) String() string {
 		return "PONG"
 	case TypeClose:
 		return "CLOSE"
+	case TypeAuthChallenge:
+		return "AUTH_CHALLENGE"
+	case TypeAuthProof:
+		return "AUTH_PROOF"
 	case TypeTermReset:
 		return "TERM_RESET"
 	case TypeTermOutput:
@@ -152,6 +162,7 @@ type State uint8
 const (
 	StateAwaitClientHello State = iota + 1
 	StateAwaitServerWelcome
+	StateAwaitAuthProof
 	StateActiveEscape
 	StateActiveLeash
 	StateClosing

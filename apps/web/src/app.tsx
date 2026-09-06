@@ -32,6 +32,8 @@ const stageDetails: Record<SessionStage, string> = {
   loading: 'Loading Tailcat WebAssembly',
   connecting: 'Connecting to relay / Meow handshake',
   establishing: 'Establishing encrypted session',
+  authenticating: 'Verifying access code',
+  admitting: 'Waiting for session admission',
 };
 
 export function viewForStage(
@@ -93,12 +95,31 @@ export function App() {
   const [metrics, setMetrics] = useState<ConnectionMetrics>();
   const [result, setResult] = useState<GameResult>();
   const [showNet, setShowNet] = useState(true);
+  const [accessMode, setAccessMode] = useState<'unknown' | 'code' | 'link'>(
+    'unknown',
+  );
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [clock, setClock] = useState(() => Date.now());
+  const accessCode = useRef<string>();
+  const accessCodeInput = useRef<HTMLInputElement>(null);
   const exitRequested = useRef(false);
   const [cacheStatus, setCacheStatus] = useState(
     'Static cache registration pending.',
   );
   const cacheRegistration = useRef<Promise<string>>();
   const loadingRuntime = view.stage === 'loading';
+
+  useEffect(() => {
+    if (cooldownUntil === 0) return;
+    const update = (): void => {
+      const current = Date.now();
+      setClock(current);
+      if (current >= cooldownUntil) setCooldownUntil(0);
+    };
+    update();
+    const timer = setInterval(update, 250);
+    return () => clearInterval(timer);
+  }, [cooldownUntil]);
 
   useEffect(() => {
     // Finish the first runtime download before precaching the same immutable
@@ -141,11 +162,23 @@ export function App() {
       invitation.sessionID.fill(0);
       setInvitation(undefined);
     };
-    void connectSession(invitation, controller.signal, (stage, progress) => {
-      if (active) setView(viewForStage(stage, progress));
-    })
+    void connectSession(
+      invitation,
+      controller.signal,
+      (stage, progress) => {
+        if (!active) return;
+        if (stage === 'authenticating') setAccessMode('code');
+        setView(viewForStage(stage, progress));
+      },
+      accessCode.current,
+    )
       .then(async (connected) => {
         if (active) {
+          accessCode.current = undefined;
+          if (accessCodeInput.current !== null)
+            accessCodeInput.current.value = '';
+          setCooldownUntil(0);
+          setAccessMode(connected.welcome.accessMode ?? 'unknown');
           setSession(connected);
           setWelcome(connected.welcome);
           setView({ detail: 'Connected', stage: 'connected' });
@@ -167,7 +200,38 @@ export function App() {
       })
       .catch((error: unknown) => {
         if (!active) return;
+        if (
+          error instanceof ProtocolError &&
+          (error.code === 'AUTH_REQUIRED' ||
+            error.code === 'AUTH_FAILED' ||
+            error.code === 'AUTH_THROTTLED')
+        ) {
+          accessCode.current = undefined;
+          if (accessCodeInput.current !== null)
+            accessCodeInput.current.value = '';
+          setAccessMode('code');
+          if (
+            error.code === 'AUTH_THROTTLED' &&
+            error.retryAfterMS !== undefined
+          ) {
+            const current = Date.now();
+            setClock(current);
+            setCooldownUntil(current + error.retryAfterMS);
+          }
+          setSession(undefined);
+          setView({
+            detail:
+              error.code === 'AUTH_REQUIRED'
+                ? 'Enter the host access code to continue.'
+                : safeMessage(error),
+            stage: 'error',
+          });
+          return;
+        }
         const retryable = retryableFailure(error, exitRequested.current);
+        accessCode.current = undefined;
+        if (accessCodeInput.current !== null)
+          accessCodeInput.current.value = '';
         setSession(undefined);
         setView({ detail: safeMessage(error), retryable, stage: 'error' });
         if (!retryable) forget();
@@ -259,6 +323,16 @@ export function App() {
                 ? 'Control'
                 : 'Read only'}
             </dd>
+            {welcome.mode === 'leash' ? (
+              <>
+                <dt>Protection</dt>
+                <dd>
+                  {welcome.accessMode === 'code'
+                    ? 'Password protected'
+                    : 'No password — link grants access'}
+                </dd>
+              </>
+            ) : null}
             {showNet ? (
               <>
                 <dt>RTT / jitter</dt>
@@ -278,6 +352,44 @@ export function App() {
           </dl>
         ) : null}
         {session?.game === undefined ? exitControl : null}
+        {accessMode === 'code' &&
+        session === undefined &&
+        invitation !== undefined &&
+        !(invitation instanceof InvitationError) ? (
+          <form
+            class="access-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (cooldownUntil > clock || accessCodeInput.current === null)
+                return;
+              accessCode.current = accessCodeInput.current.value;
+              accessCodeInput.current.value = '';
+              setView(viewForStage('loading'));
+              setAttempt((current) => current + 1);
+            }}
+          >
+            <p>Password protected</p>
+            <label for="access-code">Access code</label>
+            <input
+              id="access-code"
+              ref={accessCodeInput}
+              type="password"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck={false}
+              disabled={cooldownUntil > clock}
+              required
+            />
+            <button type="submit" disabled={cooldownUntil > clock}>
+              Connect
+            </button>
+            {cooldownUntil > clock ? (
+              <p role="status">
+                Retry in {Math.ceil((cooldownUntil - clock) / 1000)} seconds.
+              </p>
+            ) : null}
+          </form>
+        ) : null}
         {retryAllowed(view, invitation) ? (
           <button
             type="button"
@@ -288,17 +400,19 @@ export function App() {
         ) : null}
       </section>
       <p class="security-note">
-        Treat this invitation link like a password. Anyone with it can use the
-        host&apos;s shared permissions until expiry or revocation; no separate
-        password is required. TailMouse keeps the invitation only in memory.
+        {accessMode === 'link'
+          ? 'No password — link grants access. Treat this invitation link like a password until expiry or revocation.'
+          : accessMode === 'code'
+            ? 'Password protected. The invitation link and host access code are separate credentials.'
+            : 'Treat this invitation link like a password. The host may also require a separate access code.'}{' '}
+        TailMouse keeps session credentials only in memory.
       </p>
       <details>
         <summary>About TailMouse</summary>
         <p>{cacheStatus}</p>
         <p>Build {BUILD.version}</p>
-        <p>
-          TMOUSE protocol {BUILD.protocolMin}..{BUILD.protocolMax}
-        </p>
+        <p>TMOUSE Escape protocol {BUILD.protocols.escape}</p>
+        <p>TMOUSE Leash protocol {BUILD.protocols.leash}</p>
         <p>Tailcat revision {BUILD.tailcatRevision}</p>
         <p>
           Unofficial Tailcat application. Browser transport uses DERP relay.
