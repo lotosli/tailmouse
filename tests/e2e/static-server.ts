@@ -4,7 +4,12 @@ import { securityHeaders } from '../../tools/web-assets.ts';
 
 // An isolated read-only origin permits actual outages and worker updates
 // without modifying the build or another parallel browser's static server.
-export async function staticServer() {
+export async function staticServer(
+  options: {
+    omitContentLength?: boolean;
+    requireMatchingContentEncoding?: boolean;
+  } = {},
+) {
   const root = new URL('../../apps/web/dist/', import.meta.url);
   const manifest = JSON.parse(
     readFileSync(new URL('web-manifest.json', root), 'utf8'),
@@ -54,15 +59,35 @@ export async function staticServer() {
       file === 'web-manifest.json'
         ? manifest.staticHosting.manifestObject.metadata
         : manifest.files[file]!;
+    if (
+      options.requireMatchingContentEncoding &&
+      metadata.contentEncoding &&
+      request.headers['accept-encoding'] !== metadata.contentEncoding
+    ) {
+      response
+        .writeHead(406, {
+          ...headers,
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Content-Length': '0',
+        })
+        .end();
+      return;
+    }
     headers['Cache-Control'] = metadata.cacheControl;
     if (metadata.contentEncoding)
       headers['Content-Encoding'] = metadata.contentEncoding;
     response.writeHead(200, {
       ...headers,
       'Content-Type': metadata.contentType,
-      'Content-Length': String(body.byteLength),
+      ...(options.omitContentLength
+        ? { 'Transfer-Encoding': 'chunked' }
+        : { 'Content-Length': String(body.byteLength) }),
     });
-    response.end(request.method === 'HEAD' ? undefined : body);
+    if (request.method !== 'HEAD' && options.omitContentLength)
+      response.write(body);
+    response.end(
+      request.method === 'HEAD' || options.omitContentLength ? undefined : body,
+    );
   });
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);

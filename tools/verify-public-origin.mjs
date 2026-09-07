@@ -36,6 +36,11 @@ function assertSecurityHeaders(response, expected) {
     assert.equal(header(response, name), value, `${name} mismatch.`);
 }
 
+function assertContentLengthWhenPresent(response, expected, message) {
+  const value = header(response, 'Content-Length');
+  if (value !== undefined) assert.equal(value, String(expected), message);
+}
+
 function assertObjectResponse(response, metadata, source) {
   assert.equal(response.statusCode, 200, 'Static object request failed.');
   assert.equal(
@@ -53,9 +58,9 @@ function assertObjectResponse(response, metadata, source) {
     metadata.contentEncoding,
     'Static object content encoding mismatch.',
   );
-  assert.equal(
-    header(response, 'Content-Length'),
-    String(source.byteLength),
+  assertContentLengthWhenPresent(
+    response,
+    source.byteLength,
     'Static object length header mismatch.',
   );
   assert.equal(response.body.byteLength, source.byteLength, 'Byte mismatch.');
@@ -77,6 +82,7 @@ function boundedRequest(
   agent,
   network,
   timeoutMs,
+  acceptEncoding = 'identity',
 ) {
   return new Promise((resolvePromise, rejectPromise) => {
     let settled = false;
@@ -93,7 +99,7 @@ function boundedRequest(
         agent,
         headers: {
           Accept: '*/*',
-          'Accept-Encoding': 'identity',
+          'Accept-Encoding': acceptEncoding,
           'User-Agent': 'TailMouse-static-origin-verifier/1',
         },
       },
@@ -269,9 +275,9 @@ export async function verifyPublicOrigin(
     );
     assert.equal(rootHead.statusCode, 200, 'Root HEAD request failed.');
     assert.equal(rootHead.body.byteLength, 0, 'HEAD returned a response body.');
-    assert.equal(
-      header(rootHead, 'Content-Length'),
-      String(index.bytes.byteLength),
+    assertContentLengthWhenPresent(
+      rootHead,
+      index.bytes.byteLength,
       'Root HEAD length mismatch.',
     );
     assertSecurityHeaders(rootHead, staticHosting.requiredHeaders);
@@ -312,6 +318,7 @@ export async function verifyPublicOrigin(
         agent,
         network,
         timeoutMs,
+        file.identity.contentEncoding ?? 'identity',
       );
       assertObjectResponse(response, file.identity, file.bytes);
       assertSecurityHeaders(response, staticHosting.requiredHeaders);

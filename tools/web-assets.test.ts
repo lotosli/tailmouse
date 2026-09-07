@@ -108,7 +108,7 @@ test('static object metadata and hosting policy are exact and backend-free', () 
     webObjectMetadata(`tailcat/tailcat-web-${'1'.repeat(64)}.wasm.br`),
     {
       contentType: 'application/wasm',
-      cacheControl: immutableCacheControl,
+      cacheControl: `${immutableCacheControl}, no-transform`,
       contentEncoding: 'br',
     },
   );

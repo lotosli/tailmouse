@@ -42,15 +42,17 @@ and its credentials are not committed to this repository.
 | Content-named `.js`                            | `text/javascript; charset=utf-8` | none               | `public, max-age=31536000, immutable`                         |
 | Content-named `.css`                           | `text/css; charset=utf-8`        | none               | `public, max-age=31536000, immutable`                         |
 | Content-named `.wasm`                          | `application/wasm`               | none               | `public, max-age=31536000, immutable`                         |
-| Listed `.br` variant                           | underlying uncompressed type     | `br`               | same as its underlying object                                 |
-| Listed `.gz` variant                           | underlying uncompressed type     | `gzip`             | same as its underlying object                                 |
+| Listed `.br` variant                           | underlying uncompressed type     | `br`               | underlying immutable policy plus `no-transform`               |
+| Listed `.gz` variant                           | underlying uncompressed type     | `gzip`             | underlying immutable policy plus `no-transform`               |
 | `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.txt` | `text/plain; charset=utf-8`      | none               | `no-cache`                                                    |
 
 Cloudflare supports `Content-Type`, `Content-Encoding` and `Cache-Control` as R2
 HTTP object metadata. The listed `.br` and `.gz` files remain independently
-verifiable release objects. Browser requests use the raw content-named path;
-the Cloudflare compression rule below negotiates Brotli, then gzip, from the
-browser's `Accept-Encoding` header without changing that path.
+verifiable release objects. Their origin metadata includes `no-transform` so
+Cloudflare does not decode or recompress those evidence objects. Browser
+requests use the raw content-named path; the Cloudflare compression rule below
+negotiates Brotli, then gzip, from the browser's `Accept-Encoding` header without
+changing that path.
 
 ## Domain and rules
 
@@ -111,7 +113,10 @@ must use HTTPS. It makes only bounded `HEAD` and `GET` requests, never sends an
 invitation, and emits a JSON report covering the selected address, negotiated
 TLS, root and no-backend routing, exact object bytes and metadata, required
 headers, and first/repeated raw-Wasm transfer timings. HTTP is accepted only for
-the loopback test fixture.
+the loopback test fixture. When an origin omits the optional `Content-Length`,
+the verifier still proves the bounded GET body size and digest; when the header
+is present, it must equal the manifest size. Encoded evidence objects are
+requested with their exact recorded encoding and must remain byte-identical.
 
 If verification fails, stop. Restore the preceding `index.html` and
 `service-worker.js` only if all of their referenced immutable objects still

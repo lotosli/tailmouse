@@ -64,6 +64,21 @@ test('public-origin verifier proves the built local static fixture without an in
   );
 });
 
+test('public-origin verifier accepts omitted Content-Length while still checking exact bodies', async (t) => {
+  const server = await staticServer({
+    omitContentLength: true,
+    requireMatchingContentEncoding: true,
+  });
+  t.after(server.close);
+  const result = await verifyPublicOrigin(
+    server.url,
+    'apps/web/dist/web-manifest.json',
+    { timeoutMs: 5_000 },
+  );
+  assert.equal(result.routing.root.action, 'internal-rewrite');
+  assert.ok(result.transfer.coldWasm.bytes > 0);
+});
+
 test('public-origin verifier rejects credentials, query strings and fragments before a request', async (t) => {
   const server = await staticServer();
   t.after(server.close);

@@ -74,7 +74,9 @@ export function webObjectMetadata(fileName: string): WebObjectMetadata {
     );
   return {
     contentType,
-    cacheControl: immutable ? immutableCacheControl : 'no-cache',
+    cacheControl: `${immutable ? immutableCacheControl : 'no-cache'}${
+      compressed ? ', no-transform' : ''
+    }`,
     ...(compressed
       ? { contentEncoding: compressed === 'br' ? 'br' : 'gzip' }
       : {}),
