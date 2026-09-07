@@ -402,21 +402,36 @@ export async function verifyPublicOrigin(
   }
 }
 
+export function publicOriginArguments(arguments_) {
+  const values = arguments_[0] === '--' ? arguments_.slice(1) : arguments_;
+  assert.equal(
+    values.length,
+    2,
+    'Expected an origin URL and local Web manifest path.',
+  );
+  return values;
+}
+
+export function publicOriginFailureMessage(error) {
+  if (error?.code === 'ERR_ASSERTION' && error.generatedMessage === false)
+    return error.message.split('\n')[0];
+  const code =
+    typeof error?.code === 'string' && /^[A-Z0-9_]{1,64}$/u.test(error.code)
+      ? error.code
+      : 'UNCLASSIFIED';
+  return `Origin verification failed (${code}).`;
+}
+
 if (import.meta.main) {
   try {
-    assert.equal(
-      process.argv.length,
-      4,
-      'Expected an origin URL and local Web manifest path.',
-    );
-    const result = await verifyPublicOrigin(process.argv[2], process.argv[3]);
+    const [origin, manifest] = publicOriginArguments(process.argv.slice(2));
+    const result = await verifyPublicOrigin(origin, manifest);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } catch (error) {
     process.stderr.write(
       'Public-origin verification failed. No invitation or external mutation was sent.\n',
     );
-    if (error.code === 'ERR_ASSERTION' && error.generatedMessage === false)
-      process.stderr.write(`${error.message.split('\n')[0]}\n`);
+    process.stderr.write(`${publicOriginFailureMessage(error)}\n`);
     process.exitCode = 1;
   }
 }

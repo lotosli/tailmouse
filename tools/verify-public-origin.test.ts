@@ -2,7 +2,38 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { staticServer } from '../tests/e2e/static-server.ts';
-import { verifyPublicOrigin } from './verify-public-origin.mjs';
+import {
+  publicOriginArguments,
+  publicOriginFailureMessage,
+  verifyPublicOrigin,
+} from './verify-public-origin.mjs';
+
+test('public-origin CLI accepts the documented pnpm argument separator', () => {
+  const expected = [
+    'https://link.tailmouse.com/',
+    'apps/web/dist/web-manifest.json',
+  ];
+  assert.deepEqual(publicOriginArguments(expected), expected);
+  assert.deepEqual(publicOriginArguments(['--', ...expected]), expected);
+  assert.throws(
+    () => publicOriginArguments(['--', ...expected, 'unexpected']),
+    /Expected an origin URL and local Web manifest path/u,
+  );
+});
+
+test('public-origin CLI reports only a bounded safe failure category', () => {
+  const error = Object.assign(
+    new Error('upstream included synthetic-secret-DO-NOT-PRINT'),
+    { code: 'ECONNRESET' },
+  );
+  const message = publicOriginFailureMessage(error);
+  assert.equal(message, 'Origin verification failed (ECONNRESET).');
+  assert.doesNotMatch(message, /synthetic-secret|DO-NOT-PRINT/u);
+  assert.equal(
+    publicOriginFailureMessage(new Error('synthetic-secret-DO-NOT-PRINT')),
+    'Origin verification failed (UNCLASSIFIED).',
+  );
+});
 
 test('public-origin verifier proves the built local static fixture without an invitation', async (t) => {
   const server = await staticServer();
