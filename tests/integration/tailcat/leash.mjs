@@ -32,6 +32,8 @@ async function main() {
       'ai-cli',
       'ai-cli-codex',
       'ai-cli-claude',
+      'ai-agent-codex',
+      'ai-agent-claude',
       'old-peer',
       'vim',
       'shell',
@@ -54,9 +56,11 @@ async function main() {
         /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{16}$/.test(request.accessCode))
   )
     throw new Error('INPUT_INVALID');
-  const expectedPattern = ['ai-cli', 'ai-cli-codex'].includes(request.scenario)
+  const expectedPattern = ['ai-cli', 'ai-cli-codex', 'ai-agent-codex'].includes(
+    request.scenario,
+  )
     ? /^codex-cli [0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/
-    : request.scenario === 'ai-cli-claude'
+    : ['ai-cli-claude', 'ai-agent-claude'].includes(request.scenario)
       ? /^[0-9]+(?:\.[0-9]+){2} \(Claude Code\)$/
       : null;
   if (
@@ -99,13 +103,16 @@ async function main() {
     });
     context.setDefaultTimeout(10_000);
     let page = await context.newPage();
-    const reconnect = [
-      'protected',
-      'long-task',
-      'reconnect',
-      'retained-exit',
-      'browser-crash',
-    ].includes(request.scenario);
+    const interactiveAI = request.scenario.startsWith('ai-agent-');
+    const reconnect =
+      interactiveAI ||
+      [
+        'protected',
+        'long-task',
+        'reconnect',
+        'retained-exit',
+        'browser-crash',
+      ].includes(request.scenario);
     const retainedExit = request.scenario === 'retained-exit';
     const longTask = request.scenario === 'long-task';
     const killOnDisconnect = request.scenario === 'browser-crash-kill';
@@ -183,6 +190,8 @@ async function main() {
         'ai-cli': 'Installed Codex CLI acceptance',
         'ai-cli-codex': 'Installed Codex CLI acceptance',
         'ai-cli-claude': 'Installed Claude Code acceptance',
+        'ai-agent-codex': 'Installed Codex CLI acceptance',
+        'ai-agent-claude': 'Installed Claude Code acceptance',
         htop: 'Native htop acceptance',
       }[request.scenario] ?? 'Native CLI acceptance';
     await expect(page.getByText(title, { exact: true })).toBeVisible();
@@ -336,7 +345,32 @@ async function main() {
         ];
         return Math.max(0, ...matches.map((match) => Number(match[1])));
       };
-      if (longTask) {
+      if (interactiveAI) {
+        stage = 'ai-agent-process-state';
+        await expect
+          .poll(async () => {
+            const value = await page.getByLabel('Process status').innerText();
+            const state = value.includes('running')
+              ? 'running'
+              : value.includes('starting')
+                ? 'starting'
+                : /Exit \d+/u.test(value)
+                  ? 'exited'
+                  : 'other';
+            stage = `ai-agent-process-${state}`;
+            return state;
+          })
+          .toBe('running');
+        stage = 'ai-agent-screen';
+        await expect
+          .poll(() => output.getByRole('listitem').count())
+          .toBeGreaterThan(0);
+        stage = 'ai-agent-input';
+        const beforeInput = await output.innerText();
+        await page.getByRole('button', { name: 'Open keyboard' }).click();
+        await page.keyboard.press('ArrowDown');
+        await expect.poll(() => output.innerText()).not.toBe(beforeInput);
+      } else if (longTask) {
         await expect(output).toContainText('long-task-ready');
         await expect.poll(latestProgress).toBeGreaterThan(0);
         progressBeforeDisconnect = await latestProgress();
@@ -460,11 +494,40 @@ async function main() {
           .getByRole('checkbox', { name: 'Screen reader support' })
           .check();
         output = page.getByRole('region', { name: 'Terminal output' });
-        if (!longTask) await expect(output).toContainText('q🐈');
+        if (!longTask && !interactiveAI)
+          await expect(output).toContainText('q🐈');
         if (request.scenario === 'browser-crash')
           await expect(output).toContainText('local-alive🐈');
         await expect(output).not.toContainText('restarted process');
-        if (longTask) {
+        if (interactiveAI) {
+          stage = 'ai-agent-reconnected';
+          await expect(page.getByLabel('Process status')).toContainText(
+            'running',
+          );
+          await expect(page.getByText(title, { exact: true })).toBeVisible();
+          await expect
+            .poll(() => output.getByRole('listitem').count())
+            .toBeGreaterThan(0);
+          await page.setViewportSize({ width: 620, height: 850 });
+          await expect(page.getByText(pid, { exact: true })).toBeVisible();
+          stage = 'ai-agent-input-after-reconnect';
+          const beforeReconnectInput = await output.innerText();
+          await page.getByRole('button', { name: 'Open keyboard' }).click();
+          await page.keyboard.press('ArrowUp');
+          await expect
+            .poll(() => output.innerText())
+            .not.toBe(beforeReconnectInput);
+          stage = 'ai-agent-terminate';
+          await page
+            .getByRole('button', { name: 'Terminate', exact: true })
+            .click();
+          await page
+            .getByRole('button', { name: 'Confirm terminate', exact: true })
+            .click();
+          await expect(page.getByLabel('Process status')).toContainText(
+            'Exit 143',
+          );
+        } else if (longTask) {
           stage = 'long-task-progress-after-reconnect';
           await expect
             .poll(latestProgress)
@@ -499,12 +562,12 @@ async function main() {
             page.getByRole('button', { name: 'Open keyboard' }),
           ).toBeEnabled();
         }
-        if (!longTask) {
+        if (!longTask && !interactiveAI) {
           await paste('r🐈');
           await expect(output).toContainText('r🐈');
         }
       }
-      if (!longTask) {
+      if (!longTask && !interactiveAI) {
         stage = 'native-initial-size';
         let sizeSample = 0;
         const size = async () => {
@@ -572,7 +635,7 @@ async function main() {
       ).toBeVisible({
         timeout:
           ['retained-exit', 'readonly'].includes(request.scenario) ||
-          request.scenario.startsWith('ai-cli')
+          request.scenario.startsWith('ai-')
             ? 8_000
             : 5_000,
       });

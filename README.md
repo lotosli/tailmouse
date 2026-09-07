@@ -90,9 +90,10 @@ Or launch Vim and other terminal commands with their own arguments:
 tailmouse leash --web-base-url http://127.0.0.1:4173/ --readonly --start-on now -- vim
 tailmouse leash --web-base-url http://127.0.0.1:4173/ --title demo --no-restart --no-terminate --post-exit-ttl 0 -- printf hello
 tailmouse leash --web-base-url http://127.0.0.1:4173/ -- codex
+tailmouse leash --web-base-url http://127.0.0.1:4173/ -- claude
 ```
 
-The last command is an AI CLI example and requires that `codex` is already installed and configured on the host. Leash has no AI-provider integration: standards-based terminal CLIs and TUIs use the same PTY byte stream and inherit the selected command environment and filesystem authority.
+The last two commands are AI CLI examples and require the selected program to be installed and configured on the host. Leash has no AI-provider integration: standards-based terminal CLIs and TUIs use the same PTY byte stream and inherit the selected command environment and filesystem authority.
 
 Arguments after `--` are passed literally to the launched program, not interpreted as TailMouse flags. When switching programs, replace their arguments too: Vim's `-u NONE -U NONE -i NONE -n` options must not be passed to zsh. Use `/bin/zsh -f -i` to test without personal shell startup configuration. Pipes, redirects, wildcards and variables require an explicitly launched shell; TailMouse does not interpret them. Restart reuses the original argv, working directory and environment rather than accepting a replacement command from the browser.
 

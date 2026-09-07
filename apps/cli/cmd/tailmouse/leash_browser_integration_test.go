@@ -44,8 +44,9 @@ func TestHermeticLeashBrowser(t *testing.T) {
 // Run explicitly with pnpm test:leash -- --ai-cli. Installed AI CLIs are
 // acceptance targets, not dependencies of the self-contained development gate.
 func TestHermeticLeashAI(t *testing.T) {
-	for _, scenario := range []string{"ai-cli-codex", "ai-cli-claude"} {
-		t.Run(strings.TrimPrefix(scenario, "ai-cli-"), func(t *testing.T) {
+	for _, scenario := range []string{"ai-cli-codex", "ai-cli-claude", "ai-agent-codex", "ai-agent-claude"} {
+		name := strings.TrimPrefix(scenario, "ai-")
+		t.Run(name, func(t *testing.T) {
 			testNativeBrowser(t, scenario, nil)
 		})
 	}
@@ -135,7 +136,7 @@ func TestHermeticEscapeIdleMemory(t *testing.T) {
 }
 
 func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.TestNetworkProfile) {
-	testNativeBrowserWithAccess(t, scenario, profile, scenario == "protected" || strings.HasPrefix(scenario, "ai-cli"), false)
+	testNativeBrowserWithAccess(t, scenario, profile, scenario == "protected" || strings.HasPrefix(scenario, "ai-"), false)
 }
 
 func testNativeBrowserWithAccess(t *testing.T, scenario string, profile *tailcattransport.TestNetworkProfile, protected, official bool) {
@@ -221,8 +222,8 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	} else if scenario == "readonly" {
 		argv = []string{"/bin/sh", "-c", "printf 'readonly-ready\\n'; exit 23"}
 		title, wantCode = "Native readonly acceptance", 23
-	} else if strings.HasPrefix(scenario, "ai-cli-") || scenario == "ai-cli" {
-		name := strings.TrimPrefix(scenario, "ai-cli-")
+	} else if strings.HasPrefix(scenario, "ai-cli-") || strings.HasPrefix(scenario, "ai-agent-") || scenario == "ai-cli" {
+		name := strings.TrimPrefix(strings.TrimPrefix(scenario, "ai-cli-"), "ai-agent-")
 		if scenario == "ai-cli" {
 			name = "codex"
 		}
@@ -246,13 +247,25 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 		if err != nil || !matched {
 			t.Fatalf("the installed %s CLI returned an invalid bounded version", name)
 		}
+		interactive := strings.HasPrefix(scenario, "ai-agent-")
+		if interactive {
+			environment = append(environment, "TERM=xterm-256color", "COLORTERM=truecolor", "LC_ALL=C.UTF-8")
+		}
 		argv = []string{cli, "--version"}
-		if name == "claude" {
+		if interactive && name == "codex" {
+			argv = []string{cli, "--no-alt-screen", "--sandbox", "read-only", "--ask-for-approval", "never", "-C", directory}
+		} else if interactive {
+			argv = []string{node, cli, "--bare", "--no-chrome", "--permission-mode", "dontAsk", "--tools", ""}
+		} else if name == "claude" {
 			// Claude Code is an env-node script. Invoke it through the already
 			// resolved runtime so the isolated child PATH remains deterministic.
 			argv = []string{node, cli, "--version"}
 		}
-		wantCode = 0
+		if interactive {
+			wantCode = 143
+		} else {
+			wantCode = 0
+		}
 		t.Logf("AI CLI example: %s", expectedOutput)
 	}
 	if err := os.MkdirAll(filepath.Join(root, ".artifacts"), 0o700); err != nil {
@@ -400,7 +413,7 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	var nativeTransport *tailcattransport.Server
 	finished := false
 	retention := "1s"
-	if scenario == "retained-exit" || scenario == "readonly" || strings.HasPrefix(scenario, "ai-cli") {
+	if scenario == "retained-exit" || scenario == "readonly" || strings.HasPrefix(scenario, "ai-") {
 		retention = "5s" // Includes a fresh browser context and real Wasm startup.
 	}
 	args := []string{"leash", "--no-qr", "--start-on=connect", "--post-exit-ttl=" + retention, "--cwd=" + directory, "--title=" + title}
