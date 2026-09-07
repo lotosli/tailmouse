@@ -330,9 +330,12 @@ async function main() {
     // Timing starts after pause acknowledgement, so HTTP latency cannot make
     // this wait shorter than the relay's full fifteen-second pause.
     stage = 'slow-consumer-outage';
-    await delay(
-      Math.ceil(Math.max(0, 15_000 - (performance.now() - outageStarted))),
-    );
+    const outageDeadline = outageStarted + 15_000;
+    // A timer may wake before its requested delay. Recheck the monotonic
+    // deadline instead of treating one wake-up as proof of elapsed time.
+    while (performance.now() < outageDeadline) {
+      await delay(Math.max(1, Math.ceil(outageDeadline - performance.now())));
+    }
     const outageMS = performance.now() - outageStarted;
     check(outageMS >= 15_000, 'OUTAGE_RESTORED_EARLY');
     stage = 'slow-consumer-loss-observation';
