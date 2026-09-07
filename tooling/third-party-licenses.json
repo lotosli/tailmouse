@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "noticeSha256": "2156e9292c84542990e10d784feb6d6ceef3701c9e33aa50356f276d8ce0fc19",
+  "noticeSha256": "22998f7418681588bb68b2856052e00f545301bf2dfa6df56ee70fb6ae53837c",
   "libraries": [
     {
       "ecosystem": "golang",
@@ -483,9 +483,9 @@
     {
       "ecosystem": "golang",
       "name": "github.com/tailscale/tailcat",
-      "version": "v0.4.1-0.20260901152919-4a25a91e0337",
+      "version": "v0.6.0",
       "scope": "distribution",
-      "revision": "4a25a91e0337252a4d16e097b03cf3cbb92c20cd",
+      "revision": "790406204c002a6f109ef7c6a30a436601a1f6a8",
       "files": [
         {
           "name": "LICENSE",
@@ -510,7 +510,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/tailscale/wireguard-go",
-      "version": "v0.0.0-20260821191448-23d18d66172c",
+      "version": "v0.0.0-20260904023712-e855235c55a2",
       "scope": "distribution",
       "files": [
         {
@@ -966,7 +966,7 @@
     {
       "ecosystem": "golang",
       "name": "tailscale.com",
-      "version": "v1.103.0-pre.0.20260830144538-72780705eda8",
+      "version": "v1.103.0-pre.0.20260904030409-31d8badb3bfb",
       "scope": "distribution",
       "files": [
         {

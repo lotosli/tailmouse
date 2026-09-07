@@ -192,6 +192,7 @@ func testRelayBrowserWasm(t *testing.T, mode RelayMode, engine string) {
 	}
 	defer eraseBytes(address)
 	assertFullLocalRegion(t, address, region)
+	assertPSKInvitation(t, address)
 	testCanceledDial(t, address)
 
 	root := repositoryRoot(t)
@@ -283,24 +284,27 @@ func testRelayBrowserWasm(t *testing.T, mode RelayMode, engine string) {
 
 func wrongServerAddress(t *testing.T, address []byte) []byte {
 	t.Helper()
-	parsed, err := upstream.ParseConnBlob(upstream.ConnBlob(address))
+	parsed, err := upstream.ParseAddr(upstream.Addr(address))
 	if err != nil {
 		t.Fatal("cannot construct the incorrect test credential")
 	}
 	other := upstream.NewPrivateKey()
 	parsed.ServerPublic = other.Public.ServerPublic
 	parsed.ServerDiscoPublic = other.Public.ServerDiscoPublic
-	return []byte(parsed.ConnBlob())
+	return []byte(parsed.Addr())
 }
 
 func assertFullLocalRegion(t *testing.T, address []byte, want *tailcfg.DERPRegion) {
 	t.Helper()
-	parsed, err := upstream.ParseConnBlob(upstream.ConnBlob(address))
+	parsed, err := upstream.ParseAddr(upstream.Addr(address))
 	if err != nil {
 		t.Fatal("adapter produced an invalid connection credential")
 	}
 	if len(parsed.Region) != 1 || len(parsed.Region[0].Nodes) != 1 {
 		t.Fatal("adapter credential omitted the local DERP region")
+	}
+	if parsed.PresharedKey.IsZero() {
+		t.Fatal("adapter credential omitted Tailcat's default pre-shared key")
 	}
 	got := parsed.Region[0]
 	gotNode := got.Nodes[0]
@@ -314,10 +318,56 @@ func assertFullLocalRegion(t *testing.T, address []byte, want *tailcfg.DERPRegio
 	}
 }
 
+func assertPSKInvitation(t *testing.T, address []byte) {
+	t.Helper()
+	now := time.Now().Round(time.Second)
+	card := invitation.MouseCard{
+		Version:     invitation.CardVersion,
+		Mode:        invitation.ModeEscape,
+		TailcatAddr: string(address),
+		Port:        invitation.VirtualPort,
+		SessionID:   [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		ExpiresAt:   now.Add(5 * time.Minute).Unix(),
+		ProtocolMin: invitation.EscapeProtocol,
+		ProtocolMax: invitation.EscapeProtocol,
+	}
+	encoded, err := invitation.Encode(card)
+	if err != nil {
+		t.Fatal("PSK-bearing address did not fit the MouseCard")
+	}
+	defer eraseBytes(encoded)
+	fragment := "#/v1/" + base64.RawURLEncoding.EncodeToString(encoded)
+	decoded, err := invitation.ParseFragment(fragment, now)
+	fragment = ""
+	if err != nil || decoded != card {
+		t.Fatal("PSK-bearing MouseCard did not round-trip as one opaque field")
+	}
+	created, err := invitation.New("https://link.tailmouse.com/", card)
+	if err != nil {
+		t.Fatal("PSK-bearing invitation exceeded the existing URL bound")
+	}
+	defer created.Erase()
+	var rendered bytes.Buffer
+	if err := created.Render(&rendered, now, invitation.DisplayOptions{Relay: "official", NoQR: false}); err != nil {
+		t.Fatal("PSK-bearing invitation did not fit the existing QR contract")
+	}
+	eraseBytes(rendered.Bytes())
+
+	oversized := card
+	oversized.TailcatAddr += strings.Repeat("x", invitation.MaxInvitationBytes)
+	partial, err := invitation.New("https://link.tailmouse.com/", oversized)
+	if partial != nil {
+		partial.Erase()
+	}
+	if partial != nil || !errors.Is(err, invitation.ErrInvitationSize) {
+		t.Fatal("oversized PSK-bearing invitation did not fail before display")
+	}
+}
+
 func testCanceledDial(t *testing.T, address []byte) {
 	t.Helper()
 	client := &upstream.Client{
-		Server: upstream.ConnBlob(address),
+		Server: upstream.Addr(address),
 		Logf:   logger.Discard,
 	}
 	t.Cleanup(func() { _ = client.Close() })

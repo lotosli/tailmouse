@@ -147,7 +147,7 @@ func TestHermeticTailcatClientVerification(t *testing.T) {
 		t.Fatal("verification fixture address unavailable")
 	}
 	defer eraseBytes(address)
-	control := &upstream.Client{Key: controlKey, Server: upstream.ConnBlob(address), Logf: logger.Discard}
+	control := &upstream.Client{Key: controlKey, Server: upstream.Addr(address), Logf: logger.Discard}
 	t.Cleanup(func() {
 		if err := control.Close(); err != nil {
 			t.Error("verified positive-control client failed to close")

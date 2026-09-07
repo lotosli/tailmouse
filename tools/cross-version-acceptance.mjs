@@ -9,7 +9,8 @@ import { chromium, expect } from '@playwright/test';
 import { run, runPnpm } from './process.mjs';
 
 const legacyRevision = '5a5b620aff7d60ead7dae52c001f8b6bafab9c3d';
-const tailcatRevision = '4a25a91e0337252a4d16e097b03cf3cbb92c20cd';
+const priorTailcatRevision = '4a25a91e0337252a4d16e097b03cf3cbb92c20cd';
+const currentTailcatRevision = '790406204c002a6f109ef7c6a30a436601a1f6a8';
 const root = resolve(import.meta.dirname, '..');
 const mediaTypes = Object.freeze({
   '.css': 'text/css; charset=utf-8',
@@ -58,11 +59,11 @@ try {
   buildCurrent(root);
   buildLegacy(legacyRoot);
 
-  const current = await artifactIdentity(root, 2);
-  const legacy = await artifactIdentity(legacyRoot, 1);
+  const current = await artifactIdentity(root, 2, currentTailcatRevision);
+  const legacy = await artifactIdentity(legacyRoot, 1, priorTailcatRevision);
   if (
-    current.tailcatRevision !== tailcatRevision ||
-    legacy.tailcatRevision !== tailcatRevision
+    current.tailcatRevision !== currentTailcatRevision ||
+    legacy.tailcatRevision !== priorTailcatRevision
   ) {
     throw new Error(
       'Cross-version artifacts do not use the recorded Tailcat revision.',
@@ -86,7 +87,10 @@ try {
     `${JSON.stringify(
       {
         schema: 'tailmouse.cross-version-acceptance/v1',
-        tailcatRevision,
+        tailcatRevisions: {
+          legacy: priorTailcatRevision,
+          current: currentTailcatRevision,
+        },
         legacy: publicIdentity(legacy),
         current: publicIdentity(current),
         pairings: [
@@ -130,7 +134,7 @@ function buildLegacy(directory) {
   buildCurrent(directory);
 }
 
-async function artifactIdentity(directory, protocol) {
+async function artifactIdentity(directory, protocol, expectedTailcatRevision) {
   const sourceRevision = run('git', ['rev-parse', 'HEAD'], {
     capture: true,
     cwd: directory,
@@ -145,7 +149,7 @@ async function artifactIdentity(directory, protocol) {
       : manifest.protocols?.leash === protocol;
   if (
     !reportedProtocol ||
-    manifest.tailcatRevision !== tailcatRevision ||
+    manifest.tailcatRevision !== expectedTailcatRevision ||
     typeof manifest.version !== 'string'
   ) {
     throw new Error('A Web artifact reported an unexpected build identity.');

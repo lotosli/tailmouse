@@ -9,6 +9,8 @@ const source = readFileSync(
 
 test('cross-version acceptance fixes the phase-one baseline and both mismatch directions', () => {
   assert.match(source, /5a5b620aff7d60ead7dae52c001f8b6bafab9c3d/u);
+  assert.match(source, /4a25a91e0337252a4d16e097b03cf3cbb92c20cd/u);
+  assert.match(source, /790406204c002a6f109ef7c6a30a436601a1f6a8/u);
   assert.match(source, /old-browser\/new-Host/u);
   assert.match(source, /new-browser\/old-Host/u);
   assert.match(source, /protocol: 2/u);

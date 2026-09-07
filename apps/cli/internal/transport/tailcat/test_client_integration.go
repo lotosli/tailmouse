@@ -12,7 +12,7 @@ import (
 // DialLocalTestStream keeps the hermetic integration client's upstream values
 // inside the adapter boundary. The caller owns both returned cleanup paths.
 func DialLocalTestStream(ctx context.Context, address []byte, port uint16) (ByteStream, func() error, error) {
-	client := &upstream.Client{Server: upstream.ConnBlob(address), Logf: logger.Discard}
+	client := &upstream.Client{Server: upstream.Addr(address), Logf: logger.Discard}
 	stream, err := client.DialTCPPort(ctx, port)
 	if err != nil {
 		_ = client.Close()

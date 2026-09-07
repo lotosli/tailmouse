@@ -30,6 +30,9 @@ func TestNewBackendOfficialUsesZeroValueRelay(t *testing.T) {
 	if real.Region != nil || real.RegionID != 0 || real.DERPMapURL != "" {
 		t.Fatal("official mode populated an upstream relay override")
 	}
+	if !real.PresharedKey.IsZero() || real.DisablePresharedKey {
+		t.Fatal("adapter bypassed Tailcat's default pre-shared-key generation")
+	}
 	if len(real.ServedTCPPorts) != 1 ||
 		real.ServedTCPPorts[0].First != VirtualPort ||
 		real.ServedTCPPorts[0].Last != VirtualPort {
@@ -92,7 +95,7 @@ func TestNewBackendBuildsCustomRegion(t *testing.T) {
 
 	key := upstream.NewPrivateKey()
 	key.Public.Region = []*tailcfg.DERPRegion{region}
-	parsed, err := upstream.ParseConnBlob(key.Public.ConnBlob())
+	parsed, err := upstream.ParseAddr(key.Public.Addr())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +137,7 @@ func TestCustomRegionUsesLabelsAndEmbedsConnectionPorts(t *testing.T) {
 		t.Fatal("custom region labels were not applied to the host")
 	}
 	key.Public.Region = []*tailcfg.DERPRegion{configured}
-	decoded, err := upstream.ParseConnBlob(key.Public.ConnBlob())
+	decoded, err := upstream.ParseAddr(key.Public.Addr())
 	if err != nil || len(decoded.Region) != 1 {
 		t.Fatal("custom region did not round-trip")
 	}
@@ -251,11 +254,13 @@ func TestStartPreservesConfiguredCustomRelayMetadata(t *testing.T) {
 func TestStartFailuresAreRedactedAndClosed(t *testing.T) {
 	const secret = "tcSyntheticBearerCredential"
 	tests := []struct {
-		name     string
-		address  string
-		startErr error
-		want     error
+		name       string
+		address    string
+		startErr   error
+		startPanic any
+		want       error
 	}{
+		{name: "pre-shared-key generation panic", startPanic: "tcSyntheticBearerCredential", want: ErrStart},
 		{name: "upstream start", startErr: errors.New("dial " + secret), want: ErrStart},
 		{name: "upstream cancellation", startErr: errors.Join(errors.New(secret), context.Canceled), want: context.Canceled},
 		{name: "upstream deadline", startErr: errors.Join(errors.New(secret), context.DeadlineExceeded), want: context.DeadlineExceeded},
@@ -263,7 +268,7 @@ func TestStartFailuresAreRedactedAndClosed(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fake := &fakeBackend{address: test.address, startErr: test.startErr}
+			fake := &fakeBackend{address: test.address, startErr: test.startErr, startPanic: test.startPanic}
 			_, err := start(context.Background(), Config{}, func(Config) (backend, Relay, error) {
 				return fake, Relay{Mode: RelayOfficial}, nil
 			})
@@ -494,18 +499,19 @@ func syntheticAddress(t *testing.T, hosts ...string) string {
 		})
 	}
 	key.Public.Region = []*tailcfg.DERPRegion{region}
-	return string(key.Public.ConnBlob())
+	return string(key.Public.Addr())
 }
 
 type fakeBackend struct {
 	mu sync.Mutex
 
-	address   string
-	startErr  error
-	drainErr  error
-	closeErr  error
-	startHook func()
-	drainHook func(context.Context)
+	address    string
+	startErr   error
+	startPanic any
+	drainErr   error
+	closeErr   error
+	startHook  func()
+	drainHook  func(context.Context)
 
 	startCalls int
 	drainCalls int
@@ -519,10 +525,13 @@ func (f *fakeBackend) Start(context.Context) error {
 	if f.startHook != nil {
 		f.startHook()
 	}
+	if f.startPanic != nil {
+		panic(f.startPanic)
+	}
 	return f.startErr
 }
 
-func (f *fakeBackend) ConnBlob() string {
+func (f *fakeBackend) TailcatAddr() string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.address

@@ -2504,8 +2504,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:github.com/tailscale/tailcat@v0.4.1-0.20260901152919-4a25a91e0337 (distribution) ===
-Source revision: 4a25a91e0337252a4d16e097b03cf3cbb92c20cd
+=== golang:github.com/tailscale/tailcat@v0.6.0 (distribution) ===
+Source revision: 790406204c002a6f109ef7c6a30a436601a1f6a8
 
 --- LICENSE ---
 BSD 3-Clause License
@@ -2571,7 +2571,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:github.com/tailscale/wireguard-go@v0.0.0-20260821191448-23d18d66172c (distribution) ===
+=== golang:github.com/tailscale/wireguard-go@v0.0.0-20260904023712-e855235c55a2 (distribution) ===
 
 --- LICENSE ---
 Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -5052,7 +5052,7 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 
 
-=== golang:tailscale.com@v1.103.0-pre.0.20260830144538-72780705eda8 (distribution) ===
+=== golang:tailscale.com@v1.103.0-pre.0.20260904030409-31d8badb3bfb (distribution) ===
 
 --- derp/xdp/headers/LICENSE.BSD-2-Clause ---
 Valid-License-Identifier: BSD-2-Clause

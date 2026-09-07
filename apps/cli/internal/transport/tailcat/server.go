@@ -96,7 +96,7 @@ type Server struct {
 
 type backend interface {
 	Start(context.Context) error
-	ConnBlob() string
+	TailcatAddr() string
 	DrainTCP(context.Context) error
 	Close() error
 }
@@ -148,7 +148,7 @@ func (b *realBackend) selectRegion(ctx context.Context) error {
 	b.server.Region = info.Region[0]
 	return nil
 }
-func (b *realBackend) ConnBlob() string                   { return string(b.server.ConnBlob()) }
+func (b *realBackend) TailcatAddr() string                { return string(b.server.TailcatAddr()) }
 func (b *realBackend) DrainTCP(ctx context.Context) error { return b.server.DrainTCP(ctx) }
 func (b *realBackend) Close() error                       { return b.server.Close() }
 
@@ -168,7 +168,7 @@ func start(ctx context.Context, config Config, factory backendFactory) (*Server,
 	if err != nil {
 		return nil, err
 	}
-	if err := configured.Start(ctx); err != nil {
+	if err := startBackend(ctx, configured); err != nil {
 		_ = configured.Close()
 		category := ErrStart
 		if errors.Is(err, context.Canceled) {
@@ -182,7 +182,7 @@ func start(ctx context.Context, config Config, factory backendFactory) (*Server,
 		_ = configured.Close()
 		return nil, fmt.Errorf("start transport: %w", err)
 	}
-	address := configured.ConnBlob()
+	address := configured.TailcatAddr()
 	relay, err := relayFromAddress(configuredRelay.Mode, address)
 	if err != nil {
 		_ = configured.Close()
@@ -200,6 +200,18 @@ func start(ctx context.Context, config Config, factory backendFactory) (*Server,
 		relay:   relay,
 		address: []byte(address),
 	}, nil
+}
+
+// Tailcat v0.6 creates its pre-shared key inside Start and reports entropy
+// failure by panicking. Contain any upstream startup panic at this volatile
+// boundary and expose only the existing redacted start classification.
+func startBackend(ctx context.Context, configured backend) (err error) {
+	defer func() {
+		if recover() != nil {
+			err = ErrStart
+		}
+	}()
+	return configured.Start(ctx)
 }
 
 func newBackend(config Config) (backend, Relay, error) {
@@ -362,7 +374,7 @@ func normalizeHostname(value string) (string, error) {
 }
 
 func relayFromAddress(mode RelayMode, address string) (Relay, error) {
-	info, err := upstream.ParseConnBlob(upstream.ConnBlob(address))
+	info, err := upstream.ParseAddr(upstream.Addr(address))
 	if err != nil || len(info.Region) != 1 || info.Region[0] == nil || len(info.Region[0].Nodes) == 0 {
 		return Relay{}, fmt.Errorf("inspect transport credential: %w", ErrCredential)
 	}
