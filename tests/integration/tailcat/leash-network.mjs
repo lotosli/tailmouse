@@ -239,8 +239,8 @@ async function main() {
     // Keep output unavailable beyond the native fixture's ten-second liveness
     // budget. Race instrumentation is not a PTY-throughput benchmark; the
     // required 300 ms and 3 s recovery outages are exercised separately above.
-    const outageStarted = performance.now();
     await fixture('pause/15000', 'POST');
+    const outageStarted = performance.now();
     const started = performance.now();
     await fixture('bulk', 'POST');
     stage = 'slow-consumer-local-output';
@@ -259,20 +259,6 @@ async function main() {
       });
     const bulkMS = performance.now() - started;
     check(bulkMS < 10_000, 'CHILD_OUTPUT_BLOCKED_BY_BROWSER');
-    stage = 'slow-consumer-loss-observation';
-    await expect
-      .poll(async () => (await fixture('network'))[0].Dropped, {
-        timeout: 500,
-        intervals: [25],
-      })
-      .toBeGreaterThan(before[0].Dropped);
-    const impaired = await fixture('network');
-    check(
-      impaired.every(
-        (direction) => direction.Packets > 0 && direction.MaxQueue <= 128,
-      ),
-      'IMPAIRMENT_PATH_INVALID',
-    );
     let memory;
     if (measureMemory) {
       stage = 'slow-consumer-memory';
@@ -338,6 +324,38 @@ async function main() {
         });
       }
     }
+    // Local PTY completion does not imply a new encrypted packet: the stream
+    // may already be waiting for a retransmission. Complete the configured
+    // outage before inspecting loss; never restore after only the local write.
+    // Timing starts after pause acknowledgement, so HTTP latency cannot make
+    // this wait shorter than the relay's full fifteen-second pause.
+    stage = 'slow-consumer-outage';
+    await delay(
+      Math.ceil(Math.max(0, 15_000 - (performance.now() - outageStarted))),
+    );
+    const outageMS = performance.now() - outageStarted;
+    check(outageMS >= 15_000, 'OUTAGE_RESTORED_EARLY');
+    stage = 'slow-consumer-loss-observation';
+    await expect
+      .poll(async () => (await fixture('network'))[0].Dropped, {
+        timeout: 500,
+        intervals: [25],
+      })
+      .toBeGreaterThan(before[0].Dropped)
+      .catch(async () => {
+        const after = await fixture('network');
+        process.stderr.write(
+          `loss observation: ${JSON.stringify({ packets: [before[0].Packets, after[0].Packets], dropped: [before[0].Dropped, after[0].Dropped], delivered: [before[0].Delivered, after[0].Delivered], bulkMS: Math.round(bulkMS), outageElapsedMS: Math.round(performance.now() - outageStarted) })}\n`,
+        );
+        throw new AcceptanceError('NO_OUTAGE_PACKET_OBSERVED');
+      });
+    const impaired = await fixture('network');
+    check(
+      impaired.every(
+        (direction) => direction.Packets > 0 && direction.MaxQueue <= 128,
+      ),
+      'IMPAIRMENT_PATH_INVALID',
+    );
     // The required nonblocking-output observation is complete while the link
     // is unavailable. Restore a fast link for bounded catch-up and cleanup;
     // do not label that later drain as low-bandwidth throughput evidence.
@@ -417,6 +435,7 @@ async function main() {
       inputBytes: 40960,
       bulkBytes: 4 << 20,
       bulkMS,
+      outageMS,
       modifierReset: true,
       outputRecovery,
       reconnectRetries,

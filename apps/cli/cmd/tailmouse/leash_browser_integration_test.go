@@ -687,6 +687,7 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 			InputBytes       int     `json:"inputBytes"`
 			BulkBytes        int     `json:"bulkBytes"`
 			BulkMS           float64 `json:"bulkMS"`
+			OutageMS         float64 `json:"outageMS"`
 			ModifierReset    bool    `json:"modifierReset"`
 			OutputRecovery   string  `json:"outputRecovery"`
 			ReconnectRetries *struct {
@@ -709,10 +710,13 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 		if evidence.OutputRecovery != "same-stream" && evidence.OutputRecovery != "fresh-stream" {
 			t.Fatal("network probe omitted its output recovery path")
 		}
+		if evidence.OutageMS < 15_000 {
+			t.Fatal("network probe restored the link before its complete outage window")
+		}
 		if evidence.ReconnectRetries == nil || evidence.ReconnectRetries.Busy < 0 || evidence.ReconnectRetries.HandshakeTimeout < 0 || evidence.ReconnectRetries.Busy+evidence.ReconnectRetries.HandshakeTimeout > 80 {
 			t.Fatal("network probe omitted bounded explicit reconnect counts")
 		}
-		t.Logf("native Leash weak network: %d ordered input bytes; %d output bytes finished locally in %.1f ms before restoring a 15-second blocked link; fresh-stream modifiers cleared; output recovery: %s", evidence.InputBytes, evidence.BulkBytes, evidence.BulkMS, evidence.OutputRecovery)
+		t.Logf("native Leash weak network: %d ordered input bytes; %d output bytes finished locally in %.1f ms; restoration waited %.1f ms after the 15-second pause acknowledgement; fresh-stream modifiers cleared; output recovery: %s", evidence.InputBytes, evidence.BulkBytes, evidence.BulkMS, evidence.OutageMS, evidence.OutputRecovery)
 		t.Logf("fresh-stream manual retries within the bounded 60-second recovery window: busy %d, handshake timeout %d", evidence.ReconnectRetries.Busy, evidence.ReconnectRetries.HandshakeTimeout)
 		if scenario == "network-memory" {
 			memory := evidence.Memory
