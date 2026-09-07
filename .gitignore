@@ -1,5 +1,6 @@
 .artifacts/
 .cache/
+.wrangler/
 .DS_Store
 coverage/
 dist/

@@ -21,9 +21,14 @@ import { LeashView } from './leash-view.tsx';
 import { TerminalDisplayError, type LeashState } from './leash.ts';
 import type { ProcessState } from './protocol/terminal.ts';
 import { registerStaticCache } from './static-cache.ts';
+import {
+  discardShortInvitationTimings,
+  resolveShortInvitation,
+} from './short-invitation.ts';
 
 export interface ViewState {
-  readonly stage: SessionStage | 'connected' | 'closing' | 'closed' | 'error';
+  readonly stage:
+    SessionStage | 'resolving' | 'connected' | 'closing' | 'closed' | 'error';
   readonly detail: string;
   readonly retryable?: boolean;
   readonly progress?: number;
@@ -246,18 +251,31 @@ export function taskPresentation(
 }
 
 export function App() {
+  const pendingShortCode = useRef<string>();
+  const shortResolution = useRef<AbortController>();
   const [invitation, setInvitation] = useState<
     MouseCard | InvitationError | undefined
   >(() => {
     try {
-      return consumeInvitation();
+      const input = consumeInvitation();
+      if ('shortCode' in input) {
+        pendingShortCode.current = input.shortCode;
+        return undefined;
+      }
+      return input;
     } catch (error: unknown) {
       return error instanceof InvitationError ? error : new InvitationError();
     }
   });
   const [attempt, setAttempt] = useState(0);
-  const [view, setView] = useState<ViewState>(() => initialView(invitation!));
-  const [title] = useState(() => titleFor(invitation!));
+  const [view, setView] = useState<ViewState>(() =>
+    pendingShortCode.current !== undefined
+      ? { detail: 'Opening invitation', stage: 'resolving' }
+      : initialView(invitation!),
+  );
+  const [title, setTitle] = useState(() =>
+    invitation === undefined ? 'TailMouse' : titleFor(invitation),
+  );
   const [session, setSession] = useState<BrowserSession>();
   const [welcome, setWelcome] = useState<Welcome>();
   const [metrics, setMetrics] = useState<ConnectionMetrics>();
@@ -313,6 +331,8 @@ export function App() {
       if (accessCodeInput.current !== null) accessCodeInput.current.value = '';
     };
     const clearPageCredentials = (): void => {
+      pendingShortCode.current = undefined;
+      shortResolution.current?.abort();
       clearReferences();
       setInvitation((current) => {
         if (current !== undefined && !(current instanceof InvitationError))
@@ -334,6 +354,35 @@ export function App() {
       window.removeEventListener('pagehide', clearPageCredentials);
       window.removeEventListener('pageshow', rejectRestoredPage);
       clearReferences();
+    };
+  }, []);
+
+  useEffect(() => {
+    const code = pendingShortCode.current;
+    pendingShortCode.current = undefined;
+    if (code === undefined) return;
+    const discardTimings = discardShortInvitationTimings();
+    const controller = new AbortController();
+    shortResolution.current = controller;
+    void resolveShortInvitation(code, controller.signal)
+      .then((card) => {
+        if (controller.signal.aborted) {
+          card.sessionID.fill(0);
+          return;
+        }
+        setTitle(titleFor(card));
+        setInvitation(card);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        const error = new InvitationError('UNAVAILABLE');
+        setInvitation(error);
+        setView(initialView(error));
+      });
+    return () => {
+      controller.abort();
+      discardTimings();
+      shortResolution.current = undefined;
     };
   }, []);
 
@@ -379,6 +428,20 @@ export function App() {
   useEffect(() => {
     if (invitation === undefined || invitation instanceof InvitationError)
       return;
+    if (
+      invitation.requiresAccessCode === true &&
+      accessCode.current === undefined &&
+      rememberedAccessCode.current === undefined
+    ) {
+      startupTiming.current!.waitForCode(performance.now());
+      publishTiming();
+      setAccessMode('code');
+      setView({
+        detail: 'Enter the host access code to continue.',
+        stage: 'error',
+      });
+      return;
+    }
     const controller = new AbortController();
     exitRequested.current = false;
     let active = true;
@@ -678,10 +741,19 @@ export function App() {
           : accessMode === 'code'
             ? 'Password protected. The invitation link and host access code are separate credentials.'
             : 'Treat this invitation link like a password. The host may also require a separate access code.'}{' '}
-        TailMouse keeps session credentials only in memory.
+        This browser keeps session credentials only in memory.
       </p>
       <details>
         <summary>About TailMouse</summary>
+        {invitation !== undefined &&
+        !(invitation instanceof InvitationError) &&
+        invitation.requiresAccessCode === true ? (
+          <p>
+            Cloudflare can read this short link's invitation during its
+            renewable 15-minute lease. Your access code is never sent to
+            Cloudflare.
+          </p>
+        ) : null}
         <p>{cacheStatus}</p>
         <p>Build {BUILD.version}</p>
         <p>TMOUSE Escape protocol {BUILD.protocols.escape}</p>

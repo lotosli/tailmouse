@@ -27,3 +27,6 @@ minimumReleaseAgeExclude:
   - 'oxlint-tsgolint@7.0.2001'
 saveExact: true
 strictPeerDependencies: true
+allowBuilds:
+  esbuild@0.28.1: true
+  workerd@1.20260903.1: true

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true,
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "strict": true,
+    "target": "ES2023",
+    "types": []
+  },
+  "include": ["src/**/*.ts", ".artifacts/worker.d.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

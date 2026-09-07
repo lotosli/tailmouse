@@ -281,7 +281,8 @@ export async function negotiateSession(
       welcome = decodeWelcome(frame, card.mode);
       if (
         card.mode === 'leash' &&
-        welcome.accessMode !== (authenticated ? 'code' : 'link')
+        (welcome.accessMode !== (authenticated ? 'code' : 'link') ||
+          (card.requiresAccessCode === true && !authenticated))
       ) {
         throw new ProtocolError('BAD_FRAME');
       }

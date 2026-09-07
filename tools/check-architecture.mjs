@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve, sep } from 'node:path';
+import { assertEdgeConfig } from './link-edge-config.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const failures = [];
@@ -29,6 +30,13 @@ const required = [
   'docs/product-baseline.md',
   'apps/cli/AGENTS.md',
   'apps/cli/internal/transport/tailcat/AGENTS.md',
+  'apps/link-edge/AGENTS.md',
+  'apps/link-edge/package.json',
+  'apps/link-edge/src/index.ts',
+  'apps/link-edge/src/api.ts',
+  'apps/link-edge/src/short-invitation.ts',
+  'apps/link-edge/tsconfig.json',
+  'apps/link-edge/wrangler.jsonc',
   'apps/web/AGENTS.md',
   'protocol/AGENTS.md',
   'protocol/mousecard-v1.md',
@@ -64,7 +72,9 @@ for (const anchor of [
   '`Permissions-Policy`',
   '`X-Content-Type-Options`',
   '`minTLS` value to `1.2`',
-  'It uses no Worker',
+  'accepted V2 protected-short-invitation',
+  'SQLite Durable Object',
+  '15-minute',
 ]) {
   if (!r2Runbook.includes(anchor)) {
     failures.push(
@@ -196,7 +206,11 @@ const versions = JSON.parse(
 const packageJson = JSON.parse(
   readFileSync(join(root, 'package.json'), 'utf8'),
 );
-for (const path of ['package.json', 'apps/web/package.json']) {
+for (const path of [
+  'package.json',
+  'apps/link-edge/package.json',
+  'apps/web/package.json',
+]) {
   if (
     JSON.parse(readFileSync(join(root, path), 'utf8')).license !== 'Apache-2.0'
   )
@@ -224,6 +238,78 @@ if (
   packageJson.devDependencies?.['oxlint-tsgolint'] !== versions.oxlintTsgolint
 ) {
   failures.push('oxlint-tsgolint must match tooling/versions.json');
+}
+
+const edgePackage = JSON.parse(
+  readFileSync(join(root, 'apps/link-edge/package.json'), 'utf8'),
+);
+if (
+  Object.keys(edgePackage.dependencies ?? {}).length !== 1 ||
+  edgePackage.dependencies.cborg !== 'catalog:'
+) {
+  failures.push(
+    'apps/link-edge may only reuse the accepted cborg runtime dependency',
+  );
+}
+if (edgePackage.devDependencies?.wrangler !== versions.wrangler) {
+  failures.push('apps/link-edge Wrangler must match tooling/versions.json');
+}
+const allowedEdgeDevDependencies = new Set([
+  '@vitest/coverage-v8',
+  'vitest',
+  'wrangler',
+]);
+for (const dependency of Object.keys(edgePackage.devDependencies ?? {})) {
+  if (!allowedEdgeDevDependencies.has(dependency)) {
+    failures.push(`apps/link-edge has an unplanned dependency: ${dependency}`);
+  }
+}
+
+const edgeConfig = JSON.parse(
+  readFileSync(join(root, 'apps/link-edge/wrangler.jsonc'), 'utf8'),
+);
+try {
+  assertEdgeConfig(edgeConfig);
+} catch {
+  failures.push(
+    'apps/link-edge config violates the reviewed identity, bindings, limits, or privacy boundary',
+  );
+}
+const edgeSource = readFileSync(
+  join(root, 'apps/link-edge/src/index.ts'),
+  'utf8',
+);
+const edgeObjectSource = readFileSync(
+  join(root, 'apps/link-edge/src/short-invitation.ts'),
+  'utf8',
+);
+const edgeAPISource = readFileSync(
+  join(root, 'apps/link-edge/src/api.ts'),
+  'utf8',
+);
+if (
+  !/^export\s*\{\s*ShortInvitation\s*\}\s*from\s*(['"])\.\/short-invitation\.ts\1\s*;/mu.test(
+    edgeSource,
+  ) ||
+  !/^export\s+class\s+ShortInvitation\s+extends\s+DurableObject\b/mu.test(
+    edgeObjectSource,
+  )
+) {
+  failures.push(
+    'apps/link-edge must export its bound ShortInvitation Durable Object',
+  );
+}
+if (
+  !/^export\s+const\s+ORIGIN\s*=\s*(['"])https:\/\/link\.tailmouse\.com\1\s*;/mu.test(
+    edgeAPISource,
+  ) ||
+  !/^export\s+const\s+API_PATH\s*=\s*(['"])\/api\/v1\/short-invitations\1\s*;/mu.test(
+    edgeAPISource,
+  )
+) {
+  failures.push(
+    'apps/link-edge must use the reviewed same-origin versioned API',
+  );
 }
 
 const goMod = readFileSync(join(root, 'go.mod'), 'utf8');

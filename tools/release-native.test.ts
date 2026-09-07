@@ -32,7 +32,7 @@ function binary(os = 'darwin', arch = 'arm64') {
   };
 }
 
-test('native inspection admits exactly the requested six targets with source, Go and dependency identity', () => {
+await test('native inspection admits exactly the requested six targets with source, Go and dependency identity', () => {
   for (const { os, arch } of targets) {
     verifyNativeBuild(
       binary(os, arch),
@@ -45,7 +45,7 @@ test('native inspection admits exactly the requested six targets with source, Go
   }
 });
 
-test('native inspection rejects wrong executable, toolchain, target, source, dynamic build or dependency', () => {
+await test('native inspection rejects wrong executable, toolchain, target, source, dynamic build or dependency', () => {
   const bytes = Buffer.from(`${identity.version}\0${identity.tailcatRevision}`);
   const verify = (info: ReturnType<typeof binary>, target = 'darwin/arm64') =>
     verifyNativeBuild(info, bytes, identity, target, revision, '1.27.1');
@@ -83,7 +83,7 @@ test('native inspection rejects wrong executable, toolchain, target, source, dyn
   assert.throws(() => verify(binary(), 'linux/arm64'));
 });
 
-test('trimmed metadata alone cannot pass without both embedded version stamps', () => {
+await test('trimmed metadata alone cannot pass without both embedded version stamps', () => {
   for (const bytes of [
     Buffer.alloc(0),
     Buffer.from(identity.version),
@@ -126,7 +126,7 @@ function artifacts() {
   });
 }
 
-test('archive matrix requires all six unique single-executable archives with platform-specific names', () => {
+await test('archive matrix requires all six unique single-executable archives with platform-specific names', () => {
   verifyNativeMatrix(artifacts(), identity.version);
   for (const type of ['Binary', 'Archive']) {
     const missing = artifacts();

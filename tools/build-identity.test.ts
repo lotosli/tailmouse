@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { buildIdentity } from './build-identity.ts';
 
-test('build identity verifies the gitlink and distinguishes development from clean release builds', (t) => {
+await test('build identity verifies the gitlink and distinguishes development from clean release builds', (t) => {
   const fixture = repository(t);
   const revision = fixture.git(fixture.upstream, 'rev-parse', 'HEAD');
   const source = fixture.git(fixture.root, 'rev-parse', 'HEAD');
@@ -46,7 +46,7 @@ test('build identity verifies the gitlink and distinguishes development from cle
   assert.throws(() => buildIdentity(fixture.root), /clean recorded Tailcat/u);
 });
 
-test('build identity rejects missing metadata and unrecorded dependency advancement', (t) => {
+await test('build identity rejects missing metadata and unrecorded dependency advancement', (t) => {
   const fixture = repository(t);
   assert.throws(
     () => buildIdentity(join(fixture.root, 'missing')),
@@ -125,7 +125,7 @@ function repository(t: { after: (cleanup: () => void) => void }) {
   return { root, upstream, git };
 }
 
-test('the host builder preserves portable release flags and fails before claiming an invalid build', (t) => {
+await test('the host builder preserves portable release flags and fails before claiming an invalid build', (t) => {
   const fixture = mkdtempSync(join(tmpdir(), 'tailmouse-host-build-'));
   t.after(() => rmSync(fixture, { recursive: true, force: true }));
   const scripts = join(fixture, 'tools');

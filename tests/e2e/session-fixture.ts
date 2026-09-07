@@ -55,6 +55,7 @@ export function runtimeScript(
     pauseDial?: boolean;
     firstHandshakeTimeout?: boolean;
     protected?: boolean;
+    authRejections?: boolean;
   } = {},
 ) {
   return {
@@ -180,6 +181,13 @@ export function runtimeScript(
                   const auth = JSON.parse(new TextDecoder().decode(data.slice(6)));
                   if (auth.scheme !== 'hmac-sha256-v1' || !/^[A-Za-z0-9_-]{43}$/.test(auth.proof) || Object.keys(auth).sort().join(',') !== 'proof,scheme')
                     throw new Error('INVALID_AUTH_PROOF');
+                  if (options.authRejections && globalThis.testDialCount <= 2) {
+                    frame(3, { code: globalThis.testDialCount === 1 ? 'AUTH_FAILED' : 'AUTH_THROTTLED',
+                      message: 'tcSyntheticPeerSecret', retryable: true,
+                      ...(globalThis.testDialCount === 2 ? { retry_after_ms: 1500 } : {}),
+                    });
+                    return;
+                  }
                   frame(2, { protocol: 2, mode: 'leash', session_state: 'active', expires_at: 0,
                     relay: { mode: 'official', host: 'relay.example.com', browser_path: 'derp' },
                     capabilities: options.readonly ? ['terminal_output'] : ['interrupt', 'resize', 'restart', 'terminal_input', 'terminal_output', 'terminate'],

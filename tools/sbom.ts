@@ -261,7 +261,12 @@ function document(
       component: {
         'bom-ref': root,
         type: 'application',
-        name: target === 'web' ? 'TailMouse Web' : 'TailMouse',
+        name:
+          target === 'web'
+            ? 'TailMouse Web'
+            : target === 'edge'
+              ? 'TailMouse Link Edge'
+              : 'TailMouse',
         version: identity.version,
         licenses: [{ license: { id: 'Apache-2.0' } }],
         ...(archive ? { hashes: fileComponent(archive).hashes } : {}),
@@ -406,4 +411,55 @@ export function webSBOM(
       },
     ],
   );
+}
+
+export function edgeSBOM(
+  identity: BuildIdentity,
+  sourceRevision: string,
+  files: FileIdentity[],
+  npm: ModuleIdentity[],
+  toolchains: { node: string; wrangler: string; esbuild: string },
+) {
+  assert.deepEqual(
+    files.map((file) => file.name).sort(),
+    [
+      'LICENSE',
+      'NOTICE',
+      'THIRD_PARTY_NOTICES.txt',
+      'bundle-meta.json',
+      'edge-manifest.json',
+      'index.js',
+      'index.js.map',
+      'wrangler.jsonc',
+    ].sort(),
+    'Edge SBOM has an incomplete artifact inventory.',
+  );
+  assert.equal(
+    npm.length,
+    1,
+    'Edge SBOM requires one bundled runtime dependency.',
+  );
+  assert.equal(npm[0]!.name, 'cborg', 'Unreviewed edge runtime dependency.');
+  const libraries = npm.map((module) => library('npm', module));
+  const bom = document(identity, sourceRevision, 'edge', files, libraries, [
+    { ref: 'tailmouse:edge', dependsOn: ['file:index.js'] },
+    {
+      ref: 'file:index.js',
+      dependsOn: libraries.map((item) => item['bom-ref']),
+    },
+  ]);
+  for (const [name, version] of Object.entries(toolchains)) {
+    assert.match(version, /^\d+\.\d+\.\d+$/u, 'Invalid edge compiler version.');
+    bom.metadata.tools.components.push({ type: 'application', name, version });
+  }
+  assert.deepEqual(
+    Object.keys(toolchains).sort(),
+    ['esbuild', 'node', 'wrangler'],
+    'Incomplete edge compiler identity.',
+  );
+  bom.metadata.component.properties.push({
+    name: 'tailmouse:platform-import',
+    value: 'cloudflare:workers',
+  });
+  return bom;
 }

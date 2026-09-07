@@ -15,14 +15,26 @@ export interface MouseCard {
   readonly expiresAt: number;
   readonly protocolMin: number;
   readonly protocolMax: number;
+  // Short locators require a separate Host proof, even if a peer advertises
+  // link-only admission. This is local policy, never a MouseCard wire field.
+  readonly requiresAccessCode?: true;
+}
+
+export interface ShortInvitation {
+  readonly shortCode: string;
 }
 
 export class InvitationError extends Error {
-  constructor(readonly code: 'BAD_MOUSE_CARD' | 'EXPIRED' = 'BAD_MOUSE_CARD') {
+  constructor(
+    readonly code:
+      'BAD_MOUSE_CARD' | 'EXPIRED' | 'UNAVAILABLE' = 'BAD_MOUSE_CARD',
+  ) {
     super(
-      code === 'EXPIRED'
-        ? 'This invitation has expired. Request a new link from the host.'
-        : 'This invitation is invalid or unsupported. Request a new link from the host.',
+      code === 'UNAVAILABLE'
+        ? 'This invitation is unavailable. Request a new link from the host.'
+        : code === 'EXPIRED'
+          ? 'This invitation has expired. Request a new link from the host.'
+          : 'This invitation is invalid or unsupported. Request a new link from the host.',
     );
     this.name = 'InvitationError';
   }
@@ -32,13 +44,27 @@ export class InvitationError extends Error {
 // attempts any decoding. No browser persistence participates in this operation.
 export function consumeInvitation(
   nowUnix = Math.floor(Date.now() / 1000),
-): MouseCard {
+): MouseCard | ShortInvitation {
   const fragment = location.hash;
   const href = location.href;
+  const path = location.pathname;
+  const search = location.search;
+  const official = new URL(href).origin === 'https://link.tailmouse.com';
+  const shortPath = official && path !== '/';
   try {
-    history.replaceState(null, '', location.pathname + location.search);
+    history.replaceState(null, '', shortPath ? '/' : path + search);
   } catch {
     throw new InvitationError();
+  }
+  if (shortPath) {
+    if (
+      fragment !== '' ||
+      search !== '' ||
+      !/^\/[0-9A-Za-z]{6}$/u.test(path) ||
+      href !== `https://link.tailmouse.com${path}`
+    )
+      throw new InvitationError('UNAVAILABLE');
+    return { shortCode: path.slice(1) };
   }
   if (
     href.length >= MAX_INVITATION_BYTES ||

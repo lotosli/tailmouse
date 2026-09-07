@@ -4,6 +4,7 @@ import { act } from 'preact/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { App } from './app.tsx';
+import { consumeInvitation } from './invitation.ts';
 import {
   authChallengeFrame,
   closeFrame,
@@ -20,6 +21,7 @@ import {
 } from './transport/tailcat/adapter.ts';
 
 vi.mock('./transport/tailcat/adapter.ts', { spy: true });
+vi.mock('./invitation.ts', { spy: true });
 
 const root = document.createElement('div');
 const originalURL = location.href;
@@ -68,6 +70,147 @@ async function mount(invited: boolean) {
 }
 
 describe('invitation safety notice', () => {
+  async function mountShort() {
+    vi.mocked(consumeInvitation).mockReturnValueOnce({ shortCode: 'T6wxZ8' });
+    document.body.append(root);
+    await act(() => render(<App />, root));
+  }
+
+  function shortReply() {
+    const card = encode({
+      a: 2,
+      e: 0,
+      m: 'leash',
+      p: 44321,
+      s: new Uint8Array(16).fill(7),
+      t: 'tcSyntheticShortCredential',
+      v: 1,
+      z: 2,
+    });
+    const fragment = btoa(String.fromCharCode(...card))
+      .replaceAll('+', '-')
+      .replaceAll('/', '_')
+      .replaceAll('=', '');
+    return new Response(
+      JSON.stringify({
+        invitation: `https://link.tailmouse.com/#/v1/${fragment}`,
+        expiresAt: Date.now() + 900_000,
+      }),
+      {
+        headers: {
+          'content-type': 'application/json',
+          'cache-control': 'no-store',
+        },
+      },
+    );
+  }
+
+  it('resolves a short locator before code entry and requires proof before terminal admission', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(shortReply());
+    const peer = hostPeer(
+      authChallengeFrame(new Uint8Array(32).fill(3)),
+      leashWelcome('code'),
+    );
+    vi.mocked(dialTailcat).mockResolvedValueOnce(peer.stream);
+    await mountShort();
+    const field = page.getByRole('textbox', { name: 'Access code' });
+    await expect.element(field).toBeVisible();
+    await userEvent.click(page.getByText('About TailMouse', { exact: true }));
+    await expect
+      .element(
+        page.getByText(/^Cloudflare can read this short link's invitation/u),
+      )
+      .toHaveTextContent('renewable 15-minute lease');
+    expect(loadTailcat).not.toHaveBeenCalled();
+    expect(dialTailcat).not.toHaveBeenCalled();
+    await userEvent.fill(field, '2345-6789-ABCD-EFGH');
+    await userEvent.click(page.getByRole('button', { name: 'Connect' }));
+    await expect
+      .element(
+        page
+          .getByLabelText('Connection')
+          .getByText('Connected', { exact: true }),
+      )
+      .toBeVisible();
+    expect(peer.writes.map((bytes) => bytes[4])).toEqual([
+      Message.CLIENT_HELLO,
+      Message.AUTH_PROOF,
+    ]);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(fetch.mock.calls)).not.toContain('2345');
+    expect(root.textContent).not.toContain('tcSyntheticShortCredential');
+    expect(root.querySelector('input[type="password"]')).toBeNull();
+  });
+
+  it('rejects a short-link peer that attempts link-only admission', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(shortReply());
+    vi.mocked(dialTailcat).mockResolvedValueOnce(
+      hostPeer(leashWelcome('link')).stream,
+    );
+    await mountShort();
+    await expect
+      .element(page.getByRole('textbox', { name: 'Access code' }))
+      .toBeVisible();
+    await userEvent.fill(
+      page.getByRole('textbox', { name: 'Access code' }),
+      '2345-6789-ABCD-EFGH',
+    );
+    await userEvent.click(page.getByRole('button', { name: 'Connect' }));
+    await expect.element(page.getByRole('alert')).toHaveTextContent('invalid');
+    expect(root.querySelector('[aria-label="Terminal"]')).toBeNull();
+    expect(root.querySelector('input[type="password"]')).toBeNull();
+    expect(root.textContent).not.toContain('No password');
+  });
+
+  it('keeps resolver failures generic with no runtime, code form, mode controls or stale retry', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('private expired/deleted details', { status: 404 }),
+    );
+    await mountShort();
+    await expect
+      .element(page.getByRole('alert'))
+      .toHaveTextContent('This invitation is unavailable.');
+    expect(dialTailcat).not.toHaveBeenCalled();
+    expect(loadTailcat).not.toHaveBeenCalled();
+    expect(root.querySelector('input[type="password"]')).toBeNull();
+    expect(root.textContent).not.toContain('expired/deleted');
+    expect(root.textContent).not.toContain('Retry connection');
+  });
+
+  it('aborts resolution on pagehide and does not restore credentials through bfcache', async () => {
+    let resolverSignal: AbortSignal | undefined;
+    let finish: ((value: Response) => void) | undefined;
+    vi.spyOn(globalThis, 'fetch').mockImplementationOnce((_input, options) => {
+      resolverSignal = options?.signal ?? undefined;
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    });
+    await mountShort();
+    await expect
+      .element(page.getByRole('status'))
+      .toHaveTextContent('Opening invitation');
+    await act(() => {
+      window.dispatchEvent(new PageTransitionEvent('pagehide'));
+    });
+    expect(resolverSignal?.aborted).toBe(true);
+    await act(() => {
+      finish!(shortReply());
+    });
+    await act(() => {
+      window.dispatchEvent(
+        new PageTransitionEvent('pageshow', { persisted: true }),
+      );
+    });
+    await expect
+      .element(page.getByRole('alert'))
+      .toHaveTextContent('Request a new link');
+    expect(root.querySelector('input[type="password"]')).toBeNull();
+    expect(dialTailcat).not.toHaveBeenCalled();
+  });
+
   it('does not claim a protection mode before the Host reports one', async () => {
     vi.spyOn(navigator.serviceWorker, 'register').mockResolvedValue(
       {} as ServiceWorkerRegistration,

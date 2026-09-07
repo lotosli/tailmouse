@@ -1,27 +1,163 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createServer, request as httpRequest } from 'node:http';
 import { test } from 'node:test';
 import { staticServer } from '../tests/e2e/static-server.ts';
+import { securityHeaders } from './web-assets.ts';
 import {
   publicOriginArguments,
   publicOriginFailureMessage,
   verifyPublicOrigin,
 } from './verify-public-origin.mjs';
 
-test('public-origin CLI accepts the documented pnpm argument separator', () => {
+await test('public-origin CLI accepts the documented pnpm argument separator', () => {
   const expected = [
     'https://link.tailmouse.com/',
     'apps/web/dist/web-manifest.json',
   ];
   assert.deepEqual(publicOriginArguments(expected), expected);
   assert.deepEqual(publicOriginArguments(['--', ...expected]), expected);
+  assert.deepEqual(
+    publicOriginArguments(['--', ...expected, '--short-invitations']),
+    [...expected, '--short-invitations'],
+  );
   assert.throws(
     () => publicOriginArguments(['--', ...expected, 'unexpected']),
     /Expected an origin URL and local Web manifest path/u,
   );
+  assert.throws(
+    () => publicOriginArguments([...expected, '--short-invitations', 'extra']),
+    /Expected an origin URL and local Web manifest path/u,
+  );
 });
 
-test('public-origin CLI reports only a bounded safe failure category', () => {
+async function shortOrigin() {
+  const upstream = await staticServer();
+  const index = readFileSync('apps/web/dist/index.html');
+  let fault = '';
+  const requests: string[] = [];
+  const server = createServer((request, response) => {
+    const path = request.url ?? '/';
+    requests.push(`${request.method} ${path}`);
+    const short = path === '/T6wxZ8';
+    const unavailable =
+      path ===
+      '/api/v1/short-invitations/.tailmouse-origin-verifier-unavailable';
+    if (short || unavailable) {
+      const body = short
+        ? fault === 'short-body'
+          ? Buffer.alloc(index.byteLength, 0x21)
+          : index
+        : Buffer.from(
+            fault === 'api-body'
+              ? '{"error":"synthetic-diagnostic-not-generic"}'
+              : '{"error":"invitation_unavailable"}',
+          );
+      const headers: Record<string, string> = {
+        ...securityHeaders,
+        'Content-Type': short ? 'text/html; charset=utf-8' : 'application/json',
+        'Content-Length': String(body.byteLength),
+        'Cache-Control':
+          (short && fault === 'short-cache') ||
+          (short && request.method === 'HEAD' && fault === 'head-cache') ||
+          (unavailable && fault === 'api-cache')
+            ? 'no-cache'
+            : 'no-store',
+      };
+      if (short && fault === 'short-security')
+        delete headers['Referrer-Policy'];
+      response
+        .writeHead(short ? 200 : 404, headers)
+        .end(request.method === 'HEAD' ? undefined : body);
+      return;
+    }
+    const proxy = httpRequest(
+      new URL(path, upstream.url),
+      { method: request.method, headers: request.headers },
+      (source) => {
+        response.writeHead(source.statusCode ?? 502, source.headers);
+        source.pipe(response);
+        source.on('error', () => response.destroy());
+      },
+    );
+    proxy.on('error', () => response.destroy());
+    proxy.end();
+  });
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  return {
+    url: `http://127.0.0.1:${address.port}/`,
+    requests,
+    fault: (value: string) => {
+      fault = value;
+    },
+    close: async () => {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+        server.closeAllConnections();
+      });
+      await upstream.close();
+    },
+  };
+}
+
+await test('optional short-origin verification is read-only and reports its exact scope', async (t) => {
+  const server = await shortOrigin();
+  t.after(server.close);
+  const result = await verifyPublicOrigin(
+    server.url,
+    'apps/web/dist/web-manifest.json',
+    { timeoutMs: 5_000, shortInvitations: true },
+  );
+  assert.equal(result.routing.staticClientBackendRequired, false);
+  assert.equal('applicationBackend' in result.routing, false);
+  assert.deepEqual(result.routing.shortInvitations, {
+    status: 'verified',
+    entryPath: '/T6wxZ8',
+    unavailableStatus: 404,
+    cacheControl: 'no-store',
+    lifecycle: 'not-tested',
+  });
+  assert.ok(server.requests.includes('GET /T6wxZ8'));
+  assert.ok(server.requests.includes('HEAD /T6wxZ8'));
+  assert.ok(
+    server.requests.every((request) => /^(?:GET|HEAD) /u.test(request)),
+  );
+  assert.ok(
+    server.requests.every(
+      (request) => !/short-invitations\/[0-9A-Za-z]{6}$/u.test(request),
+    ),
+  );
+});
+
+await test('short-origin verification fails fast on wrong bytes, headers, or diagnostic responses', async (t) => {
+  const server = await shortOrigin();
+  t.after(server.close);
+  for (const [fault, expected] of [
+    ['short-body', /Content hash mismatch/u],
+    ['short-cache', /Static object cache policy mismatch/u],
+    ['head-cache', /Short entry HEAD cache policy mismatch/u],
+    ['short-security', /Referrer-Policy mismatch/u],
+    ['api-cache', /Unavailable invitation cache policy mismatch/u],
+    ['api-body', /Unavailable invitation response was not generic/u],
+  ] as const) {
+    server.fault(fault);
+    await assert.rejects(
+      verifyPublicOrigin(server.url, 'apps/web/dist/web-manifest.json', {
+        timeoutMs: 5_000,
+        shortInvitations: true,
+      }),
+      expected,
+    );
+  }
+  assert.ok(!server.requests.some((request) => request.includes('.wasm')));
+});
+
+await test('public-origin CLI reports only a bounded safe failure category', () => {
   const error = Object.assign(
     new Error('upstream included synthetic-secret-DO-NOT-PRINT'),
     { code: 'ECONNRESET' },
@@ -35,7 +171,7 @@ test('public-origin CLI reports only a bounded safe failure category', () => {
   );
 });
 
-test('public-origin verifier proves the built local static fixture without an invitation', async (t) => {
+await test('public-origin verifier proves the built local static fixture without an invitation', async (t) => {
   const server = await staticServer();
   t.after(server.close);
   const result = await verifyPublicOrigin(
@@ -62,9 +198,10 @@ test('public-origin verifier proves the built local static fixture without an in
   assert.ok(
     server.requests.includes('/api/.tailmouse-origin-verifier-no-backend'),
   );
+  assert.ok(!server.requests.includes('/T6wxZ8'));
 });
 
-test('public-origin verifier accepts omitted Content-Length while still checking exact bodies', async (t) => {
+await test('public-origin verifier accepts omitted Content-Length while still checking exact bodies', async (t) => {
   const server = await staticServer({
     omitContentLength: true,
     requireMatchingContentEncoding: true,
@@ -79,7 +216,7 @@ test('public-origin verifier accepts omitted Content-Length while still checking
   assert.ok(result.transfer.coldWasm.bytes > 0);
 });
 
-test('public-origin verifier rejects credentials, query strings and fragments before a request', async (t) => {
+await test('public-origin verifier rejects credentials, query strings and fragments before a request', async (t) => {
   const server = await staticServer();
   t.after(server.close);
   const base = new URL(server.url);
@@ -94,5 +231,11 @@ test('public-origin verifier rejects credentials, query strings and fragments be
       }),
       /credentials|query strings|fragments/u,
     );
+  await assert.rejects(
+    verifyPublicOrigin(server.url, 'apps/web/dist/web-manifest.json', {
+      shortInvitations: 'true',
+    }),
+    /Invalid short-invitation verification option/u,
+  );
   assert.deepEqual(server.requests, []);
 });

@@ -22,7 +22,7 @@ Accounts, databases, a cloud control plane, business traffic relay, persistent t
 ## Security-critical facts
 
 - **Reported:** Tailcat ConnBlob and invitation fragment material are bearer credentials.
-- **Reported:** Invitations must not enter logs or persistent storage and must be removed from the visible URL after browser consumption.
+- **Reported:** Invitations must not enter logs and must be removed from the visible URL after browser consumption. The original v1 flow keeps them out of persistent storage; the accepted V2 official protected-short-invitation exception is recorded below.
 - **Reported:** Tailcat v0.x is unstable and requires a project-owned adapter.
 - **Observed online, 2026-09-02:** Tailcat `main` is ahead of the PRD-era tagged release and its current module declares Go 1.27.0. TailMouse records the selected commit as a submodule gitlink rather than fixing the product baseline to a tag.
 
@@ -30,12 +30,14 @@ Accounts, databases, a cloud control plane, business traffic relay, persistent t
 
 1. Endpoints establish, reject, and terminate explicitly versioned sessions.
 2. Escape and leash permissions, I/O, and degradation are independently verifiable.
-3. Credentials do not enter logs, history, storage, telemetry, or fixtures.
+3. Credentials do not enter logs, history, telemetry, or fixtures. Storage is prohibited except for the accepted lease-bounded V2 official protected-invitation mapping.
 4. Disconnect, latency, loss, reorder, backpressure, and recovery are bounded and testable.
 5. macOS, Linux, Windows, and critical mobile-browser paths have proportionate evidence.
 6. Gates, coverage, and release outputs are reproducible and expose failure.
 
 ## Accepted clarification
+
+- **Reported, 2026-09-07, accepted owner V2 addition:** The official origin may map a case-sensitive six-character locator to one protected-Leash invitation in plaintext for a rolling 15-minute lease. The separate access code never enters that service. Host renewal, immediate authoritative deletion, and alarm expiry bound retention. Escape, explicit link-only access, and self-hosted origins continue to use full fragments. This addition is governed by `add-protected-short-invitations`; it does not amend the original supplied v1 PRD or add accounts, terminal relaying, or a generic control plane.
 
 - **Reported, 2026-09-04, accepted owner correction of PRD 13.4:** Display relay connection and the Meow/Meowed exchange as one `Connecting to relay / Meow handshake` stage because the selected Wasm bridge does not expose separate progress events. Actual Wasm download percentage, the subsequent session-handshake stage, safe errors, the 60-second connection limit and startup targets remain required. Tailcat source remains unchanged.
 
@@ -43,6 +45,6 @@ Accounts, databases, a cloud control plane, business traffic relay, persistent t
 
 ## Open decisions
 
-- **Unknown:** The PRD mentions BSD-3-Clause and Apache-2.0 in different places; the owner must select one before release.
-- **Unknown:** Production domain, hosting, signing, and distribution remain undecided.
+- **Observed/owner-delegated, 2026-09-04:** Apache-2.0 is selected for owned source and distributed with reviewed third-party notices; see `docs/decisions/2026-002-product-dependencies.md`.
+- **Observed, 2026-09-07:** The official static browser origin is `https://link.tailmouse.com/` on Cloudflare R2. The accepted V2 short-link edge is implemented locally but its public cutover remains unverified; Native signing and distribution remain undecided.
 - **Inferred:** The PRD's flat directory suggestion is represented as `apps/*` ownership boundaries without changing product behavior.

@@ -21,7 +21,7 @@ import {
   type NoticeLibrary,
 } from './release-licenses.ts';
 
-test('release notice coverage requires every actual dependency and the recorded source revision', () => {
+await test('release notice coverage requires every actual dependency and the recorded source revision', () => {
   const source = { ...syntheticLibrary(), revision: 'a'.repeat(40) };
   const sourceOnly = {
     ...syntheticLibrary(),
@@ -46,7 +46,7 @@ test('release notice coverage requires every actual dependency and the recorded 
     assert.throws(() => verifyNoticeCoverage(inventory, components));
 });
 
-test('distribution notice bytes must match the checked-in source inventory', (t) => {
+await test('distribution notice bytes must match the checked-in source inventory', (t) => {
   const root = resolve(import.meta.dirname, '..');
   assert.deepEqual(
     distributionNotices(root).map((file) => file.fileName),
@@ -87,7 +87,7 @@ function syntheticLibrary(): NoticeLibrary {
   };
 }
 
-test('third-party notices preserve nested bytes, provenance and stable ordering', () => {
+await test('third-party notices preserve nested bytes, provenance and stable ordering', () => {
   const first = syntheticLibrary();
   const second = {
     ...syntheticLibrary(),
@@ -121,7 +121,7 @@ test('third-party notices preserve nested bytes, provenance and stable ordering'
   );
 });
 
-test('third-party notice rendering rejects missing grants, ambiguous identities and unsafe source data', () => {
+await test('third-party notice rendering rejects missing grants, ambiguous identities and unsafe source data', () => {
   const original = syntheticLibrary();
   for (const libraries of [
     [],
@@ -156,7 +156,7 @@ test('third-party notice rendering rejects missing grants, ambiguous identities 
     assert.throws(() => thirdPartyNotices([{ ...original, ...change }]));
 });
 
-test('project notices preserve the complete license and accepted project attribution', () => {
+await test('project notices preserve the complete license and accepted project attribution', () => {
   const files = projectNotices(resolve(import.meta.dirname, '..'));
   assert.deepEqual(
     files.map((file) => file.fileName),
@@ -166,7 +166,7 @@ test('project notices preserve the complete license and accepted project attribu
   assert.match(files[1]!.source.toString(), /Third-party software retains/u);
 });
 
-test('project notices reject missing, changed, excessive and linked source material', (t) => {
+await test('project notices reject missing, changed, excessive and linked source material', (t) => {
   const directory = mkdtempSync(resolve(tmpdir(), 'tailmouse-licenses-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const restore = () => {
@@ -196,7 +196,7 @@ test('project notices reject missing, changed, excessive and linked source mater
   assert.throws(() => projectNotices(directory), /bounded regular/u);
 });
 
-test('notice command explicitly updates sources and fails closed on drift or a missing grant', (t) => {
+await test('notice command explicitly updates sources and fails closed on drift or a missing grant', (t) => {
   const fixture = mkdtempSync(resolve(tmpdir(), 'tailmouse-notice-command-'));
   t.after(() => rmSync(fixture, { recursive: true, force: true }));
   const put = (name: string, source: string | Uint8Array) => {

@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   assertNoCredentials,
   checksumManifest,
+  edgeSBOM,
   fileIdentity,
   nativeSBOM,
   verifySBOM,
@@ -43,7 +44,80 @@ const webFiles = [
 const npm = [{ name: '@xterm/xterm', version: '6.0.0' }];
 const wasm = { main: tailcat, modules: [module] };
 
-test('native SBOM binds archive, contained bytes, resolved Tailcat and actual module inventory', () => {
+await test('edge SBOM binds the complete bundle and current compiler/runtime identities separately', () => {
+  const files = [
+    'LICENSE',
+    'NOTICE',
+    'THIRD_PARTY_NOTICES.txt',
+    'bundle-meta.json',
+    'edge-manifest.json',
+    'index.js',
+    'index.js.map',
+    'wrangler.jsonc',
+  ].map(file);
+  const runtime = [{ name: 'cborg', version: '6.1.2' }];
+  const tools = { node: '26.8.1', wrangler: '4.129.0', esbuild: '0.28.1' };
+  const bom = edgeSBOM(identity, revision, files, runtime, tools);
+  assert.equal(bom.metadata.component.name, 'TailMouse Link Edge');
+  assert.equal(bom.metadata.component.components.length, 8);
+  assert.deepEqual(
+    bom.components.map((item) => item.purl),
+    ['pkg:npm/cborg@6.1.2'],
+  );
+  assert.deepEqual(
+    bom.metadata.tools.components.slice(1),
+    Object.entries(tools).map(([name, version]) => ({
+      type: 'application',
+      name,
+      version,
+    })),
+  );
+  assert.deepEqual(bom.dependencies, [
+    { ref: 'tailmouse:edge', dependsOn: ['file:index.js'] },
+    { ref: 'file:index.js', dependsOn: ['pkg:npm/cborg@6.1.2'] },
+  ]);
+  assert.ok(
+    bom.metadata.component.properties.some(
+      (item) =>
+        item.name === 'tailmouse:platform-import' &&
+        item.value === 'cloudflare:workers',
+    ),
+  );
+  verifySBOM(structuredClone(bom), bom);
+  const changed = structuredClone(bom);
+  changed.metadata.tools.components[1]!.version = '26.8.2';
+  assert.throws(() => verifySBOM(changed, bom));
+  assert.throws(() =>
+    edgeSBOM(identity, revision, files.slice(1), runtime, tools),
+  );
+  assert.throws(() => edgeSBOM(identity, revision, files, [], tools));
+  assert.throws(() =>
+    edgeSBOM(identity, revision, files, [...runtime, ...runtime], tools),
+  );
+  assert.throws(() =>
+    edgeSBOM(
+      identity,
+      revision,
+      files,
+      [{ name: 'unknown', version: '1.0.0' }],
+      tools,
+    ),
+  );
+  assert.throws(() =>
+    edgeSBOM(identity, revision, files, runtime, {
+      ...tools,
+      wrangler: 'latest',
+    }),
+  );
+  assert.throws(() =>
+    edgeSBOM(identity, revision, files, runtime, {
+      ...tools,
+      extra: '1.0.0',
+    } as typeof tools),
+  );
+});
+
+await test('native SBOM binds archive, contained bytes, resolved Tailcat and actual module inventory', () => {
   const bom = nativeSBOM(
     identity,
     revision,
@@ -87,7 +161,7 @@ test('native SBOM binds archive, contained bytes, resolved Tailcat and actual mo
   assert.equal(bom.compositions[0]?.aggregate, 'incomplete');
 });
 
-test('Web SBOM separates npm and Wasm libraries and includes every supplied static file', () => {
+await test('Web SBOM separates npm and Wasm libraries and includes every supplied static file', () => {
   const bom = webSBOM(identity, revision, webFiles, npm, wasm, 'go1.27.1');
   assert.equal(bom.metadata.component.name, 'TailMouse Web');
   assert.deepEqual(bom.metadata.component.licenses, [
@@ -125,7 +199,7 @@ test('Web SBOM separates npm and Wasm libraries and includes every supplied stat
   assert.deepEqual(win.dependencies[0]?.dependsOn, ['file:tailmouse.exe']);
 });
 
-test('SBOM generation rejects missing, duplicate, malformed and unresolved identities', () => {
+await test('SBOM generation rejects missing, duplicate, malformed and unresolved identities', () => {
   const build = (
     modules: ModuleIdentity[] = [tailcat, module],
     files = nativeFiles,
@@ -220,7 +294,7 @@ test('SBOM generation rejects missing, duplicate, malformed and unresolved ident
   );
 });
 
-test('checksum manifest binds actual bytes and rejects unsafe, duplicate or self paths', () => {
+await test('checksum manifest binds actual bytes and rejects unsafe, duplicate or self paths', () => {
   const first = fileIdentity('web/index.html', Buffer.from('abc'));
   assert.deepEqual(first, {
     name: 'web/index.html',
@@ -243,7 +317,7 @@ test('checksum manifest binds actual bytes and rejects unsafe, duplicate or self
     assert.throws(() => checksumManifest(files));
 });
 
-test('release content rejects recognizable invitations, ConnBlobs and private keys without echoing them', () => {
+await test('release content rejects recognizable invitations, ConnBlobs and private keys without echoing them', () => {
   const candidates = [
     `https://example.invalid/#/v1/${'A'.repeat(80)}`,
     `tc${'A'.repeat(80)}`,
@@ -264,7 +338,7 @@ test('release content rejects recognizable invitations, ConnBlobs and private ke
   assertNoCredentials(Buffer.from([0, 255, 128, 10]));
 });
 
-test('SBOM verification permits generation metadata but rejects inventory and identity tampering', () => {
+await test('SBOM verification permits generation metadata but rejects inventory and identity tampering', () => {
   const expected = nativeSBOM(
     identity,
     revision,

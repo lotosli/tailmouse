@@ -46,7 +46,7 @@ function acceptance(t: TestContext, args: string[], failBuild = false) {
   return { result, commands };
 }
 
-test('Leash acceptance preserves exact smoke, matrix, AI CLI, official and Chrome selection', (t) => {
+await test('Leash acceptance preserves exact smoke, matrix, AI CLI, official and Chrome selection', (t) => {
   for (const mode of [
     'smoke',
     'matrix',
@@ -114,7 +114,7 @@ test('Leash acceptance preserves exact smoke, matrix, AI CLI, official and Chrom
   }
 });
 
-test('Leash acceptance rejects unknown or duplicate selectors before any build', (t) => {
+await test('Leash acceptance rejects unknown or duplicate selectors before any build', (t) => {
   for (const args of [
     ['--matrix'],
     ['--network-matrix', '--network-matrix'],
@@ -127,7 +127,7 @@ test('Leash acceptance rejects unknown or duplicate selectors before any build',
   }
 });
 
-test('Leash acceptance accepts the pnpm argument separator', (t) => {
+await test('Leash acceptance accepts the pnpm argument separator', (t) => {
   const { result, commands } = acceptance(t, ['--', '--official']);
   if (process.platform !== 'darwin') {
     assert.notEqual(result.status, 0);
@@ -138,7 +138,7 @@ test('Leash acceptance accepts the pnpm argument separator', (t) => {
   assert.equal(commands.at(-1)?.at(-2), '-run=^TestOfficialLeashBrowser$');
 });
 
-test('Leash acceptance never proceeds after a prerequisite failure', (t) => {
+await test('Leash acceptance never proceeds after a prerequisite failure', (t) => {
   const { result, commands } = acceptance(t, ['--network-matrix'], true);
   assert.notEqual(result.status, 0);
   if (['darwin', 'linux'].includes(process.platform)) {

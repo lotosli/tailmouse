@@ -3,5 +3,11 @@
   "proseWrap": "preserve",
   "semi": true,
   "singleQuote": true,
-  "trailingComma": "all"
+  "trailingComma": "all",
+  "overrides": [
+    {
+      "files": "apps/link-edge/wrangler.jsonc",
+      "options": { "parser": "json" }
+    }
+  ]
 }

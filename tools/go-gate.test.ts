@@ -53,7 +53,7 @@ function releaseGate(t: TestContext, target: string, failRace = false) {
   return { result, commands };
 }
 
-test('release gate runs race checks for every supported release target', (t) => {
+await test('release gate runs race checks for every supported release target', (t) => {
   for (const target of [
     'darwin\namd64',
     'darwin\narm64',
@@ -71,7 +71,7 @@ test('release gate runs race checks for every supported release target', (t) => 
   }
 });
 
-test('only Windows ARM64 reports its unsupported race detector and still checks vulnerabilities', (t) => {
+await test('only Windows ARM64 reports its unsupported race detector and still checks vulnerabilities', (t) => {
   for (const target of ['windows\narm64\n', 'windows\r\narm64\r\n']) {
     const { result, commands } = releaseGate(t, target);
     assert.equal(result.status, 0, result.stderr);
@@ -87,7 +87,7 @@ test('only Windows ARM64 reports its unsupported race detector and still checks 
   }
 });
 
-test('race failures and invalid target output stop before vulnerability checks', (t) => {
+await test('race failures and invalid target output stop before vulnerability checks', (t) => {
   for (const target of [
     '',
     'windows',
@@ -105,7 +105,7 @@ test('race failures and invalid target output stop before vulnerability checks',
   }
 });
 
-test('CI keeps the complete fail-fast matrix ahead of packaging and fuzzing', () => {
+await test('CI keeps the complete fail-fast matrix ahead of packaging and fuzzing', () => {
   const workflow = readFileSync(
     new URL('../.github/workflows/gate.yml', import.meta.url),
     'utf8',
@@ -158,7 +158,7 @@ test('CI keeps the complete fail-fast matrix ahead of packaging and fuzzing', ()
   assert.match(gate, /tools\/release-licenses\.mjs', 'check'/u);
 });
 
-test('CI checks current Tailcat main without updating the recorded gitlink', () => {
+await test('CI checks current Tailcat main without updating the recorded gitlink', () => {
   const workflow = readFileSync(
     new URL('../.github/workflows/tailcat-upstream.yml', import.meta.url),
     'utf8',
@@ -203,12 +203,114 @@ test('CI checks current Tailcat main without updating the recorded gitlink', () 
   assert.doesNotMatch(workflow, /continue-on-error:/u);
 });
 
-test('root build prepares Tailcat artifacts before Native and Web builds', () => {
+await test('root build prepares Tailcat and Web artifacts before the edge build', () => {
   const packageJson = JSON.parse(
     readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
   ) as { scripts?: { build?: string } };
   assert.equal(
     packageJson.scripts?.build,
-    'node tools/tailcat-gate.mjs build && node tools/build-native.mjs && pnpm --recursive --if-present run build',
+    'node tools/tailcat-gate.mjs build && node tools/build-native.mjs && pnpm --filter @tailmouse/web build && pnpm --filter @tailmouse/link-edge build',
   );
+});
+
+function deliveryGate(t: TestContext, quick: boolean, fail: string = '') {
+  const fixture = mkdtempSync(join(tmpdir(), 'tailmouse-delivery-order-'));
+  t.after(() => rmSync(fixture, { recursive: true, force: true }));
+  const log = join(fixture, 'commands.jsonl');
+  copyFileSync(
+    new URL('./gate.mjs', import.meta.url),
+    join(fixture, 'gate.mjs'),
+  );
+  writeFileSync(
+    join(fixture, 'process.mjs'),
+    `
+      import { appendFileSync } from 'node:fs';
+      export function run(command, args) {
+        const entry = [command, ...args];
+        appendFileSync(${JSON.stringify(log)}, JSON.stringify(entry) + '\\n');
+        if (${JSON.stringify(fail)} && args.join(' ') === ${JSON.stringify(fail)}) throw new Error('Synthetic prerequisite failure');
+      }
+      export function runPnpm(args) { run('pnpm', args); }
+    `,
+  );
+  const result = spawnSync(
+    process.execPath,
+    [join(fixture, 'gate.mjs'), ...(quick ? ['--quick'] : [])],
+    { encoding: 'utf8', timeout: 10_000 },
+  );
+  if (result.error) throw result.error;
+  const commands = readFileSync(log, 'utf8')
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line) as string[]);
+  return { result, commands };
+}
+
+await test('quick and full delivery gates build the exact static prerequisite before edge checks', (t) => {
+  for (const quick of [true, false]) {
+    const { result, commands } = deliveryGate(t, quick);
+    assert.equal(result.status, 0, result.stderr);
+    const argumentsOnly = commands.map((command) => command.slice(1).join(' '));
+    const ordered = [
+      'tools/go-gate.mjs check',
+      'tools/tailcat-gate.mjs check',
+      'tools/tailcat-gate.mjs build',
+      '--filter @tailmouse/web build',
+      '--recursive --if-present run typecheck',
+      'run lint',
+      '--recursive --if-present run test',
+      '--recursive --if-present run coverage',
+      'tools/build-native.mjs',
+      '--filter @tailmouse/link-edge build',
+      '--filter @tailmouse/link-edge test:integration',
+      '--test tools/verify-public-origin.test.ts',
+    ];
+    let preceding = -1;
+    for (const step of ordered) {
+      const index = argumentsOnly.indexOf(step);
+      assert.ok(
+        index > preceding,
+        `${step} is missing or out of dependency order`,
+      );
+      preceding = index;
+    }
+    assert.equal(
+      argumentsOnly.filter((value) => value === 'tools/tailcat-gate.mjs build')
+        .length,
+      1,
+    );
+    assert.equal(
+      argumentsOnly.filter((value) => value === '--filter @tailmouse/web build')
+        .length,
+      1,
+    );
+    assert.equal(
+      argumentsOnly.includes('run build'),
+      false,
+      'Gate must not repeat the root prerequisite build.',
+    );
+  }
+});
+
+await test('static prerequisite failures stop before all dependent edge work', (t) => {
+  for (const failure of [
+    'tools/tailcat-gate.mjs build',
+    '--filter @tailmouse/web build',
+  ]) {
+    const { result, commands } = deliveryGate(t, true, failure);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Synthetic prerequisite failure/u);
+    assert.equal(commands.at(-1)?.slice(1).join(' '), failure);
+    assert.equal(
+      commands.some(
+        (command) =>
+          command.includes('typecheck') ||
+          command.includes('coverage') ||
+          command.includes('test:integration') ||
+          command.includes('@tailmouse/link-edge'),
+      ),
+      false,
+    );
+    assert.doesNotMatch(result.stdout, /Gate passed/u);
+  }
 });

@@ -25,7 +25,7 @@ func TestQRBrowserDecode(t *testing.T) {
 		Bitmap [][]bool `json:"bitmap"`
 	}{}
 	for _, value := range []string{
-		"synthetic",
+		"https://link.tailmouse.com/T6wxZ8",
 		string(testInvitation(t, ModeEscape).url),
 		string(testInvitation(t, ModeLeash).url),
 		"https://example.invalid/#/v1/" + strings.Repeat("a", MaxInvitationBytes-1-len("https://example.invalid/#/v1/")),
@@ -34,10 +34,13 @@ func TestQRBrowserDecode(t *testing.T) {
 		if err != nil {
 			t.Fatal("synthetic QR encoding failed")
 		}
+		var rendered bytes.Buffer
+		writeTerminalQR(&rendered, addQuietZone(bitmap))
+		decoded := decodeTerminalBitmap(t, rendered.String())
 		fixtures = append(fixtures, struct {
 			Source string   `json:"source"`
 			Bitmap [][]bool `json:"bitmap"`
-		}{value, addQuietZone(bitmap)})
+		}{value, decoded})
 	}
 	input, err := json.Marshal(fixtures)
 	if err != nil {

@@ -54,13 +54,20 @@ worker.addEventListener('activate', (event) => {
 
 worker.addEventListener('fetch', (event) => {
   const request = event.request;
+  const url = new URL(request.url);
+  // Locator navigation and its API never enter the application cache or a
+  // worker-owned fetch. The browser performs the resolver's no-store request.
+  if (
+    /^\/[0-9A-Za-z]{6}$/u.test(url.pathname) ||
+    url.pathname.startsWith('/api/v1/short-invitations')
+  )
+    return;
   // Explicit network-only navigation preserves control in the supported
   // Firefox engine. No page response, request metadata or invitation is stored.
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request));
     return;
   }
-  const url = new URL(request.url);
   const integrity = assets.get(url.href);
   if (
     request.method !== 'GET' ||

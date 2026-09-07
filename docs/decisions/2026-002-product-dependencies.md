@@ -64,6 +64,8 @@ is removed as its real consumer lands.
   macOS Chromium's native BarcodeDetector. Other platforms retain portable QR
   unit tests; this probe does not claim physical-phone scanning acceptance.
 
+**Supersession, 2026-09-07:** The accepted V2 `add-protected-short-invitations` change removes the former QR version-4 floor. The same pinned encoder now selects the smallest level-M symbol for the displayed URL; four-module quiet zones remain. Terminal presentation uses half-block glyphs, with independent decoding of the rendered matrix.
+
 ## Project license and source notices, 2026-09-04
 
 - **Evidence/authority:** PRD release requirements leave the project license unspecified; the owner delegates such omissions. The earlier QR authorization gap is resolved by the accepted encoder replacement, without changing Tailcat.

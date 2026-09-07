@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-test('M0 acceptance redacts browser failures, preserves the primary phase and joins cleanup', (t) => {
+await test('M0 acceptance redacts browser failures, preserves the primary phase and joins cleanup', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'tailmouse-m0-redaction-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const write = (name: string, content: string) => {

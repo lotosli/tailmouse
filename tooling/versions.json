@@ -25,6 +25,7 @@
   "oxlint": "1.81.0",
   "oxlintTsgolint": "7.0.2001",
   "pnpm": "11.25.0",
+  "wrangler": "4.129.0",
   "tailcat": {
     "branch": "main",
     "kind": "git-submodule",

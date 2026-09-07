@@ -7,8 +7,9 @@ TailMouse/
 ├── apps/
 │   ├── cli/                              # Go composition root and native runtime
 │   │   └── internal/transport/tailcat/  # only native Tailcat import boundary
+│   ├── link-edge/                        # official bounded short-link/static edge
 │   └── web/                              # Preact/Vite browser client
-│       └── src/transport/tailcat/       # only browser Tailcat bridge boundary
+│       └── src/transport/tailcat/        # only browser Tailcat bridge boundary
 ├── protocol/                             # language-neutral TMOUSE/1 contract
 ├── tests/                                # cross-runtime and system tests
 ├── third_party/
@@ -38,6 +39,11 @@ apps/web composition
   -> src/transport/tailcat adapter -> Tailcat Go/Wasm bridge
   -> browser capability adapters -> browser APIs
 
+apps/link-edge
+  -> strict versioned short-invitation API
+  -> one SQLite Durable Object per locator
+  -> exact manifest-listed R2 static objects
+
 protocol specs and fixtures <- Go and TypeScript conformance tests
 system tests                <- packaged native app and built static web app
 ```
@@ -50,7 +56,7 @@ Core logic does not import Tailcat, DOM, Node, PTY, or operating-system implemen
 
 `apps/cli` is the executable composition root. Protocol state, session policy, and flow control remain independent of Tailcat. PTY, clipboard, and controlled input are platform boundaries with cancellation, bounded buffers, and explicit error propagation. Unix PTY and Windows ConPTY differences stay in platform adapters.
 
-Invitation rendering uses the exactly pinned, MIT-licensed `skip2/go-qrcode` encoder through the existing private bitmap function. It adds no transitive module or application abstraction; minimum version, M correction, four-module quiet zone and invitation limits remain TailMouse-owned policy. Format-bit tests and an independent native browser decoder validate output rather than requiring identical QR masks from different encoders.
+Invitation rendering uses the exactly pinned, MIT-licensed `skip2/go-qrcode` encoder through the existing private bitmap function. It adds no transitive module or application abstraction; the smallest payload-fitting version, M correction, four-module quiet zone and invitation limits remain TailMouse-owned policy. The terminal renderer combines two module rows in one half-block character cell. Format-bit tests and an independent native browser decoder validate output rather than requiring identical QR masks from different encoders.
 
 The concrete Escape binding lives in the native session package and connects the independent round core to protocol frames. `Host.Wait` drives its ticker; the existing per-connection PING sender also drains its bounded game output. One lock serializes round state and input acceptance, never network I/O. Input carries the current connection lease, snapshots coalesce, and reconnect discards old queued work before sending initialization and current state. The CLI configures the binding before opening transport and retains ownership of the session wait/close lifecycle.
 
@@ -94,7 +100,7 @@ The native adapter fetches official/custom maps through a private standard-libra
 
 ### Browser client
 
-The web client is a static mobile-first PWA using Preact, Canvas 2D for Escape, and xterm.js with FitAddon for Leash. Small capability adapters centralize permission, degradation, and testing. The client uses no remote scripts, fonts, analytics, or server runtime. It consumes an invitation fragment once, immediately removes it from the address bar, and never persists it.
+The web client is a static mobile-first PWA using Preact, Canvas 2D for Escape, and xterm.js with FitAddon for Leash. Small capability adapters centralize permission, degradation, and testing. The client uses no remote scripts, fonts, or analytics. It consumes either one invitation fragment or one canonical official protected-Leash short path, never both. A short path is resolved once through a bounded same-origin `no-store` request before access-code entry or Tailcat startup; the returned full invitation remains only in page memory. The client immediately removes either credential-bearing fragment or locator path from the visible address and never persists either value.
 
 Protected Leash keeps the separately entered access code only in active-page memory. Web Crypto derives a proof for the Host's fresh challenge and erases proof/challenge working bytes; a retry creates a new stream and proof rather than replaying either. The Host alone reports protected or link-only access and admits capabilities. Page disposal and page-cache restoration erase invitation and code state. Link-only access is an explicit CLI exception, not a browser downgrade.
 
@@ -134,9 +140,13 @@ On an invited page, registration waits until runtime loading ends so its integri
 
 The minimal Nginx example serves only static files with the production security and caching headers; the Docker build context contains only its configuration and built assets. Sensor access is same-origin and still requires Escape's existing user-initiated permission flow. See `docs/web-self-hosting.md` for MIME/compression, deployment and verification boundaries.
 
-Official publication uses one R2 bucket behind only `link.tailmouse.com`. An exact root-only internal rewrite selects `index.html`; manifest-listed hashed paths retain immutable metadata, encoded evidence objects additionally prohibit intermediary transformation, entry/metadata/notices remain no-cache, Cloudflare negotiates Brotli or gzip for ordinary raw paths, and one response transform mirrors the static-server security headers. The R2 custom domain requires TLS 1.2 or newer and its `r2.dev` development URL remains disabled. There is no Worker, Pages project, application backend or credential in repository configuration. `docs/cloudflare-r2-publication.md` is the operator runbook; public mutation remains separately owner-authorized.
+The official `link.tailmouse.com` edge is the only short-invitation service. One Cloudflare Worker serves the exact manifest-listed objects from the existing R2 bucket and handles only canonical six-character navigation plus four versioned create/resolve/renew/delete operations. One SQLite Durable Object per locator gives authoritative ordering and alarm expiry. The object may hold the bounded full invitation in plaintext for a rolling 15-minute lease, plus lease metadata and a one-way management-capability verifier; it never receives the separate access code, authentication proof, command, process, or terminal data. The Host retains the management capability only in memory, renews every five minutes, and requests immediate deletion on authoritative end paths. Resolution never renews or enters a cache. The six-character locator is not authentication.
 
-The schema-2 Web manifest is the pre-publication contract rather than a second deployment system. It records exact bytes, hashes and HTTP metadata for every uploadable object plus the root rewrite, 404 behavior, security headers and no-backend invariant. Release verification independently matches the directory to that allowlist and proves the sole raw Wasm's gzip and Brotli variants decompress to the same bytes. The manifest itself remains no-cache and is verified from the expected local file, avoiding an impossible self-hash.
+The Worker preserves the static manifest's exact bytes, MIME types, encoding choices, range behavior where supported, cache controls, and security headers. Full fragment invitations continue to use the same static entry and never reach the API. Non-official/self-hosted deployments remain static-only and keep full fragment invitations. This bounded mapping is not an account system, session directory, application data plane, terminal relay, or generic control plane. The 2026-09-07 R2-only publication of clean revision `65d1c7458272` remains historical deployment evidence until the reviewed Worker cutover is separately verified and recorded in `docs/evidence/prd-conformance.md`.
+
+The schema-2 Web manifest preserves the independently self-hostable static contract. A separate edge manifest binds the same Web-manifest hash to the Worker bundle/map, reviewed SQLite exports, route, rate limits, source inventory and compiler versions. The complete distribution carries eight edge files and an eighth CycloneDX SBOM; it does not turn full-fragment invitations into API consumers. Release verification independently matches the static directory to its allowlist and proves the sole raw Wasm's gzip and Brotli variants decompress to the same bytes. Each manifest is verified from its expected local file rather than claiming an impossible self-hash. Public-origin verification checks static identity and optional short routing read-only; a separate explicit synthetic lifecycle probe verifies mutations and expiry without retaining credentials.
+
+The short-service lease is a live availability boundary, not a physical-erasure claim: Cloudflare SQLite has separate provider-managed recovery copies. Reads and renewals enforce expiry even when alarms are delayed, and active-state deletion preserves a cleanup alarm on failure. TailMouse has no invitation archive/restore API; operators must not restore historical invitation storage.
 
 ### Protocol
 

@@ -106,6 +106,19 @@ test('production headers, fixed static cache and offline assets exclude invitati
   await page.evaluate(async (asset) => {
     await fetch(`${asset}?synthetic-private-query`);
   }, keys[0]!);
+  const resolver = `${site.url}api/v1/short-invitations/T6wxZ8`;
+  expect(
+    await page.evaluate(async (url) => {
+      const response = await fetch(url, {
+        cache: 'no-store',
+        credentials: 'omit',
+        redirect: 'error',
+        referrerPolicy: 'no-referrer',
+      });
+      return response.status;
+    }, resolver),
+  ).toBe(404);
+  expect(site.requests).toContain('/api/v1/short-invitations/T6wxZ8');
   const after = await page.evaluate(
     async (name) =>
       (await (await caches.open(name)).keys()).map((entry) => entry.url),
@@ -130,6 +143,16 @@ test('production headers, fixed static cache and offline assets exclude invitati
     'Stored Wasm must be reachable by the worker cache lookup',
   ).toMatchObject({ exact: true });
   await site.close();
+  expect(
+    await page.evaluate(async (url) => {
+      try {
+        await fetch(url, { cache: 'no-store' });
+        return false;
+      } catch {
+        return true;
+      }
+    }, resolver),
+  ).toBe(true);
   const offline = await page.evaluate(
     async (asset) => {
       const result = await fetch(asset, { cache: 'no-store' });

@@ -182,8 +182,8 @@ func TestQRPayloadBoundsAndMinimumVersion(t *testing.T) {
 	for _, size := range []int{1, 32, 128, 512, MaxInvitationBytes - 1} {
 		t.Run(fmt.Sprint(size), func(t *testing.T) {
 			bitmap, err := qrBitmap(bytes.Repeat([]byte("a"), size))
-			if err != nil || len(bitmap) < 33 || (len(bitmap)-17)%4 != 0 {
-				t.Fatal("valid bounded content did not produce a version-4-or-higher QR")
+			if err != nil || len(bitmap) < 21 || (len(bitmap)-17)%4 != 0 {
+				t.Fatal("valid bounded content did not produce a valid QR version")
 			}
 			for _, row := range bitmap {
 				if len(row) != len(bitmap) {
@@ -268,7 +268,7 @@ func TestRenderQRAndLifecycleFailuresAreSafe(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(output.String(), "\x1b[40m") ||
+	if !strings.Contains(output.String(), "\x1b[30;47m") ||
 		strings.Count(output.String(), string(invitation.url)) != 1 {
 		t.Fatal("rendered output omitted QR modules or duplicated the URL")
 	}

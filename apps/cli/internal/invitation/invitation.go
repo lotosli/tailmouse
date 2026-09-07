@@ -28,7 +28,6 @@ const (
 	MaxCardBytes                = 1050
 	MaxExpiryUnixSeconds        = 9_007_199_254_740_991
 	quietZoneModules            = 4
-	minimumQRVersion            = 4 // QR version 4 is 33 by 33 modules.
 )
 
 var (
@@ -92,6 +91,7 @@ type Invitation struct {
 	url       []byte
 	mode      Mode
 	expiresAt int64
+	short     bool
 }
 
 // New creates the exact fragment-only URL after validating its final byte
@@ -172,6 +172,9 @@ func (invitation *Invitation) Render(
 		rendered.WriteString("Anyone with this link can access this session until it expires.\nTreat it like a password.\n")
 	} else {
 		rendered.WriteString("Keep this invitation private.\nThe separate access code is also required.\n")
+		if invitation.short {
+			rendered.WriteString("Cloudflare temporarily stores this invitation, but never the access code.\n")
+		}
 	}
 	if invitation.mode == ModeLeash {
 		if options.Readonly {
@@ -199,6 +202,7 @@ func (invitation *Invitation) Erase() {
 	invitation.url = nil
 	invitation.mode = ""
 	invitation.expiresAt = 0
+	invitation.short = false
 }
 
 // Format prevents every fmt verb, including %#v, from revealing the private
@@ -246,12 +250,6 @@ func qrBitmap(source []byte) ([][]bool, error) {
 	if err != nil {
 		return nil, ErrQR
 	}
-	if code.VersionNumber < minimumQRVersion {
-		code, err = qrcode.NewWithForcedVersion(string(source), minimumQRVersion, qrcode.Medium)
-		if err != nil {
-			return nil, ErrQR
-		}
-	}
 	code.DisableBorder = true // The terminal renderer adds exactly one quiet zone.
 	return code.Bitmap(), nil
 }
@@ -269,12 +267,19 @@ func addQuietZone(bitmap [][]bool) [][]bool {
 }
 
 func writeTerminalQR(output *bytes.Buffer, bitmap [][]bool) {
-	for _, row := range bitmap {
-		for _, dark := range row {
-			if dark {
-				output.WriteString("\x1b[40m  ")
-			} else {
-				output.WriteString("\x1b[47m  ")
+	for row := 0; row < len(bitmap); row += 2 {
+		output.WriteString("\x1b[30;47m")
+		for column, top := range bitmap[row] {
+			bottom := row+1 < len(bitmap) && bitmap[row+1][column]
+			switch {
+			case top && bottom:
+				output.WriteRune('█')
+			case top:
+				output.WriteRune('▀')
+			case bottom:
+				output.WriteRune('▄')
+			default:
+				output.WriteByte(' ')
 			}
 		}
 		output.WriteString("\x1b[0m\n")

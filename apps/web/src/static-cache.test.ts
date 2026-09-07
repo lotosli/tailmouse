@@ -124,6 +124,15 @@ describe('fixed-list service worker', () => {
       { url: url.replace('tailmouse.test', 'foreign.test'), method: 'GET' },
       { url: `${scope}session`, method: 'GET' },
       { url: `${scope}index.html`, method: 'GET' },
+      { url: 'https://tailmouse.test/T6wxZ8', method: 'GET', mode: 'navigate' },
+      {
+        url: 'https://tailmouse.test/api/v1/short-invitations/T6wxZ8',
+        method: 'GET',
+      },
+      {
+        url: 'https://tailmouse.test/api/v1/short-invitations/T6wxZ8',
+        method: 'DELETE',
+      },
     ])
       expect(dispatch('fetch', request)).toBeUndefined();
     expect(storage.open).not.toHaveBeenCalled();

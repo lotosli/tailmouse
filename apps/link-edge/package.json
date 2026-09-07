@@ -1,0 +1,22 @@
+{
+  "name": "@tailmouse/link-edge",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "coverage": "node build.mjs --prepare && vitest run --coverage",
+    "test": "node build.mjs --prepare && vitest run",
+    "test:integration": "node build.mjs --prepare && node --test --experimental-test-coverage --test-coverage-include=verify-lifecycle.mjs --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 integration.test.mjs verify-lifecycle.test.mjs",
+    "typecheck": "node build.mjs --prepare && wrangler types .artifacts/worker.d.ts --config wrangler.jsonc && tsc --noEmit --pretty false -p tsconfig.json && tsc --noEmit --pretty false -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "cborg": "catalog:"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "catalog:",
+    "vitest": "catalog:",
+    "wrangler": "4.129.0"
+  }
+}

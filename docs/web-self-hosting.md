@@ -7,12 +7,17 @@ pnpm exec node tools/tailcat-gate.mjs build
 pnpm --filter @tailmouse/web build
 ```
 
-Serve `apps/web/dist/` as static files over HTTPS. There is no TailMouse API,
-application backend or connection credential in this directory. Native TailMouse
-and browser Wasm embed the same Tailcat gitlink. `web-manifest.json` records their
+Serve `apps/web/dist/` as static files over HTTPS. A self-hosted origin has no
+TailMouse API, application backend or connection credential in this directory.
+The V2 short-invitation API is an official-origin-only service and is not a
+requirement or hidden fallback for self-hosting. Native TailMouse and browser
+Wasm embed the same Tailcat gitlink. `web-manifest.json` records their
 compatibility metadata and SHA-256 identities of generated files.
 
-The static host never receives URL fragments. Protected Leash access codes stay
+The self-hosted static origin never receives URL fragments. Its Escape,
+protected Leash, and link-only invitations remain full fragments; do not copy
+the official six-character locator path without implementing a separately
+specified trust and lifecycle boundary. Protected Leash access codes stay
 in the active page's memory and are converted into fresh challenge proofs inside
 the encrypted session; they are not static configuration, object metadata or
 server logs. Link-only invitations remain full-access bearer credentials and
@@ -21,10 +26,22 @@ must not be placed in paths, queries, redirects or deployment tooling.
 Deploy one coherent manifest at a time. Escape uses wire identifier 1 and Leash
 uses identifier 2; an old Leash browser or Host must fail before terminal data or
 child startup rather than loading a compatibility shim. The official target is
-`https://link.tailmouse.com/`, but local self-hosting does not imply that the
-official origin has been published or verified. Its no-backend R2 topology and
-reviewed rule set are defined in the
-[Cloudflare R2 publication runbook](cloudflare-r2-publication.md).
+`https://link.tailmouse.com/`; local self-hosting does not inherit its short-link
+service, storage, deployment status, or trust boundary. The original R2
+publication and reviewed rule set are defined in the
+[Cloudflare publication runbook](cloudflare-r2-publication.md). Revision
+`65d1c7458272` is verified R2-only publication evidence; the Worker cutover is
+planned and unverified until its separate deployment evidence is recorded.
+The root-domain and `www` website remain V3 work.
+
+Official short links have a different storage boundary: Cloudflare can read
+their full invitation in an active 15-minute mapping, renewed by the Host every
+five minutes. It never receives the independent access code. Host-end deletion
+and expiry make the mapping unavailable; Cloudflare's SQLite recovery window
+is separate, so this is not a physical-erasure guarantee. The linked runbook
+covers its 30-day PITR limitation, forbidden restoration of invitation backups,
+outage handling, local abuse limits, and rollback. None of that storage is
+required or created by this static self-hosting procedure.
 
 ## Nginx example
 
@@ -69,7 +86,9 @@ request targets; never put credentials in query strings or paths.
 
 The service worker precaches only its build-time hashed-resource allowlist with
 integrity checks. It stores no HTML, navigation, query-string, relay, invitation,
-session or terminal response. Cached static files can be read offline; opening
+session or terminal response. It also bypasses every short-invitation API
+request and canonical short navigation; copying the Web directory does not
+provide the official resolver or an offline invitation cache. Cached static files can be read offline; opening
 or reloading the HTML still requires the host, and a live session requires relay
 connectivity. Cache registration failure is visible under About TailMouse and
 does not prevent online operation.

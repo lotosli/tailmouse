@@ -31,7 +31,7 @@ function wasm(info = records) {
   ]);
 }
 
-test('Wasm inventory uses embedded compiled modules and exact clean revision', () => {
+await test('Wasm inventory uses embedded compiled modules and exact clean revision', () => {
   const inventory = wasmDependencies(wasm(), revision);
   assert.deepEqual(inventory, {
     main: {
@@ -49,7 +49,7 @@ test('Wasm inventory uses embedded compiled modules and exact clean revision', (
   );
 });
 
-test('Wasm inventory requires trimmed source paths in the compiled artifact', () => {
+await test('Wasm inventory requires trimmed source paths in the compiled artifact', () => {
   for (const info of [
     records.replace('build\t-trimpath=true\n', ''),
     records.replace('-trimpath=true', '-trimpath=false'),
@@ -60,7 +60,7 @@ test('Wasm inventory requires trimmed source paths in the compiled artifact', ()
     );
 });
 
-test('Wasm inventory fails closed on missing, altered and unknown metadata', () => {
+await test('Wasm inventory fails closed on missing, altered and unknown metadata', () => {
   for (const source of [
     Buffer.alloc(0),
     Buffer.from('not Wasm'),
@@ -91,7 +91,7 @@ test('Wasm inventory fails closed on missing, altered and unknown metadata', () 
   assert.throws(() => wasmDependencies(wasm(), 'unrecorded'));
 });
 
-test('npm inventory resolves shipped modules only, deduplicates and strips paths', (t) => {
+await test('npm inventory resolves shipped modules only, deduplicates and strips paths', (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'tailmouse-npm-inventory-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   function packageFile(name: string, version: string, declaredName = name) {

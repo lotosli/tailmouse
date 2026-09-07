@@ -15,7 +15,7 @@ import {
   webObjectMetadata,
 } from './web-assets.ts';
 
-test('Tailcat asset paths and checksums derive only from verified bytes', (t) => {
+await test('Tailcat asset paths and checksums derive only from verified bytes', (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'tailmouse-web-assets-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const revision = '1'.repeat(40);
@@ -81,7 +81,7 @@ test('Tailcat asset paths and checksums derive only from verified bytes', (t) =>
   );
 });
 
-test('gzip and Brotli artifacts are deterministic and preserve original bytes', () => {
+await test('gzip and Brotli artifacts are deterministic and preserve original bytes', () => {
   const source = Buffer.from(
     'synthetic static application bytes\0🐈'.repeat(100),
   );
@@ -92,7 +92,7 @@ test('gzip and Brotli artifacts are deterministic and preserve original bytes', 
   assert.ok(first.every((item) => item.source.length < source.length));
 });
 
-test('static object metadata and hosting policy are exact and backend-free', () => {
+await test('static object metadata and hosting policy are exact and backend-free', () => {
   assert.deepEqual(webObjectMetadata('index.html'), {
     contentType: 'text/html; charset=utf-8',
     cacheControl: 'no-cache',
@@ -140,7 +140,7 @@ test('static object metadata and hosting policy are exact and backend-free', () 
   });
 });
 
-test('the non-root read-only Nginx image keeps every temporary path on tmpfs', () => {
+await test('the non-root read-only Nginx image keeps every temporary path on tmpfs', () => {
   const config = readFileSync('apps/web/nginx.conf', 'utf8');
   for (const [directive, directory] of [
     ['client_body', 'client-body'],
@@ -160,7 +160,7 @@ test('the non-root read-only Nginx image keeps every temporary path on tmpfs', (
   assert.match(readFileSync('apps/web/Dockerfile', 'utf8'), /^USER nginx$/mu);
 });
 
-test('static inspection rejects external and inline executable resources', () => {
+await test('static inspection rejects external and inline executable resources', () => {
   verifyStaticReferences(
     '<script type="module" src="./assets/app-12345678.js"></script><link href="./assets/app-12345678.css">',
     'html',

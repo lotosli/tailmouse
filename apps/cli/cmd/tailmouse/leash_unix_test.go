@@ -214,7 +214,7 @@ func startLeashCLIWithInputAccess(t *testing.T, mode string, input, writeInput *
 			t.Fatal(err)
 		}
 	}
-	args := []string{"leash", "--no-qr", "--post-exit-ttl=30ms"}
+	args := []string{"leash", "--web-base-url=https://mouse.example/", "--no-qr", "--post-exit-ttl=30ms"}
 	if linkOnly {
 		args = append(args, "--no-password")
 	}

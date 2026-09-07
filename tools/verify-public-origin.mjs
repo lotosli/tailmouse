@@ -169,7 +169,7 @@ function readManifest(manifestPath) {
   assert.equal(
     manifest.staticHosting.applicationBackend,
     false,
-    'An application backend is forbidden.',
+    'The static client must not require an application backend.',
   );
   const entries = Object.entries(manifest.files ?? {}).sort(
     ([left], [right]) => (left < right ? -1 : left > right ? 1 : 0),
@@ -253,6 +253,11 @@ export async function verifyPublicOrigin(
     Number.isSafeInteger(timeoutMs) && timeoutMs >= 100 && timeoutMs <= 60_000,
     'Invalid request deadline.',
   );
+  assert.ok(
+    options.shortInvitations === undefined ||
+      typeof options.shortInvitations === 'boolean',
+    'Invalid short-invitation verification option.',
+  );
   const network = {
     addresses: new Set(),
     tls: { status: 'not-applicable' },
@@ -292,6 +297,94 @@ export async function verifyPublicOrigin(
     );
     assertObjectResponse(rootGet, rootMetadata, index.bytes);
     assertSecurityHeaders(rootGet, staticHosting.requiredHeaders);
+
+    if (options.shortInvitations) {
+      // Navigation is static only. Never resolve a valid locator: it might
+      // belong to a live invitation on a public origin.
+      const shortURL = objectURL(origin, 'T6wxZ8');
+      const shortMetadata = { ...rootMetadata, cacheControl: 'no-store' };
+      const shortGet = await boundedRequest(
+        shortURL,
+        'GET',
+        index.bytes.byteLength,
+        agent,
+        network,
+        timeoutMs,
+      );
+      assertObjectResponse(shortGet, shortMetadata, index.bytes);
+      assertSecurityHeaders(shortGet, staticHosting.requiredHeaders);
+      const shortHead = await boundedRequest(
+        shortURL,
+        'HEAD',
+        0,
+        agent,
+        network,
+        timeoutMs,
+      );
+      assert.equal(
+        shortHead.statusCode,
+        200,
+        'Short entry HEAD request failed.',
+      );
+      assert.equal(
+        shortHead.body.byteLength,
+        0,
+        'HEAD returned a response body.',
+      );
+      assert.equal(
+        header(shortHead, 'Cache-Control'),
+        'no-store',
+        'Short entry HEAD cache policy mismatch.',
+      );
+      assert.equal(
+        header(shortHead, 'Content-Type'),
+        rootMetadata.contentType,
+        'Short entry HEAD MIME mismatch.',
+      );
+      assert.equal(
+        header(shortHead, 'Content-Encoding'),
+        rootMetadata.contentEncoding,
+        'Short entry HEAD content encoding mismatch.',
+      );
+      assertContentLengthWhenPresent(
+        shortHead,
+        index.bytes.byteLength,
+        'Short entry HEAD length mismatch.',
+      );
+      assertSecurityHeaders(shortHead, staticHosting.requiredHeaders);
+      const unavailable = await boundedRequest(
+        objectURL(
+          origin,
+          'api/v1/short-invitations/.tailmouse-origin-verifier-unavailable',
+        ),
+        'GET',
+        1024,
+        agent,
+        network,
+        timeoutMs,
+      );
+      assert.equal(
+        unavailable.statusCode,
+        404,
+        'Invalid invitation locator did not return 404.',
+      );
+      assert.equal(
+        header(unavailable, 'Cache-Control'),
+        'no-store',
+        'Unavailable invitation cache policy mismatch.',
+      );
+      assert.equal(
+        header(unavailable, 'Content-Type'),
+        'application/json',
+        'Unavailable invitation MIME mismatch.',
+      );
+      assert.equal(
+        unavailable.body.toString('utf8'),
+        '{"error":"invitation_unavailable"}',
+        'Unavailable invitation response was not generic.',
+      );
+      assertSecurityHeaders(unavailable, staticHosting.requiredHeaders);
+    }
 
     const manifestResponse = await boundedRequest(
       objectURL(origin, staticHosting.manifestObject.path),
@@ -388,7 +481,18 @@ export async function verifyPublicOrigin(
       routing: {
         root: staticHosting.rootRoute,
         unknownPathStatus: 404,
-        applicationBackend: false,
+        ...(options.shortInvitations
+          ? {
+              staticClientBackendRequired: false,
+              shortInvitations: {
+                status: 'verified',
+                entryPath: '/T6wxZ8',
+                unavailableStatus: 404,
+                cacheControl: 'no-store',
+                lifecycle: 'not-tested',
+              },
+            }
+          : { applicationBackend: false }),
       },
       transfer: {
         inspectedBytes: transferredBytes,
@@ -411,10 +515,10 @@ export async function verifyPublicOrigin(
 
 export function publicOriginArguments(arguments_) {
   const values = arguments_[0] === '--' ? arguments_.slice(1) : arguments_;
-  assert.equal(
-    values.length,
-    2,
-    'Expected an origin URL and local Web manifest path.',
+  assert.ok(
+    values.length === 2 ||
+      (values.length === 3 && values[2] === '--short-invitations'),
+    'Expected an origin URL and local Web manifest path, optionally followed by --short-invitations.',
   );
   return values;
 }
@@ -431,8 +535,12 @@ export function publicOriginFailureMessage(error) {
 
 if (import.meta.main) {
   try {
-    const [origin, manifest] = publicOriginArguments(process.argv.slice(2));
-    const result = await verifyPublicOrigin(origin, manifest);
+    const [origin, manifest, flag] = publicOriginArguments(
+      process.argv.slice(2),
+    );
+    const result = await verifyPublicOrigin(origin, manifest, {
+      shortInvitations: flag === '--short-invitations',
+    });
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } catch (error) {
     process.stderr.write(

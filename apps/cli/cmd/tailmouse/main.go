@@ -153,6 +153,12 @@ func startupSignals(ctx context.Context, cancel context.CancelFunc, interrupts <
 }
 
 func runSession(ctx context.Context, stdin *os.File, options config.Options, command *leash.Command, credential *credentialTerminal, stdout, stderr io.Writer, start transportStarter, interrupts <-chan os.Signal, stopStartup func()) (code int) {
+	return runSessionWithShortClient(ctx, stdin, options, command, credential, stdout, stderr, start, interrupts, stopStartup, invitation.NewShortClient(nil))
+}
+
+func runSessionWithShortClient(ctx context.Context, stdin *os.File, options config.Options, command *leash.Command, credential *credentialTerminal, stdout, stderr io.Writer, start transportStarter, interrupts <-chan os.Signal, stopStartup func(), shortClient *invitation.ShortClient) (code int) {
+	ctx, cancelSession := context.WithCancelCause(ctx)
+	defer cancelSession(nil)
 	log := newDiagnostics(options, stderr)
 	reason := "internal_error"
 	var childResult bool
@@ -179,6 +185,27 @@ func runSession(ctx context.Context, stdin *os.File, options config.Options, com
 	closeReason := "local_revoke"
 	var server transportServer
 	var cardInvitation *invitation.Invitation
+	var shortLease *invitation.ShortLease
+	var stopRenewal context.CancelFunc
+	var renewalDone <-chan error
+	var shortOnce sync.Once
+	closeShort := func() {
+		shortOnce.Do(func() {
+			if stopRenewal != nil {
+				stopRenewal()
+				<-renewalDone
+			}
+			if shortLease != nil {
+				cleanup, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				if err := shortLease.Delete(cleanup); err != nil {
+					// Local authority is already closed. The scheduled service
+					// alarm remains the fallback; preserve the original outcome.
+					_ = log.cleanupFailure("short_invitation_delete")
+				}
+			}
+		})
+	}
 	var applicationOnce, transportOnce sync.Once
 	var accessFailure string
 	// Keep an earlier access failure even if a later mode/console cleanup fails.
@@ -232,6 +259,7 @@ func runSession(ctx context.Context, stdin *os.File, options config.Options, com
 		}
 		hadFailure := accessFailure != ""
 		closeApplication()
+		closeShort()
 		if !hadFailure && accessFailure != "" && mayReplace(outcome) {
 			accessRoot = true
 		}
@@ -249,6 +277,10 @@ func runSession(ctx context.Context, stdin *os.File, options config.Options, com
 	}
 	defer func() {
 		shutdown("", nil)
+		if errors.Is(context.Cause(ctx), invitation.ErrShortLease) {
+			code, reason, childResult = exitInvitation, "short_invitation_renewal", false
+			return
+		}
 		if (code == exitOK || childResult || accessRoot) && accessFailure != "" {
 			code, reason = exitTransport, accessFailure
 			childResult = false
@@ -371,6 +403,28 @@ func runSession(ctx context.Context, stdin *os.File, options config.Options, com
 	if err != nil {
 		reason = "invitation_creation"
 		return exitInvitation
+	}
+	if invitation.UsesShortInvitation(invitation.Mode(options.Command), options.Leash.NoPassword, options.WebBaseURL) {
+		shortLease, err = shortClient.Publish(startContext, cardInvitation)
+		if err != nil {
+			reason = "short_invitation_publication"
+			return exitInvitation
+		}
+		renewalContext, cancel := context.WithCancel(ctx)
+		stopRenewal = cancel
+		done := make(chan error, 1)
+		renewalDone = done
+		go func() {
+			err := shortLease.Maintain(renewalContext)
+			if err != nil && renewalContext.Err() == nil {
+				// Authority arbitrates competing terminal causes. A renewal
+				// arriving after another outcome must not replace that root.
+				if changed, _ := host.Authority.Finish(session.TransportFailure); changed {
+					cancelSession(errors.Join(invitation.ErrShortLease, err))
+				}
+			}
+			done <- err
+		}()
 	}
 	relayLabel := relay.Host
 	if relay.Mode == tailcattransport.RelayOfficial {

@@ -19,6 +19,7 @@ import { verifyNativeBuild, verifyNativeMatrix } from './release-native.mjs';
 import {
   assertNoCredentials,
   checksumManifest,
+  edgeSBOM,
   fileIdentity,
   nativeSBOM,
   verifySBOM,
@@ -30,6 +31,7 @@ import {
   verifyNoticeCoverage,
 } from './release-licenses.ts';
 import { staticHosting, webObjectMetadata } from './web-assets.ts';
+import { verifyEdgeRelease } from './link-edge-release.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const release = resolve(root, '.artifacts/release');
@@ -295,6 +297,27 @@ function main(args) {
       ),
     },
   ];
+  stage = 'edge artifact inventory';
+  const edgeDirectory = generate
+    ? resolve(root, 'apps/link-edge/dist')
+    : resolve(distribution, 'edge');
+  const edge = verifyEdgeRelease(root, edgeDirectory);
+  for (const file of edge.identities)
+    copies.push({
+      from: resolve(edgeDirectory, file.name),
+      name: `edge/${file.name}`,
+      identity: { ...file, name: `edge/${file.name}` },
+    });
+  boms.push({
+    name: `tailmouse_${identity.version}_edge.cdx.json`,
+    bom: edgeSBOM(
+      identity,
+      revision,
+      edge.identities,
+      edge.npm,
+      edge.manifest.toolchains,
+    ),
+  });
   const archives = [];
   const readme = bytes(resolve(root, 'README.md'));
   assertNoCredentials(readme);
@@ -432,7 +455,7 @@ function main(args) {
     'Distribution contains missing or unexpected files.',
   );
   process.stdout.write(
-    `Distribution ${generate ? 'generated' : 'verified'}: six native archives, ${web.identities.length} Web files, seven CycloneDX 1.7 SBOMs and complete SHA-256 coverage.\n`,
+    `Distribution ${generate ? 'generated' : 'verified'}: six native archives, ${web.identities.length} Web files, ${edge.identities.length} edge files, eight CycloneDX 1.7 SBOMs and complete SHA-256 coverage.\n`,
   );
   process.stdout.write(
     'Integrity and notice verification is not release approval: native/device acceptance, signing and publication remain separate.\n',

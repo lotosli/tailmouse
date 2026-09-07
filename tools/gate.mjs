@@ -25,7 +25,6 @@ const phases = [
     'format',
     () => runPnpm(['exec', 'prettier', '--check', '.', '--ignore-unknown']),
   ],
-  ['lint', () => runPnpm(['run', 'lint'])],
   [
     'build identity, release and static asset tests',
     () =>
@@ -33,6 +32,8 @@ const phases = [
         '--test',
         'tools/m0-acceptance.test.ts',
         'tools/go-gate.test.ts',
+        'tools/check-architecture.test.ts',
+        'tools/link-edge-release.test.ts',
         'tools/leash-acceptance.test.ts',
         'tools/cross-version-acceptance.test.ts',
         'tools/build-identity.test.ts',
@@ -44,10 +45,6 @@ const phases = [
       ]),
   ],
   [
-    'typecheck',
-    () => runPnpm(['--recursive', '--if-present', 'run', 'typecheck']),
-  ],
-  [
     'Go static checks',
     () => run(process.execPath, ['tools/go-gate.mjs', 'check']),
   ],
@@ -55,13 +52,26 @@ const phases = [
     'Tailcat static checks',
     () => run(process.execPath, ['tools/tailcat-gate.mjs', 'check']),
   ],
+  [
+    'Tailcat native and WebAssembly builds',
+    () => run(process.execPath, ['tools/tailcat-gate.mjs', 'build']),
+  ],
+  [
+    'Web static artifact prerequisite',
+    () => runPnpm(['--filter', '@tailmouse/web', 'build']),
+  ],
+  [
+    'typecheck',
+    () => runPnpm(['--recursive', '--if-present', 'run', 'typecheck']),
+  ],
+  ['lint', () => runPnpm(['run', 'lint'])],
   ['unit tests', () => runPnpm(['--recursive', '--if-present', 'run', 'test'])],
   [
     'Tailcat tests',
     () => run(process.execPath, ['tools/tailcat-gate.mjs', 'test']),
   ],
   [
-    'web coverage',
+    'TypeScript coverage',
     () => runPnpm(['--recursive', '--if-present', 'run', 'coverage']),
   ],
   [
@@ -69,10 +79,16 @@ const phases = [
     () => run(process.execPath, ['tools/go-gate.mjs', 'coverage']),
   ],
   [
-    'Tailcat native and WebAssembly builds',
-    () => run(process.execPath, ['tools/tailcat-gate.mjs', 'build']),
+    'Native and edge builds',
+    () => {
+      run(process.execPath, ['tools/build-native.mjs']);
+      runPnpm(['--filter', '@tailmouse/link-edge', 'build']);
+    },
   ],
-  ['build', () => runPnpm(['run', 'build'])],
+  [
+    'local Worker integration',
+    () => runPnpm(['--filter', '@tailmouse/link-edge', 'test:integration']),
+  ],
   [
     'local public-origin verification',
     () =>

@@ -4,7 +4,7 @@ This constitution governs specifications, code, tests, tooling, and agent behavi
 
 ## 1. Product boundary
 
-v0.1 implements the PRD's end-to-end path plus escape and leash. Accounts, databases, a cloud control plane, business traffic relays, persistent terminal history, P1/P2 features, and hypothetical platform capabilities are out of scope unless an explicit decision and accepted specification add them.
+v0.1 implements the PRD's end-to-end path plus escape and leash. Accounts, general-purpose databases, a generic cloud control plane, business traffic relays, persistent terminal history, P1/P2 features, and hypothetical platform capabilities are out of scope unless an explicit decision and accepted specification add them. The accepted V2 protected-short-invitation change is a narrow exception: it may add one lease-bounded official locator service and its required strongly consistent mapping storage, but not accounts, session discovery, or terminal relaying.
 
 ## 2. Evidence before decisions
 
@@ -38,7 +38,7 @@ Tailcat source is an external read-only Git submodule. Agents MUST NOT edit it o
 
 ## 7. Security and privacy
 
-ConnBlobs and invitation fragments are bearer credentials. Never place them in logs, persistent storage, telemetry, crash reports, shell history, command arguments, fixtures, or snapshots. Consume invitations in memory and remove them from the visible URL immediately. Parsers use strict versions and size limits and fail closed. Browser assets are local by default.
+ConnBlobs and invitation fragments are bearer credentials. Never place them in logs, telemetry, crash reports, shell history, command arguments, fixtures, or snapshots. Outside the accepted official protected-short-invitation service, never persist them. That service may retain one bounded plaintext invitation only for its active 15-minute lease, with no access code, terminal data, process data, or plaintext management capability; expiry and authoritative Host cleanup delete the active mapping. Every resolve and renewal checks expiry independently of alarm execution. Cloudflare's SQLite recovery copies are a separate provider retention boundary, not verified physical erasure within 15 minutes; TailMouse has no invitation archive/recovery API, and operators must not restore historical invitation storage. Native and browser clients otherwise consume invitations in memory, and the browser removes them from the visible URL immediately. Parsers use strict versions and size limits and fail closed. Browser assets are local by default.
 
 ## 8. Verifiable quality
 

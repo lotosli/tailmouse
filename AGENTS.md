@@ -9,7 +9,7 @@ Read `context.md`, `docs/governance/constitution.md`, `docs/architecture.md`, an
 - Use OpenSpec for protocol, security, cross-runtime, architectural, or otherwise non-trivial behavior changes. Put material design decisions and alternatives in the proposal. A small documentation or mechanical configuration fix needs only the smallest useful artifact.
 - Fail at the first violated invariant. Do not continue a gate after a required check fails, swallow an error, silently fall back, or report partial success as completion.
 - Run `pnpm gate:quick` during iteration and `pnpm gate` before handoff. New production code must keep statements, branches, functions, and lines at or above 80% where the language tool exposes those metrics.
-- Never log, persist, place in process arguments, or expose Tailcat ConnBlobs or URL-fragment invitation material. Use synthetic redacted fixtures only.
+- Never log, place in process arguments, or expose Tailcat ConnBlobs or URL-fragment invitation material outside the deliberate sharing surface and accepted protected-short-invitation API. Persistence is restricted to that service's lease-bounded mapping under the constitution; repository files and tests use synthetic redacted fixtures only.
 - Treat `third_party/tailcat` as a read-only external submodule. Never edit its source or advance its gitlink unless the user explicitly requests that Tailcat action.
 
 ## Simplicity budget

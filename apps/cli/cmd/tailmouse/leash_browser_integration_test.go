@@ -416,7 +416,7 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	if scenario == "retained-exit" || scenario == "readonly" || strings.HasPrefix(scenario, "ai-") {
 		retention = "5s" // Includes a fresh browser context and real Wasm startup.
 	}
-	args := []string{"leash", "--no-qr", "--start-on=connect", "--post-exit-ttl=" + retention, "--cwd=" + directory, "--title=" + title}
+	args := []string{"leash", "--web-base-url=https://mouse.example/", "--no-qr", "--start-on=connect", "--post-exit-ttl=" + retention, "--cwd=" + directory, "--title=" + title}
 	if !official {
 		args = append(args, "--derp-host=localhost")
 	}
