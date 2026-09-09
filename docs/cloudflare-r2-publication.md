@@ -107,6 +107,16 @@ during candidate preparation. Do not create a CNAME to an `r2.dev` hostname.
    `index.html` last. Retain the preceding manifest's hashed objects until its
    active clients have aged out; never replace bytes at a content-named key.
 
+Check new immutable-key existence through the authenticated R2 object API,
+using raw bounded byte reads for encoded objects. Do not request an absent
+canonical public asset before uploading it: Cloudflare can cache a 404 for
+three minutes, making an immediate post-upload check see stale absence. Verify
+the previous public release first and the new canonical public bytes after
+upload. Keep authorization restricted to `api.cloudflare.com`; never forward
+it to the public origin or a redirect. This is a deployment check, not another
+application endpoint or cache rule.
+[Cloudflare default status-code caching, verified 2026-09-08](https://developers.cloudflare.com/cache/concepts/default-cache-behavior/).
+
 Retained prior objects are rollback input, not an expanded Worker allowlist.
 The Worker serves only its embedded current manifest: an in-flight older page
 requesting an uncached obsolete hash can receive 404 after cutover and must
@@ -183,6 +193,13 @@ Do not customize cipher suites without a separate compatibility decision.
 
 ## Worker cutover
 
+**Owner decision, 2026-09-09:** The official hostname is a prelaunch
+development/test deployment. Diagnose, fix, redeploy, and retest failures in
+place; do not automatically remove its route or restore the old static release.
+This supersedes the earlier mandatory-rollback workflow. Preserve failures and
+all functional/security acceptance requirements. The recovery procedure below
+is available for a separately requested recovery, not a test-failure action.
+
 1. Complete the release-input checks above and record the preceding static
    manifest, entry-object hashes, domain settings, and hostname-scoped rule and
    route configuration. These records contain no invitation data. Keep all
@@ -200,8 +217,8 @@ Do not customize cipher suites without a separate compatibility decision.
    and namespace, four rate bindings, runtime limits, and disabled alternate
    endpoints/logging. Use the pinned workspace Wrangler; do not replace its
    configuration with dashboard-edited application code. Deploying with the
-   configured `link.tailmouse.com/*` route is a production cutover, not a
-   staging command:
+   configured `link.tailmouse.com/*` route changes the real public test
+   deployment, not a local dry run:
 
    ```sh
    node tools/link-edge-release.mjs verify
@@ -223,7 +240,14 @@ Do not customize cipher suites without a separate compatibility decision.
    cutover; the R2-only evidence does not prove Worker behavior. Preserve all
    three prior rule values for rollback before saving changes.
 5. Verify the deployed Worker identity, storage backend and bindings before
-   releasing the new official protected-Leash CLI default. Compare every static
+   releasing the new official protected-Leash CLI default. Verify the exact
+   route ID, pattern and script through the documented zone routes API, and
+   confirm unrelated routes in that zone and the active Worker version are
+   unchanged. A secondary service-environment listing is not an additional
+   immediate-consistency gate; a zone check does not prove account-wide route
+   absence. Actual public routing remains a separate required check.
+   [Cloudflare zone routes API, verified 2026-09-08](https://developers.cloudflare.com/api/resources/workers/subresources/routes/methods/list/).
+   Compare every static
    object and its HTTP metadata with the matching manifest, including raw,
    gzip, and Brotli Wasm. A short path serves the same verified `index.html`
    bytes with `no-store`; manifest-listed names such as `NOTICE` retain static
@@ -235,16 +259,17 @@ Do not customize cipher suites without a separate compatibility decision.
    context, and expiry without browser traffic. Verify the 15-minute active
    expiry separately from delayed alarm cleanup and provider PITR; do not
    shorten production leases to speed acceptance. Delete remaining synthetic
-   mappings and retain only redacted outcomes. Finish with a real macOS
+   mappings and retain only redacted outcomes. Also run a real macOS
    protected Host/browser flow whose credentials never enter retained output.
 
-Any missing or failed publication check stops release and invokes rollback.
+Any missing or failed publication check stops that verification run. Correct
+the failure and retest in place; do not invoke automatic rollback.
 Local tests, an uploaded bundle, or an attached route do not establish public
 short-link availability. Record the verified revision and results in
 `docs/evidence/prd-conformance.md`; Linux, Windows, and physical-device runtime
 evidence stays deferred until its environment is supplied.
 
-After those deployment checks pass, the explicit macOS public-flow probe runs
+Once routing and static/configuration checks pass, the explicit macOS public-flow probe runs
 from a non-PTY task shell (an ordinary controlling terminal is rejected so
 credentials cannot escape the owned capture):
 
@@ -259,7 +284,8 @@ with ordinary TLS verification, separately entered access code, independently
 decoded compact QR, isolated zsh I/O, same-process fresh-context reconnect and
 Host-end deletion. It does not use or replace the owner's manual binary. Its
 opt-in and exact selector keep public mutation outside the hermetic gate. Only
-after this and every other publication check passes may the new CLI be delivered.
+after this and every other publication check passes may acceptance be declared complete
+and the new official protected-Leash CLI default be delivered.
 
 Cloudflare's disable-compression option also disables its default compression;
 responses carrying `no-transform` retain their supplied bytes. Direct R2
@@ -295,7 +321,7 @@ source inventory, matching Web-manifest hash, and exact bundle/map hashes by
 `edge-manifest.json`. The distribution includes its eight edge files and an
 eighth CycloneDX SBOM while preserving the Web schema-2 self-hosting contract.
 
-After explicit production-cutover authorization, run the bounded synthetic
+Within the owner-authorized public test deployment, run the bounded synthetic
 lifecycle check separately:
 
 ```sh
@@ -326,7 +352,9 @@ the verifier still proves the bounded GET body size and digest; when the header
 is present, it must equal the manifest size. Encoded evidence objects are
 requested with their exact recorded encoding and must remain byte-identical.
 
-If verification fails, stop publication. For a Worker regression, restore only
+If verification fails, stop that run, diagnose, fix, and retest in place. Do not
+automatically execute recovery during prelaunch testing. If the owner separately
+requests recovery for a Worker regression, restore only
 a reviewed prior Worker version compatible with the existing SQLite class and
 static manifest. A code rollback is not a data rollback; never restore the
 invitation namespace from backup or delete that namespace to reset a rollout.

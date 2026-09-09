@@ -20,17 +20,19 @@ The Web release SHALL retain static self-hostable assets with content-hashed scr
 
 Official publication MUST deploy the reviewed short-link runtime and strongly consistent expiring storage configuration before switching short-path traffic, while preserving the gate-approved static manifest, encodings, MIME, cache/security headers, TLS policy, unknown-path 404 behavior, and disabled non-production object URL. Publication SHALL verify create, case-sensitive resolve, wrong-case rejection, renewal, immediate delete, alarm expiry, no-cache behavior, redacted logs, static-byte identity, and a real protected Host-to-browser connection.
 
-Credential-free local workerd/SQLite checks and clean release verification MUST precede the official route cutover. Public checks then run within that cutover window without enabling preview endpoints or another origin. The new official protected-Leash CLI default MUST NOT be delivered until every public check passes; any failed publication check MUST immediately restore the preceding verified static deployment.
+Credential-free local workerd/SQLite checks and clean release verification MUST precede official deployment. Public checks then run on that origin without enabling preview endpoints or another origin. During the owner-authorized prelaunch development/test phase, a failed check MUST retain its failure result and lead to diagnosis, correction, redeployment where needed, and retesting in place, not automatic route removal or static rollback. Test deployment MUST NOT be represented as completed acceptance; every required public check must pass before completion is claimed.
+
+The new official protected-Leash CLI default MUST NOT be delivered until every required public check passes. Repairing the test deployment in place does not waive that delivery check.
 
 #### Scenario: Service deployment is incomplete
 
 - **WHEN** runtime, storage migration, rate limits, route, static binding, deletion alarm, or public verification is missing or fails
-- **THEN** the deployment does not switch the official protected-Leash default and does not claim short-link availability
+- **THEN** the deployment remains incomplete, reports the failed check, and is corrected and retested without claiming verified short-link availability
 
 #### Scenario: Static delivery changes during cutover
 
 - **WHEN** any manifest-listed public asset differs in bytes, encoding, MIME, cache policy, or security headers after the edge cutover
-- **THEN** publication fails and the previous verified static deployment remains or is restored without publishing a partial short-link release
+- **THEN** verification fails, the mismatched delivery is corrected and retested in place, and no complete short-link release is claimed until the exact static contract passes
 
 #### Scenario: Production deletion is exercised
 

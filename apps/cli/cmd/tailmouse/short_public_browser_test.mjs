@@ -182,13 +182,16 @@ async function main() {
     const paste = async (value) => {
       await page.getByRole('textbox', { name: 'Paste text' }).fill(value);
       await page.getByRole('button', { name: 'Send paste' }).click();
+      // Bracketed paste inserts text; zsh needs a separate terminal Enter.
+      await page.getByRole('button', { name: 'Open keyboard' }).click();
+      await page.keyboard.press('Enter');
     };
     stage = 'protected-public-connect';
     await connect();
     const pid = await page.getByText(/^PID \d+$/u).innerText();
     stage = 'zsh-input-output';
     await paste(
-      'PUBLIC_SHORT_STATE=731; printf "public-short-%s\\n" "$((6 * 7))"; printf "public-short-unicode:%s\\n" "🐈"\n',
+      'PUBLIC_SHORT_STATE=731; printf "public-short-%s\\n" "$((6 * 7))"; printf "public-short-unicode:%s\\n" "🐈"',
     );
     await expect(
       page.getByRole('region', { name: 'Terminal output' }),
@@ -214,14 +217,14 @@ async function main() {
     await expect(
       page.getByRole('region', { name: 'Terminal output' }),
     ).toContainText('public-short-42');
-    await paste('printf "public-short-state:%s\\n" "$PUBLIC_SHORT_STATE"\n');
+    await paste('printf "public-short-state:%s\\n" "$PUBLIC_SHORT_STATE"');
     await expect(
       page.getByRole('region', { name: 'Terminal output' }),
     ).toContainText('public-short-state:731');
     if (resolverRequests !== 2 || invalidResolverRequest)
       throw new Error('RESOLVER_BOUNDARY');
     stage = 'host-end';
-    await paste('exit 19\n');
+    await paste('exit 19');
     await expect(page.getByLabel('Process status')).toContainText('Exit 19');
     await expect(
       page.getByText('Session closed.', { exact: true }),
