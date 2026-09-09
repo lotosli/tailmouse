@@ -20,26 +20,39 @@ TailMouse is an **unofficial** application built on [Tailcat](https://github.com
 
 TailMouse is not affiliated with or endorsed by Tailscale Inc. Tailscale and Tailcat names and trademarks belong to their respective owners.
 
-**Treat every invitation link, QR code and access code as a credential.** Leash is password-protected by default: the invitation and separately displayed access code are both required, and the browser sends a fresh challenge proof rather than the code. The explicit `--no-password` exception makes the full invitation sufficient for the configured permissions. A writable terminal has the launched process's authority. DERP sees connection metadata, timing and traffic sizes, although session payloads are end-to-end encrypted. The Web page is a trusted endpoint and can see session plaintext. The accepted V2 short-link design also trusts the official Cloudflare edge with the protected invitation in plaintext for a bounded lease; it never sends the separate access code there. That edge change is under implementation and is not claimed live yet.
+**Treat every invitation link, QR code and access code as a credential.** Leash is password-protected by default: the invitation and separately displayed access code are both required, and the browser sends a fresh challenge proof rather than the code. The explicit `--no-password` exception makes the full invitation sufficient for the configured permissions. A writable terminal has the launched process's authority. DERP sees connection metadata, timing and traffic sizes, although session payloads are end-to-end encrypted. The Web page is a trusted endpoint and can see session plaintext. The accepted V2 short-link design also trusts the official Cloudflare edge with the protected invitation in plaintext for a bounded lease; it never sends the separate access code there. The edge is deployed for prelaunch testing; full public lifecycle acceptance remains pending.
 
 ## Development status
 
 This checkout is not a published v0.1 release. macOS has native/browser integration evidence. Linux and Windows builds, static checks, artifacts and platform-specific test binaries are present, but native execution is explicitly deferred until the owner provides matching environments; those platforms are `not verified`, and no runtime-support claim is made. This deferral does not block the current macOS-scoped development completion. Unix cleanup owns the launched session-leader group and session-validated foreground job groups selected through its controlling PTY; native macOS tests cover ordinary interactive-shell separation, but a descendant that deliberately creates an unrelated session is outside this portable boundary. Use disposable test commands until the remaining release acceptance is complete.
 
-The release target is macOS 13+, Linux glibc distributions and Windows 11, each on amd64/arm64. Browser targets are the latest two major Safari, Chrome, Edge and Firefox versions, with iPhone Safari and Android Chrome as mobile acceptance targets. Automated browser profiles do not establish physical-device support. See the [conformance ledger](docs/evidence/prd-conformance.md) for current evidence and remaining work, including process-tree, platform and final release acceptance. The official static browser client is live; the short-link edge, Homebrew tap and versioned application release are not yet claimed.
+The release target is macOS 13+, Linux glibc distributions and Windows 11, each on amd64/arm64. Browser targets are the latest two major Safari, Chrome, Edge and Firefox versions, with iPhone Safari and Android Chrome as mobile acceptance targets. Automated browser profiles do not establish physical-device support. See the [conformance ledger](docs/evidence/prd-conformance.md) for current evidence and remaining work, including process-tree, platform and final release acceptance. The official static browser client and short-link edge are deployed for prelaunch testing; the Homebrew tap and versioned application release are not yet claimed.
+
+## Continue development
+
+Start with [project memory](context.md), [agent instructions](AGENTS.md), [architecture](docs/architecture.md) and [the constitution](docs/governance/constitution.md). The active [V2 tasks](openspec/changes/implement-prd-v2/tasks.md) and [protected short-invitation tasks](openspec/changes/add-protected-short-invitations/tasks.md) identify unfinished implementation and acceptance work; use the conformance ledger above for evidence rather than inferring completion from checked-in code.
+
+The [V3 PRD](docs/evidence/TailMouse_PRD_v3.zh-CN.md), [V4 PRD draft](docs/evidence/TailMouse_PRD_v4.zh-CN.md) and [V4 scope decision](docs/decisions/2026-006-v4-remote-work-direction.md) preserve the next product direction. V4's native receiver, file sharing and named loopback TCP forwarding are planning, not implemented features. Follow [SDD](docs/development/sdd.md) to review and accept the corresponding OpenSpec change before implementing them. V4 inherits V3 Native rather than introducing a second native client.
 
 ## Build and try locally
 
-Use the exact Node, pnpm and Go versions in [tooling/versions.json](tooling/versions.json), with Corepack available. From this checkout:
+Clone the repository, then use the exact Node, pnpm and Go versions in [tooling/versions.json](tooling/versions.json), with Corepack available:
 
 ```sh
+git clone https://github.com/lotosli/tailmouse.git
+cd tailmouse
+```
+
+Enable Corepack's pnpm shim before building. Ensure that shim precedes any separately installed pnpm on PATH, so nested build commands use the same pinned package manager. From the repository root:
+
+```sh
+corepack enable pnpm
 git submodule update --init -- third_party/tailcat
 corepack pnpm install --frozen-lockfile
-corepack pnpm exec node tools/tailcat-gate.mjs build
 corepack pnpm build
 ```
 
-Native output is `.artifacts/native/tailmouse` (`tailmouse.exe` on Windows); static Web output is `apps/web/dist/`. The build verifies the initialized Tailcat checkout against the recorded gitlink. Do not copy in a separately downloaded Wasm or update the submodule implicitly.
+Native output is `.artifacts/native/tailmouse` (`tailmouse.exe` on Windows); static Web output is `apps/web/dist/`. The build verifies the initialized Tailcat checkout against the recorded gitlink. Do not copy in a separately downloaded Wasm or update the submodule implicitly. Dependencies and build outputs are recreated from tracked inputs; no previous contributor's `.artifacts/`, `node_modules/` or `dist/` directory is required. Local builds and hermetic Worker tests do not require Cloudflare credentials; deployment and opt-in public acceptance are separate operator workflows.
 
 In each macOS/Linux terminal used below, add the built CLI to PATH:
 
@@ -136,6 +149,14 @@ TailMouse does not provide anonymity, file transfer, SSH, a hosted account/contr
 
 ## Development and release checks
 
+After installing dependencies, install the locked Playwright browsers:
+
+```sh
+corepack pnpm exec playwright install
+```
+
+On Linux, use `corepack pnpm exec playwright install --with-deps` to also install the required system libraries. Review the platform and tool prerequisites in [gates and snapshot builds](docs/development/gates.md) before running:
+
 ```sh
 corepack pnpm gate:quick
 corepack pnpm gate
@@ -143,7 +164,7 @@ corepack pnpm tailcat:check
 corepack pnpm release:snapshot
 ```
 
-Install the matching Playwright browsers before browser tests. `gate:quick` is the iteration gate; `gate` additionally runs race, vulnerability and the complete real Go/Wasm impairment suite. Both stop at the first required failure. TypeScript statements/branches/functions/lines and Go statements each retain their configured 80% floor.
+`gate:quick` is the iteration gate; `gate` additionally runs race, vulnerability and the complete real Go/Wasm impairment suite. Both stop at the first required failure. TypeScript statements/branches/functions/lines and Go statements each retain their configured 80% floor.
 
 `release:snapshot` additionally requires the pinned GoReleaser executable. It creates local six-platform archives and checks identity without signing, deleting prior output or publishing. Local per-artifact SBOM, checksum and source-notice verification are also available. Snapshots are not approved releases. See [gates and snapshot builds](docs/development/gates.md) for prerequisites and the separate release/platform acceptance requirements.
 
@@ -151,4 +172,4 @@ Install the matching Playwright browsers before browser tests. `gate:quick` is t
 
 TailMouse-owned source is licensed under [Apache-2.0](LICENSE), with project attribution in [NOTICE](NOTICE). [Third-party notices](THIRD_PARTY_NOTICES.txt) preserve the original licenses and attribution, including the read-only Tailcat submodule. All three files accompany native and static Web distributions. The [source inventory](tooling/third-party-licenses.json) records versions and original-file hashes; `pnpm check:licenses` rejects drift after the build. Dependency changes require reviewing and explicitly updating notices with `pnpm release:notices`.
 
-The repository keeps two application boundaries (`apps/cli`, `apps/web`), language-neutral contracts under `protocol`, and system tests under `tests`. Start with [architecture](docs/architecture.md), [SDD](docs/development/sdd.md), [Tailcat ownership](docs/development/tailcat-submodule.md), [the constitution](docs/governance/constitution.md) and the [product baseline](docs/product-baseline.md). Tailcat source and its recorded gitlink are read-only unless an update is explicitly requested.
+The repository keeps three application boundaries (`apps/cli`, `apps/web`, `apps/link-edge`), language-neutral contracts under `protocol`, and system tests under `tests`. See [Tailcat ownership](docs/development/tailcat-submodule.md) and the [product baseline](docs/product-baseline.md) for dependency and scope constraints. Tailcat source and its recorded gitlink are read-only unless an update is explicitly requested.
