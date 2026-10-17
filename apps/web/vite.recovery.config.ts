@@ -112,6 +112,9 @@ export default defineConfig({
               bytes: source.length,
               sha256: digest(source),
               ...webObjectMetadata(fileName),
+              ...(baseline.files[fileName] === undefined
+                ? {}
+                : { cacheControl: baseline.files[fileName].cacheControl }),
             };
             if (/^(assets|tailcat)\/.*\.(js|css|wasm)$/u.test(fileName)) {
               cacheAssets.push({

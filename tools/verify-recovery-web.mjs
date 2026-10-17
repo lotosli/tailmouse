@@ -15,6 +15,12 @@ const manifest = JSON.parse(
 );
 const assets = new Map();
 for (const [name, metadata] of Object.entries(manifest.files)) {
+  if (name.startsWith('.tailmouse/'))
+    assert.equal(
+      metadata.cacheControl,
+      'no-store',
+      `Preview cache policy: ${name}`,
+    );
   const body = await readFile(resolve(root, name));
   assert.equal(body.length, metadata.bytes, `Length: ${name}`);
   assert.equal(
