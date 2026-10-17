@@ -54,6 +54,10 @@ Runtime, package-manager, direct-dependency, and CI action versions are exact. C
 
 ## 10. Memory and amendments
 
+### 2026-10-17 recovered resource frontend
+
+The owner-authorized resource-sharing PRD adds CLI, Web, Receive and Dev, retaining Escape and using one origin for private trusted-app testing. Its bounded per-tab sessionStorage recovery is a narrow exception to the legacy in-memory rule in section 7. It does not authorize persisted legacy invitations, analytics or preview access to credentials. The accepted onboarding change records provenance and makes no native release claim while the corresponding native source is missing. A recovery browser build is not a substitute for the complete source release gate.
+
 Keep durable facts in `context.md`, architecture choices in `docs/decisions/`, and accepted behavior in OpenSpec. Child `AGENTS.md` files contain only local differences.
 
 An amendment states its motivation, impact, migration, and alternatives and synchronizes affected gates, agent instructions, and specs. Review outcomes at milestones; simplify or delete rules that lack evidence.

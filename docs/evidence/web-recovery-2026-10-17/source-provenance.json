@@ -1,0 +1,160 @@
+{
+  "observed": "2026-10-17",
+  "origin": "https://tailmouse.com",
+  "manifestSHA256": "6ab99ac1aeb6e499c1b3fb00d786a4ac14c444e14cfeeaa7a60aadb18e31503e",
+  "sources": [
+    {
+      "path": "apps/web/src/build.ts",
+      "sha256": "cd2bc94e7728a0474991ba3633a3d485eeb6e27301b191acd83452d1ae26b5b0",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/invitation.ts",
+      "sha256": "22bb8e0d6cc961427932472dc1c7b3acee0ea72a64ec6a2c8dd592e1ad2e89ab",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/protocol/values.ts",
+      "sha256": "ab24a38498ef01af09223693425f1534dc3289376733e1d610359f01088c1a73",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/protocol/terminal.ts",
+      "sha256": "0d20793abe2ddc61ee3bdf080bd90945131e9f7cd8587aa03de94d65853a7cef",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/protocol/game.ts",
+      "sha256": "03eb4441f8f203fa1a4c29bcf3edf2b9565d081f6f8f43396faf72523ebe66f2",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/protocol/frame.ts",
+      "sha256": "c2310fbca94264ec171af2a8f1cc91aef15f37c14ae6ecde0037f2b1df833567",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/escape-prediction.ts",
+      "sha256": "df4c9d44c1670a31f63a9ac8f54f3a96e32a8f293494a28db10a4987b086409e",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/escape.ts",
+      "sha256": "340df463ae6322642456d812fa99e18f48c4e99d4720124b9a5da0979a9a8332",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/leash.ts",
+      "sha256": "2967f5c5de760c79cc632c71f03c8c006e5bddfc112c66e57c862b6d06359933",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/latency.ts",
+      "sha256": "80bc7b4c13506c9c295f62c1c02f1e0661b6d05acca5c1b2fc1b1a5a4ccdfc48",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/transport/tailcat/adapter.ts",
+      "sha256": "de50708d81724853250db1ad557d40094d1b6817a1c7b3bd8b911d0510e78d8b",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/session.ts",
+      "sha256": "606946cb379bb16e9df251d84f718a3d2312721194e42488633cbaa784f7d6de",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/escape-input.ts",
+      "sha256": "86fe2764f4bbac502914fed58a17ea76f010d1e5aedeaea05f2f3c17a23f7013",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/escape-canvas.ts",
+      "sha256": "0861481cebef4ebc352816d0233da5316ec7bab551b1d5751694ab7df2ff9af6",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/escape-view.tsx",
+      "sha256": "ab34b4bef1d63741118be7848c410b7b9642f7ed21b0464d428b7090ad694c16",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/leash-view.tsx",
+      "sha256": "0d35effe5009803b936538f304096d335fbe21ab4c8b3c248a0a573d0d36469a",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/static-cache.ts",
+      "sha256": "0aee1d8acf525cdaf2143c5d81a3f17c991c3af060f2c7dccda0a70fae932654",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/short-invitation.ts",
+      "sha256": "28892dea4a9a234b2d4283088c178eb4aaebe6daac2aa7d0c846c77de9ab7d00",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/app.tsx",
+      "sha256": "d80b0c12840d8646bf0a1fd81c64a42c76d0cfe3b297cce81889fdcaa0a70e74",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/transport/tailcat/resource.ts",
+      "sha256": "b822564d8d2138a73fa84ddcf22e46c30661b48021d0ccbfd9b9c9fa284bd639",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/resources/wire.ts",
+      "sha256": "bd868467efc1e395220f193ab8ac698d226820fa358abadf95ab300affe63ad6",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/resources/deployment.ts",
+      "sha256": "1427011051a702e4bc9b69784806249f49fb7efca534dccfbddb78eb5ba4fdab",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/resources/invitation.ts",
+      "sha256": "05c29145bfd3e05e9ae929398da1a52aa476693576f714642bc043f019314efb",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/resources/session.ts",
+      "sha256": "c229c2174153926223a99af3a71119fa5156656b3a2b63fcc62dea9179c245e1",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/resources/preview.ts",
+      "sha256": "34f0e5f202c31cb4055984d4ee3ffa0f787d0f2b9739b10c6f66e919b3562cbb",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/resources/workspace.tsx",
+      "sha256": "334507118c8fd05fa52d4b1920245fec4cd7276180bd93badf41005c07a7e615",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/main.tsx",
+      "sha256": "e6f3d1f9e33eb7985479a436f3fb40b4bc50eee4adca677dfb596b7c0fb95a08",
+      "sourceMap": "index-Sm7q14NK.js.map"
+    },
+    {
+      "path": "apps/web/src/transport/tailcat/resource-worker.ts",
+      "sha256": "300e6039d40004a60ee18642ea9dcedc25d0dc5e28d4a96adce60e33056f3bec",
+      "sourceMap": "resource-worker-BReaI5nY.js.map"
+    }
+  ],
+  "css": {
+    "source": "assets/index-kPuT16TY.css",
+    "range": [
+      3938,
+      8534
+    ]
+  },
+  "unrecovered": [
+    "native resource source",
+    "resource Go/Wasm bridge source",
+    "native acceptance tests",
+    "native release binaries"
+  ]
+}

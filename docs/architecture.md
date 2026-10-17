@@ -1,5 +1,9 @@
 # TailMouse code architecture
 
+## Resource browser recovery (2026-10-17)
+
+The accepted `improve-resource-onboarding` change restores the deployed resource browser under `apps/web/src/resources` and its Worker adapter under `src/transport/tailcat`. The existing native tree is still the legacy implementation; corresponding resource native and Go/Wasm sources are missing. The explicit recovery Vite build verifies immutable deployed artifacts and reports their provenance. It is separate from the normal source release, which must not publish a mismatched native/browser pair. Resource sessionStorage recovery is bounded to the trusted tab under the resource PRD; legacy invitations retain their original in-memory semantics. See `docs/evidence/web-recovery-2026-10-17/README.md` for the recovery boundary.
+
 ## Repository shape
 
 ```text

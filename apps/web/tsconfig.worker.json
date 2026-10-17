@@ -4,5 +4,6 @@
     "lib": ["ESNext", "WebWorker"],
     "types": []
   },
-  "include": ["worker.ts"]
+  "include": ["worker.ts", "src/transport/tailcat/resource-worker.ts"],
+  "exclude": []
 }

@@ -1,0 +1,525 @@
+{
+  "schemaVersion": 2,
+  "version": "0.0.0-dev.13440a5c97b1.dirty",
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "protocols": {
+    "escape": 1,
+    "leash": 2,
+    "resource": 2
+  },
+  "cacheVersion": "7946b10000c60cf7d2fbad0bf7e8b4b958a8b8e7aa75892643dfca12d127d1ca",
+  "resourceProtocol": {
+    "frontendMajor": 1,
+    "protocolMajor": 2,
+    "wasm": "tailcat/resource-1b459cc6e9acdc96292e5cc44fc58110d1a333a00f6ade6cbaa15349ec86251e.wasm",
+    "contentBootstrap": ".tailmouse/bridge.html",
+    "serviceWorker": ".tailmouse/sw.js",
+    "sourceRevision": "13440a5c97b15fb1a01aafd93f874ee18e0e35b9",
+    "sourceSha256": "5c4c0109ac7851cd5b1b6cedaa8acff0f724f2b696e0e868f87bbd7638009b87"
+  },
+  "dependencies": {
+    "npm": [
+      {
+        "name": "@xterm/addon-fit",
+        "version": "0.11.0"
+      },
+      {
+        "name": "@xterm/xterm",
+        "version": "6.0.0"
+      },
+      {
+        "name": "cborg",
+        "version": "6.1.2"
+      },
+      {
+        "name": "preact",
+        "version": "10.29.8"
+      },
+      {
+        "name": "vite",
+        "version": "8.2.2"
+      }
+    ],
+    "resourceWasm": {
+      "main": {
+        "name": "tailmouse",
+        "version": "v0.0.0-20260909081749-13440a5c97b1+dirty",
+        "revision": "13440a5c97b15fb1a01aafd93f874ee18e0e35b9"
+      },
+      "modules": [
+        {
+          "name": "github.com/akutz/memconn",
+          "version": "v0.1.0",
+          "sum": "h1:NawI0TORU4hcOMsMr11g7vwlCdkYeLKXBcxWu2W/P8A="
+        },
+        {
+          "name": "github.com/coder/websocket",
+          "version": "v1.8.15",
+          "sum": "h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA="
+        },
+        {
+          "name": "github.com/fxamacker/cbor/v2",
+          "version": "v2.9.3",
+          "sum": "h1:oQBnFATpNdY8gJHTndDDv5Xl4QqNaz51G5LLEPhng3Q="
+        },
+        {
+          "name": "github.com/gaissmai/bart",
+          "version": "v0.29.0",
+          "sum": "h1:wO6HGE8g9YE0Wm0bCpYxwRzfQ4+fbJKOhL64e5ACGCI="
+        },
+        {
+          "name": "github.com/go-json-experiment/json",
+          "version": "v0.0.0-20260820222146-c27c302e5fc3",
+          "sum": "h1:UADEEmDKgfXbtnGJZ97beY5XLo9ZechG1nlU4KnRrkE="
+        },
+        {
+          "name": "github.com/golang/groupcache",
+          "version": "v0.0.0-20241129210726-2c02b8208cf8",
+          "sum": "h1:f+oWsMOmNPc8JmEHVZIycC7hBoQxHH9pNKQORJNozsQ="
+        },
+        {
+          "name": "github.com/google/btree",
+          "version": "v1.1.3",
+          "sum": "h1:CVpQJjYgC4VbzxeGVHfvZrv1ctoYCAI8vbl07Fcxlyg="
+        },
+        {
+          "name": "github.com/klauspost/compress",
+          "version": "v1.20.0",
+          "sum": "h1:a3C1ke2ohxFymNlb2HWAHjDeKCI90scRskErZkR0ezA="
+        },
+        {
+          "name": "github.com/tailscale/wireguard-go",
+          "version": "v0.0.0-20260924224943-0a83b87f7908",
+          "sum": "h1:+nNMmeMU/JoRY1Y4iWrCWYHMOMQhFpx9NKBAb+DH7So="
+        },
+        {
+          "name": "github.com/x448/float16",
+          "version": "v0.8.4",
+          "sum": "h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM="
+        },
+        {
+          "name": "go4.org/mem",
+          "version": "v0.0.0-20240501181205-ae6ca9944745",
+          "sum": "h1:Tl++JLUCe4sxGu8cTpDzRLd3tN7US4hOxG5YpKCzkek="
+        },
+        {
+          "name": "go4.org/netipx",
+          "version": "v0.0.0-20260823151212-3075585bcbeb",
+          "sum": "h1:XBM4hvfwGAttkkiTIFfeigdfcL1xIfdKXqFdgiHGtDs="
+        },
+        {
+          "name": "golang.org/x/crypto",
+          "version": "v0.57.0",
+          "sum": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M="
+        },
+        {
+          "name": "golang.org/x/exp",
+          "version": "v0.0.0-20260908205506-85c1c2202aba",
+          "sum": "h1:Ck8QetSgk912qxWLMCKxd0in+aiyBQyDSMae6e/xmpU="
+        },
+        {
+          "name": "golang.org/x/net",
+          "version": "v0.59.0",
+          "sum": "h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues="
+        },
+        {
+          "name": "golang.org/x/sys",
+          "version": "v0.48.0",
+          "sum": "h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo="
+        },
+        {
+          "name": "golang.org/x/term",
+          "version": "v0.46.0",
+          "sum": "h1:3+OXuTbaKDgwk8jTi3aSLHRlmWqHEUDUtxnbFigO4YE="
+        },
+        {
+          "name": "golang.org/x/text",
+          "version": "v0.42.0",
+          "sum": "h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI="
+        },
+        {
+          "name": "golang.org/x/time",
+          "version": "v0.16.0",
+          "sum": "h1:vMb6ptszcQMkcwiRTAuNNU50gom6++Q/6gY2hDM6VDE="
+        },
+        {
+          "name": "gvisor.dev/gvisor",
+          "version": "v0.0.0-20260915211658-a6f909f08a72",
+          "sum": "h1:EytKYr5WrVs+Aah/0xDO8ZAZZzS/iTEVC8ln4ipDbL0="
+        },
+        {
+          "name": "tailscale.com",
+          "version": "v1.103.0-pre.0.20260929142145-a0e471a35b8f",
+          "sum": "h1:a9y2RcAkvFGRsyloa8maBtoKmCc+TwwJpxbaWjrrt0I="
+        }
+      ],
+      "sourceSha256": "5c4c0109ac7851cd5b1b6cedaa8acff0f724f2b696e0e868f87bbd7638009b87",
+      "tailcat": {
+        "name": "github.com/tailscale/tailcat",
+        "version": "v0.7.1-0.20261007201807-52fbad323e9d",
+        "revision": "52fbad323e9d352f1febb623e0975368e9a8cbdd"
+      }
+    },
+    "wasm": {
+      "main": {
+        "name": "github.com/tailscale/tailcat",
+        "version": "v0.7.1-0.20261007201807-52fbad323e9d",
+        "revision": "52fbad323e9d352f1febb623e0975368e9a8cbdd"
+      },
+      "modules": [
+        {
+          "name": "github.com/akutz/memconn",
+          "version": "v0.1.0",
+          "sum": "h1:NawI0TORU4hcOMsMr11g7vwlCdkYeLKXBcxWu2W/P8A="
+        },
+        {
+          "name": "github.com/coder/websocket",
+          "version": "v1.8.15",
+          "sum": "h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA="
+        },
+        {
+          "name": "github.com/fxamacker/cbor/v2",
+          "version": "v2.9.3",
+          "sum": "h1:oQBnFATpNdY8gJHTndDDv5Xl4QqNaz51G5LLEPhng3Q="
+        },
+        {
+          "name": "github.com/gaissmai/bart",
+          "version": "v0.29.0",
+          "sum": "h1:wO6HGE8g9YE0Wm0bCpYxwRzfQ4+fbJKOhL64e5ACGCI="
+        },
+        {
+          "name": "github.com/go-json-experiment/json",
+          "version": "v0.0.0-20260820222146-c27c302e5fc3",
+          "sum": "h1:UADEEmDKgfXbtnGJZ97beY5XLo9ZechG1nlU4KnRrkE="
+        },
+        {
+          "name": "github.com/golang/groupcache",
+          "version": "v0.0.0-20241129210726-2c02b8208cf8",
+          "sum": "h1:f+oWsMOmNPc8JmEHVZIycC7hBoQxHH9pNKQORJNozsQ="
+        },
+        {
+          "name": "github.com/google/btree",
+          "version": "v1.1.3",
+          "sum": "h1:CVpQJjYgC4VbzxeGVHfvZrv1ctoYCAI8vbl07Fcxlyg="
+        },
+        {
+          "name": "github.com/klauspost/compress",
+          "version": "v1.20.0",
+          "sum": "h1:a3C1ke2ohxFymNlb2HWAHjDeKCI90scRskErZkR0ezA="
+        },
+        {
+          "name": "github.com/tailscale/wireguard-go",
+          "version": "v0.0.0-20260924224943-0a83b87f7908",
+          "sum": "h1:+nNMmeMU/JoRY1Y4iWrCWYHMOMQhFpx9NKBAb+DH7So="
+        },
+        {
+          "name": "github.com/x448/float16",
+          "version": "v0.8.4",
+          "sum": "h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM="
+        },
+        {
+          "name": "go4.org/mem",
+          "version": "v0.0.0-20240501181205-ae6ca9944745",
+          "sum": "h1:Tl++JLUCe4sxGu8cTpDzRLd3tN7US4hOxG5YpKCzkek="
+        },
+        {
+          "name": "go4.org/netipx",
+          "version": "v0.0.0-20260823151212-3075585bcbeb",
+          "sum": "h1:XBM4hvfwGAttkkiTIFfeigdfcL1xIfdKXqFdgiHGtDs="
+        },
+        {
+          "name": "golang.org/x/crypto",
+          "version": "v0.57.0",
+          "sum": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M="
+        },
+        {
+          "name": "golang.org/x/exp",
+          "version": "v0.0.0-20260908205506-85c1c2202aba",
+          "sum": "h1:Ck8QetSgk912qxWLMCKxd0in+aiyBQyDSMae6e/xmpU="
+        },
+        {
+          "name": "golang.org/x/net",
+          "version": "v0.59.0",
+          "sum": "h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues="
+        },
+        {
+          "name": "golang.org/x/sys",
+          "version": "v0.48.0",
+          "sum": "h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo="
+        },
+        {
+          "name": "golang.org/x/term",
+          "version": "v0.46.0",
+          "sum": "h1:3+OXuTbaKDgwk8jTi3aSLHRlmWqHEUDUtxnbFigO4YE="
+        },
+        {
+          "name": "golang.org/x/text",
+          "version": "v0.42.0",
+          "sum": "h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI="
+        },
+        {
+          "name": "golang.org/x/time",
+          "version": "v0.16.0",
+          "sum": "h1:vMb6ptszcQMkcwiRTAuNNU50gom6++Q/6gY2hDM6VDE="
+        },
+        {
+          "name": "gvisor.dev/gvisor",
+          "version": "v0.0.0-20260915211658-a6f909f08a72",
+          "sum": "h1:EytKYr5WrVs+Aah/0xDO8ZAZZzS/iTEVC8ln4ipDbL0="
+        },
+        {
+          "name": "tailscale.com",
+          "version": "v1.103.0-pre.0.20260929142145-a0e471a35b8f",
+          "sum": "h1:a9y2RcAkvFGRsyloa8maBtoKmCc+TwwJpxbaWjrrt0I="
+        }
+      ]
+    }
+  },
+  "toolchains": {
+    "go": "go1.27.2",
+    "vite": "8.2.2",
+    "rolldown": "1.2.6"
+  },
+  "staticHosting": {
+    "applicationBackend": false,
+    "manifestObject": {
+      "path": "web-manifest.json",
+      "metadata": {
+        "contentType": "application/json",
+        "cacheControl": "no-cache"
+      }
+    },
+    "rootRoute": {
+      "requestPath": "/",
+      "objectPath": "index.html",
+      "action": "internal-rewrite",
+      "clearQuery": true
+    },
+    "unknownPathStatus": 404,
+    "requiredHeaders": {
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss:; frame-src https:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+      "Referrer-Policy": "no-referrer",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(self), gyroscope=(self), magnetometer=()",
+      "X-Content-Type-Options": "nosniff"
+    }
+  },
+  "contentHosting": {
+    "applicationBackend": false,
+    "allowedPrefix": "/.tailmouse/",
+    "unknownPathStatus": 404,
+    "serviceWorker": {
+      "path": "/.tailmouse/sw.js",
+      "scope": "/",
+      "requiredHeaders": {
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    "frameAncestors": "trusted-session-wildcard-from-config",
+    "requiredHeaders": {
+      "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; frame-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "no-store"
+    }
+  },
+  "files": {
+    "manifest.webmanifest": {
+      "bytes": 263,
+      "sha256": "c00dd49351860e0ae33ad013d0c8af3868e58c510a10729294672584dc02f47d",
+      "contentType": "application/manifest+json",
+      "cacheControl": "no-cache"
+    },
+    ".tailmouse/bridge.html": {
+      "bytes": 481,
+      "sha256": "ce1b6011edf5fe38194375a72ac422e90268dfa4b55b9dc5857c4e0832dd528c",
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    ".tailmouse/bridge.js": {
+      "bytes": 5828,
+      "sha256": "de33d8f0c3b85ce4524ccddd0822abdf3bc8b1885ba011da82b8048149de96ea",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    ".tailmouse/content.css": {
+      "bytes": 162,
+      "sha256": "00215c10399e9ca30c9f634815f116943ecbfddd0d9535e235fbe79f1f4fd797",
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    ".tailmouse/shim.js": {
+      "bytes": 6476,
+      "sha256": "2c46841986544d50453112df3208b6f2e61d7b37ad8ed773d63798faebac68bc",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    ".tailmouse/sw.js": {
+      "bytes": 6552,
+      "sha256": "babddc84b445749507ed2673cfe2b58986439c5ae15ee313fb81aab698e5424e",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    "LICENSE": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "NOTICE": {
+      "bytes": 197,
+      "sha256": "d06acc407b129cf43d516d2571544fa5f0f8d4c5dde5cebc4fe78599790d0272",
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "THIRD_PARTY_NOTICES.txt": {
+      "bytes": 396815,
+      "sha256": "7aecea89161e637aa7687c0d137d62a5e2d072802d2dc01a1d0ad849cabcd073",
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "assets/index-Sm7q14NK.js": {
+      "bytes": 493830,
+      "sha256": "d05cb3651194bd61867dafea168161355d23decbdbde25da5862b925ac311e74",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "assets/index-Sm7q14NK.js.gz": {
+      "bytes": 134812,
+      "sha256": "df4ee7412bd76409d7e40ebbcc5489aa71d092eb55cf9741a1f55b7e667a4f79",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "assets/index-Sm7q14NK.js.br": {
+      "bytes": 123756,
+      "sha256": "1fcc865ebec0f5d24face1b86518068d63f2f72df261e7c8d7419a0836dcb0b3",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "assets/index-Sm7q14NK.js.map": {
+      "bytes": 1274819,
+      "sha256": "c0e543cae1bb5ad7fa55190be5266d6ddf044dfd6d632c8f3e63cbce5717725e",
+      "contentType": "application/json",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "assets/index-kPuT16TY.css": {
+      "bytes": 15396,
+      "sha256": "a8a39bec119d98f598709cff5dccc92a9b93f93278d6a7a5d6f617514bf53d0b",
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "assets/index-kPuT16TY.css.gz": {
+      "bytes": 4098,
+      "sha256": "37d5fd15c7841b902f1b7b197bc83705d5e47c1004b79c2ba3f12881132310b6",
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "assets/index-kPuT16TY.css.br": {
+      "bytes": 3809,
+      "sha256": "0989da36d42f8b0e1232b41f6ba13b3fad03f031e483eb7fa105ed52d2cc4118",
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "assets/resource-worker-BReaI5nY.js": {
+      "bytes": 1420,
+      "sha256": "0354d407039df58e29caf44e23e7cc5589f430d02903bdcd1cb6a43454b90eec",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "assets/resource-worker-BReaI5nY.js.gz": {
+      "bytes": 718,
+      "sha256": "8613dd59480c389a82f5d6b6e7c96f99b03dec520ad66ad0fa505ecd492b5404",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "assets/resource-worker-BReaI5nY.js.br": {
+      "bytes": 655,
+      "sha256": "316831cda555bacf39d9102461cd8cc8e73d3ae7c886694dbd75e492f76b6bab",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "assets/resource-worker-BReaI5nY.js.map": {
+      "bytes": 4964,
+      "sha256": "bc2cfe10a78a5ca7d1dfd8b06a76dedcc96b09e628f1c1c02aecf517b3daeac0",
+      "contentType": "application/json",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "index.html": {
+      "bytes": 551,
+      "sha256": "1461b85f6248c23424ea165bb6b6a1afd72e60e6f791fb78bebd3f6f41161d08",
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "tailcat/resource-1b459cc6e9acdc96292e5cc44fc58110d1a333a00f6ade6cbaa15349ec86251e.wasm": {
+      "bytes": 26656976,
+      "sha256": "1b459cc6e9acdc96292e5cc44fc58110d1a333a00f6ade6cbaa15349ec86251e",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "tailcat/resource-1b459cc6e9acdc96292e5cc44fc58110d1a333a00f6ade6cbaa15349ec86251e.wasm.gz": {
+      "bytes": 6202013,
+      "sha256": "9a2990ff62d012c6a841ae3d2a522cf0876f413650a2374dae8e8c6e31f74545",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "tailcat/resource-1b459cc6e9acdc96292e5cc44fc58110d1a333a00f6ade6cbaa15349ec86251e.wasm.br": {
+      "bytes": 5007913,
+      "sha256": "814d1b12dbb9aa0f2f63cd2313b3abc7e36471e1999b29fe8649cefabd73a591",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "tailcat/tailcat-web-eac28adc6b2c97ee8850550aa0400b56791751bb9fa9ea1e19abd0b32abc747b.wasm": {
+      "bytes": 26955586,
+      "sha256": "eac28adc6b2c97ee8850550aa0400b56791751bb9fa9ea1e19abd0b32abc747b",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "tailcat/tailcat-web-eac28adc6b2c97ee8850550aa0400b56791751bb9fa9ea1e19abd0b32abc747b.wasm.gz": {
+      "bytes": 6260393,
+      "sha256": "17b35f216178080c7053ce0b708e0d31ebd4a9534fa2edc5289dbece636dcaae",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "tailcat/tailcat-web-eac28adc6b2c97ee8850550aa0400b56791751bb9fa9ea1e19abd0b32abc747b.wasm.br": {
+      "bytes": 5040240,
+      "sha256": "2fae922f73a744002db2d8bf60e6c8d1ec8e6b1a7ca7b77e1b7c9f073f1e9347",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js": {
+      "bytes": 16992,
+      "sha256": "0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz": {
+      "bytes": 4348,
+      "sha256": "be3987f4a9c27c5a94ba36ae399a54d209955773e617932c16ff928565003914",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.br": {
+      "bytes": 4132,
+      "sha256": "08f3ff652247bca159df65b1b9291996f751e35844c21edb8e2eba9cefec12fd",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "service-worker.js": {
+      "bytes": 2904,
+      "sha256": "eecc8985f8a3788cb853f6572707ac4c22fefb7848c530ccb6e2964d5a0e4920",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "no-cache"
+    }
+  }
+}

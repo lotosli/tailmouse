@@ -31,6 +31,10 @@ const identity = buildIdentity(
   resolve(import.meta.dirname, '../..'),
   process.env.TAILMOUSE_BUILD_VERSION,
 );
+if (!Object.hasOwn(identity.protocols, 'resource'))
+  throw new Error(
+    'Resource-sharing source release inputs are missing. Restore the native/resource build pipeline before a full release; use pnpm web:recovery-build for the explicit browser-only recovery candidate.',
+  );
 const versions = JSON.parse(
   readFileSync(
     resolve(import.meta.dirname, '../../tooling/versions.json'),
