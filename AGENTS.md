@@ -25,6 +25,8 @@ Read `context.md`, `docs/governance/constitution.md`, `docs/architecture.md`, an
 
 ## Durable project memory
 
+- Before an environment publication/switch or a substantive handoff, preserve authorized work in a source commit on the task branch and verify that the remote branch contains it. Keep unfinished work explicitly marked as WIP; a checkpoint is not a passing gate or release. Do not force-push, include credentials, or rely on an archive stored only inside the same cloud environment.
+- On startup, compare the actual source revision and available files with the saved environment instructions. If they differ, preserve both states and investigate; do not reset, clean, or republish the current directory to make the instructions appear consistent.
 - Maintain the chain evidence → assumptions → options → decision → implementation → outcome review.
 - Update `context.md` after a substantive decision or verified external change. Record architecture decisions under `docs/decisions/`.
 - Mark claims `observed`, `reported`, `inferred`, or `unknown`; include a verification date for volatile facts.

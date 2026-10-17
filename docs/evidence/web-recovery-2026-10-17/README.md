@@ -2,7 +2,7 @@
 
 ## Observed baseline
 
-On 2026-10-17 the executor contained clean legacy commit `13440a5c97b15fb1a01aafd93f874ee18e0e35b9`, with no prior uncommitted resource implementation, stash, unreachable Git objects, release packages or attached task artifacts. GitHub had only `main`, no pull requests and no Actions artifacts. This establishes the checked locations, not proof that every other machine has lost its copy. The owner has been asked for a backup/workspace location.
+On 2026-10-17 the executor contained clean legacy commit `13440a5c97b15fb1a01aafd93f874ee18e0e35b9`, with no prior uncommitted resource implementation, stash, unreachable Git objects, release packages or attached task artifacts. GitHub had only `main`, no pull requests and no Actions artifacts. This establishes the checked locations, not proof that every other machine has lost its copy. The subsequent [source recovery investigation](source-recovery.md) records the additional remote searches, the different running/published environment version identifiers, and the still-inaccessible snapshot/history recovery path.
 
 The public deployment remained available. Its manifest SHA-256 is `6ab99ac1aeb6e499c1b3fb00d786a4ac14c444e14cfeeaa7a60aadb18e31503e`; its reported version is `0.0.0-dev.13440a5c97b1.dirty`, with Tailcat `52fbad323e9d352f1febb623e0975368e9a8cbdd` and resource protocol 2. These describe that deployed binary, not the old native tree.
 
