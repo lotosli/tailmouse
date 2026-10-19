@@ -1,0 +1,11 @@
+ok  	tailmouse/apps/cli/cmd/tailmouse	32.437s	coverage: 76.6% of statements
+ok  	tailmouse/apps/cli/internal/config	1.035s	coverage: 97.4% of statements
+ok  	tailmouse/apps/cli/internal/escape	5.865s	coverage: 99.6% of statements
+ok  	tailmouse/apps/cli/internal/flow	1.019s	coverage: 92.2% of statements
+ok  	tailmouse/apps/cli/internal/invitation	1.347s	coverage: 94.4% of statements
+ok  	tailmouse/apps/cli/internal/leash	1.323s	coverage: 94.6% of statements
+ok  	tailmouse/apps/cli/internal/platform/pty	12.859s	coverage: 84.5% of statements
+ok  	tailmouse/apps/cli/internal/protocol	2.191s	coverage: 94.7% of statements
+ok  	tailmouse/apps/cli/internal/session	1.938s	coverage: 89.6% of statements
+ok  	tailmouse/apps/cli/internal/share	1.186s	coverage: 65.1% of statements
+ok  	tailmouse/apps/cli/internal/transport/tailcat	3.755s	coverage: 79.6% of statements
