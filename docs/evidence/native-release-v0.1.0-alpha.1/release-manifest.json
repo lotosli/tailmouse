@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0-alpha.1",
+  "tag": "v0.1.0-alpha.1",
+  "sourceRevision": "a93a5883d5eb2654cce63f8777bc9a0d3e622188",
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "protocols": {
+    "escape": 1,
+    "leash": 2,
+    "resource": 2
+  },
+  "toolchains": {
+    "cyclonedx": "0.33.1",
+    "go": "1.27.2",
+    "goreleaser": "2.18.0",
+    "node": "26.8.1",
+    "pnpm": "11.25.0"
+  },
+  "applicationUnchangedFrom": "1d770553b3f20ebcdb9165d29838290885040613",
+  "nativeArchiveRuntimeVerified": [
+    "linux/amd64"
+  ],
+  "limits": [
+    "Preview binaries are unsigned.",
+    "Windows Receive and Dev with Receive are unsupported.",
+    "macOS Receive requires APFS.",
+    "Final Windows Worker fixture confirmation and browser-to-ConPTY end-to-end acceptance remain unverified.",
+    "Physical devices and runtime execution of every cross-built archive remain unverified.",
+    "The hosted test UI and previews share one origin for trusted applications."
+  ],
+  "files": [
+    {
+      "name": "tailmouse-config.json",
+      "bytes": 175,
+      "sha256": "318241bebc934100350a22a54c51cf2aa4ea8535ffd7f27725ed56d50b345e58"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_darwin_amd64.tar.gz",
+      "bytes": 8787314,
+      "sha256": "0611e6eabbf1d6b5414d437c6f489037663b9dcc67e10f024002dab30b72a70c"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_darwin_amd64.tar.gz.cdx.json",
+      "bytes": 23342,
+      "sha256": "dbe5bd43670826cea637dc63a97aee1fb767b4ada7b6fa2f277e5abaa842921c"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_darwin_arm64.tar.gz",
+      "bytes": 8183886,
+      "sha256": "6be5e831ab4c50961499ef691e5d8b801280cc69b23aae270dd9855233b370c1"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_darwin_arm64.tar.gz.cdx.json",
+      "bytes": 23342,
+      "sha256": "b984602480f8e66c7f0053e455f3baab7d4c80fdf08ce6cf4634634bba42181a"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_linux_amd64.tar.gz",
+      "bytes": 8919475,
+      "sha256": "f383c916aaa300512d2de3dcc676adf3c9edb73566e7b0b7d81110dda66322cf"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_linux_amd64.tar.gz.cdx.json",
+      "bytes": 25645,
+      "sha256": "8d6e1c188fc6fb765b7f26d392bebfdfda32e40cc463a1b27be8c10f84a98bc1"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_linux_arm64.tar.gz",
+      "bytes": 8120902,
+      "sha256": "e81921ed0f8614841b3b376421cdd8d2b6a6599cf4bd2a14e40042a6fbb5fb90"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_linux_arm64.tar.gz.cdx.json",
+      "bytes": 25645,
+      "sha256": "2e59b0defcd2ca546a87876f32146b55de71ad15d43dcbfb2e6f9d09fa022136"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_windows_amd64.zip",
+      "bytes": 8918173,
+      "sha256": "c2acfea39959acabec89834ac1cb8a80d4e4b9484c7714b4446bd7025148e3bc"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_windows_amd64.zip.cdx.json",
+      "bytes": 24672,
+      "sha256": "90e97be5e1ac4c4e7479c8d04f945a02ee7185cb79a4a816cdddec5da40c238a"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_windows_arm64.zip",
+      "bytes": 8020805,
+      "sha256": "9e2acbd110d2c4f0741f7e0bf9bac21382297ad8d5ddce3be5817dfe69797730"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.1_windows_arm64.zip.cdx.json",
+      "bytes": 24672,
+      "sha256": "978bd8a50f3a543e74eb6469a0f0c7e2d4b2437ef7346fdcfb301f2dfb4f3cbe"
+    }
+  ]
+}
