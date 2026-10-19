@@ -115,7 +115,13 @@ export default {
       headers.set('Content-Type', 'text/javascript; charset=utf-8');
     if (rawPath.endsWith('.css'))
       headers.set('Content-Type', 'text/css; charset=utf-8');
-    if (rawPath === '/LICENSE' || rawPath === '/NOTICE')
+    if (rawPath.endsWith('.html'))
+      headers.set('Content-Type', 'text/html; charset=utf-8');
+    if (
+      rawPath.endsWith('.txt') ||
+      rawPath === '/LICENSE' ||
+      rawPath === '/NOTICE'
+    )
       headers.set('Content-Type', 'text/plain; charset=utf-8');
     if (compressed !== undefined && asset.ok)
       headers.set('Content-Encoding', compressed === 'br' ? 'br' : 'gzip');

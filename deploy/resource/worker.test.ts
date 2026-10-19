@@ -172,17 +172,22 @@ await test('Wasm negotiation respects refusal, quality, raw decoding and HEAD', 
   assert.equal(missing.headers.get('Content-Encoding'), null);
 });
 
-await test('direct precompressed script and stylesheet objects retain their manifest MIME and encoding', async () => {
+await test('static objects retain their manifest MIME and encoding despite provider defaults', async () => {
   for (const [path, type, encoding] of [
     ['/assets/app-12345678.js.br', 'text/javascript; charset=utf-8', 'br'],
     ['/assets/app-12345678.css.gz', 'text/css; charset=utf-8', 'gzip'],
     ['/LICENSE', 'text/plain; charset=utf-8', null],
     ['/NOTICE', 'text/plain; charset=utf-8', null],
+    ['/THIRD_PARTY_NOTICES.txt', 'text/plain; charset=utf-8', null],
+    ['/index.html', 'text/html; charset=utf-8', null],
+    ['/.tailmouse/bridge.html', 'text/html; charset=utf-8', null],
   ]) {
     const response = await worker.fetch(new Request(origin + path), {
       ASSETS: {
         async fetch() {
-          return new Response('compressed fixture');
+          return new Response('static fixture', {
+            headers: { 'Content-Type': type!.split(';')[0]! },
+          });
         },
       },
     });

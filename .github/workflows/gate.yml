@@ -48,6 +48,9 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or ($go_arch -join ',') -ne 'arm64,arm64') {
             throw 'Windows ARM64 requires native ARM64 Go and test binaries.'
           }
+          # The image's GCC targets x64. Match our CGO-free ARM64 release;
+          # native Go tests still run, including upstream C API core tests.
+          'CGO_ENABLED=0' >> $env:GITHUB_ENV
       - run: pnpm install --frozen-lockfile
       - if: runner.os == 'Linux'
         run: pnpm exec playwright install --with-deps
