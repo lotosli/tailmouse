@@ -7,6 +7,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -198,7 +199,9 @@ await test('project notices reject missing, changed, excessive and linked source
 });
 
 await test('notice command explicitly updates sources and fails closed on drift or a missing grant', (t) => {
-  const fixture = mkdtempSync(resolve(tmpdir(), 'tailmouse-notice-command-'));
+  const fixture = realpathSync(
+    mkdtempSync(resolve(tmpdir(), 'tailmouse-notice-command-')),
+  );
   t.after(() => rmSync(fixture, { recursive: true, force: true }));
   const put = (name: string, source: string | Uint8Array) => {
     const path = resolve(fixture, name);

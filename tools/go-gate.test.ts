@@ -77,7 +77,7 @@ await test('only Windows ARM64 reports its unsupported race detector and still c
     assert.equal(result.status, 0, result.stderr);
     assert.match(
       result.stdout,
-      /Go 1\.27\.1 does not support the race detector on windows\/arm64/,
+      /Go 1\.27\.2 does not support the race detector on windows\/arm64/,
     );
     assert.equal(
       commands.some((command) => command.includes('-race')),
