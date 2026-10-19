@@ -24,6 +24,7 @@ import (
 	"tailmouse/apps/cli/internal/invitation"
 	"tailmouse/apps/cli/internal/protocol"
 	"tailmouse/apps/cli/internal/session"
+	tailcattransport "tailmouse/apps/cli/internal/transport/tailcat"
 )
 
 const leashEcho = "q\x03\x1b[A🐈"
@@ -730,4 +731,40 @@ func (writer *failFinalLeashDiagnostic) Write(data []byte) (int, error) {
 		return 0, errors.New("synthetic private diagnostic detail")
 	}
 	return len(data), nil
+}
+
+func TestLeashCLIBoundedDrainPreservesChildExit(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		err  error
+		code int
+	}{
+		{"bounded drain", errors.Join(tailcattransport.ErrDrain, context.DeadlineExceeded), 37},
+		{"unexpected drain failure", tailcattransport.ErrDrain, exitTransport},
+		{"drain and close failure", errors.Join(tailcattransport.ErrDrain, context.DeadlineExceeded, tailcattransport.ErrClose), exitTransport},
+		{"unclassified deadline", context.DeadlineExceeded, exitTransport},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			input, writer, err := os.Pipe()
+			if err != nil {
+				t.Fatal(err)
+			}
+			var diagnostic bytes.Buffer
+			fixture := startLeashCLIWithInput(t, "wait", input, writer, &diagnostic, "--start-on=connect", "--json")
+			fixture.transport.mu.Lock()
+			fixture.transport.closeErr = test.err
+			fixture.transport.mu.Unlock()
+			browser := fixture.connect(t)
+			waitLeashRunning(t, fixture, browser, 1)
+			if _, err := fixture.input.Write([]byte("x")); err != nil {
+				t.Fatal(err)
+			}
+			closeLeashBrowser(t, fixture, browser)
+			fixture.result(t, test.code)
+			warned := strings.Contains(diagnostic.String(), `"reason":"transport_drain_timeout"`)
+			if warned != (test.code == 37) {
+				t.Fatal("bounded drain warning was omitted or disguised a close failure")
+			}
+		})
+	}
 }
