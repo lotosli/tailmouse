@@ -6,7 +6,7 @@ Share a terminal, preview a local web app, and receive files through one browser
 
 ## Download and run
 
-**Publication pending:** the six v0.1.0-alpha.1 packages are built and verified, but GitHub asset upload is blocked by the cloud environment's upload credentials. The release is still a draft; the download links below become available after publication. The repository currently remains private, so downloads require repository access.
+**Publication pending:** the six v0.1.0-alpha.1 packages are built and verified. Public downloads are planned, but repository visibility and release uploads are still blocked by GitHub permissions. The repository remains private and the release remains a draft; the links below will work after publication.
 
 **v0.1.0-alpha.1 is a preview release.** Choose the archive for the machine that will host the session. Guests do not download anything.
 
