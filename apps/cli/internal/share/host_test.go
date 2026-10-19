@@ -4,14 +4,17 @@ import (
 	"context"
 	"io"
 	"net"
+	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
 
 func testHost(t *testing.T, manual bool) (*Host, string) {
 	t.Helper()
-	o := Options{Command: "receive", Directory: t.TempDir(), Cwd: t.TempDir(), MaxFile: 1024, MaxTotal: 2048, MaxFiles: 100, MaxClients: 2, TTL: time.Minute, Approval: "auto", FrontendBase: "https://ui.example.com", ContentBase: "https://preview.example.net"}
+	o := Options{Command: "web", Cwd: t.TempDir(), MaxClients: 2, TTL: time.Minute, Approval: "auto", FrontendBase: "https://ui.example.com", ContentBase: "https://preview.example.net"}
 	if manual {
 		o.Approval = "manual"
 	}
@@ -19,6 +22,11 @@ func testHost(t *testing.T, manual bool) (*Host, string) {
 	if e != nil {
 		t.Fatal(e)
 	}
+	// Policy and fake-clock heartbeat tests need a declared resource without
+	// depending on a POSIX filesystem or real network I/O inside synctest.
+	transport := &http.Transport{}
+	transport.RegisterProtocol("http", hostTestHTTP{})
+	h.web = &WebResource{target: &url.URL{Scheme: "http", Host: "127.0.0.1:8080"}, origin: "http://127.0.0.1:8080", transport: transport, jars: map[string]http.CookieJar{}, available: true}
 	h.Ready()
 	t.Cleanup(func() {
 		if e := h.Close(); e != nil {
@@ -26,6 +34,12 @@ func testHost(t *testing.T, manual bool) (*Host, string) {
 		}
 	})
 	return h, token
+}
+
+type hostTestHTTP struct{}
+
+func (hostTestHTTP) RoundTrip(request *http.Request) (*http.Response, error) {
+	return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": {"text/plain"}}, Body: io.NopCloser(strings.NewReader("abc")), ContentLength: 3, Request: request}, nil
 }
 func openHost(t *testing.T, h *Host, peer string, hello Hello) net.Conn {
 	t.Helper()
@@ -64,7 +78,7 @@ func welcomeHost(t *testing.T, h *Host, token, peer string) (net.Conn, Welcome) 
 func TestHostGrantsBindPeerResourceAndGeneration(t *testing.T) {
 	h, token := testHost(t, false)
 	_, welcome := welcomeHost(t, h, token, "peer-a")
-	grant := Hello{Type: "hello", Version: 2, Session: h.ID(), Channel: "upload", Resource: "receive", Member: welcome.Member, Grant: welcome.Grant}
+	grant := Hello{Type: "hello", Version: 2, Session: h.ID(), Channel: "http", Resource: "web", Member: welcome.Member, Grant: welcome.Grant}
 	other := openHost(t, h, "peer-b", grant)
 	var denied WireError
 	objectFrom(t, other, &denied)
@@ -79,36 +93,22 @@ func TestHostGrantsBindPeerResourceAndGeneration(t *testing.T) {
 	if denied.Code != "UNAUTHORIZED" {
 		t.Fatal("undeclared resource authorized")
 	}
-	upload := openHost(t, h, "peer-a", grant)
-	if e := WriteJSON(upload, Message{Type: "upload.begin", Name: "file.txt", Size: 3}); e != nil {
+	stream := openHost(t, h, "peer-a", grant)
+	if e := WriteJSON(stream, HTTPRequest{Type: "request", Method: "GET", Path: "/"}); e != nil {
 		t.Fatal(e)
 	}
-	var ready struct {
-		Type   string `json:"type"`
-		Upload string `json:"upload"`
-	}
-	objectFrom(t, upload, &ready)
-	if ready.Type != "upload.ready" {
-		t.Fatal("upload unavailable")
-	}
-	if e := WriteFrame(upload, DataFrame, []byte("abc")); e != nil {
+	if e := WriteFrame(stream, EndFrame, nil); e != nil {
 		t.Fatal(e)
 	}
-	var progress struct {
-		Type     string `json:"type"`
-		Received int64  `json:"received"`
+	var response HTTPResponse
+	objectFrom(t, stream, &response)
+	data, err := ReadFrame(stream)
+	if err != nil || response.Status != http.StatusOK || data.Kind != DataFrame || string(data.Data) != "abc" {
+		t.Fatal("valid resource grant did not deliver its response")
 	}
-	objectFrom(t, upload, &progress)
-	if progress.Received != 3 {
-		t.Fatal("byte accounting")
-	}
-	if e := WriteJSON(upload, Message{Type: "upload.finish", SHA256: digest("abc")}); e != nil {
-		t.Fatal(e)
-	}
-	var result Receipt
-	objectFrom(t, upload, &result)
-	if result.Type != "upload.completed" || result.Size != 3 {
-		t.Fatal("commit not acknowledged")
+	end, err := ReadFrame(stream)
+	if err != nil || end.Kind != EndFrame {
+		t.Fatal("response did not finish")
 	}
 	fresh := h.Rotate()
 	if fresh == token {

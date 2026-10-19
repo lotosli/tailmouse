@@ -41,7 +41,7 @@ func TestControlHeartbeatRejectsReplayAndExpiresSilentMember(t *testing.T) {
 		if h.CanInput(w.Member) {
 			t.Fatal("silent member retained input")
 		}
-		stream := openHost(t, h, "peer", Hello{Type: "hello", Version: 2, Session: h.ID(), Channel: "upload", Resource: "receive", Member: w.Member, Grant: w.Grant})
+		stream := openHost(t, h, "peer", Hello{Type: "hello", Version: 2, Session: h.ID(), Channel: "http", Resource: "web", Member: w.Member, Grant: w.Grant})
 		var denied WireError
 		objectFrom(t, stream, &denied)
 		if denied.Code != "UNAUTHORIZED" {

@@ -1,3 +1,5 @@
+//go:build linux || darwin
+
 package share
 
 import (
@@ -25,6 +27,54 @@ func receiver(t *testing.T, max int64) *Receiver {
 	})
 	return r
 }
+
+func TestReceiveStreamCommitAcknowledgesVerifiedBytes(t *testing.T) {
+	h, token := testHost(t, false)
+	r := receiver(t, 1024)
+	h.mu.Lock()
+	h.web.Close()
+	h.web = nil
+	h.receiver = r
+	h.options.MaxFile, h.options.MaxTotal, h.options.MaxFiles = 1024, 2048, 100
+	h.mu.Unlock()
+	_, welcome := welcomeHost(t, h, token, "peer-a")
+	upload := openHost(t, h, "peer-a", Hello{Type: "hello", Version: 2, Session: h.ID(), Channel: "upload", Resource: "receive", Member: welcome.Member, Grant: welcome.Grant})
+	if e := WriteJSON(upload, Message{Type: "upload.begin", Name: "file.txt", Size: 3}); e != nil {
+		t.Fatal(e)
+	}
+	var ready struct {
+		Type   string `json:"type"`
+		Upload string `json:"upload"`
+	}
+	objectFrom(t, upload, &ready)
+	if ready.Type != "upload.ready" {
+		t.Fatal("upload unavailable")
+	}
+	if e := WriteFrame(upload, DataFrame, []byte("abc")); e != nil {
+		t.Fatal(e)
+	}
+	var progress struct {
+		Type     string `json:"type"`
+		Received int64  `json:"received"`
+	}
+	objectFrom(t, upload, &progress)
+	if progress.Received != 3 {
+		t.Fatal("byte accounting")
+	}
+	if e := WriteJSON(upload, Message{Type: "upload.finish", SHA256: digest("abc")}); e != nil {
+		t.Fatal(e)
+	}
+	var result Receipt
+	objectFrom(t, upload, &result)
+	if result.Type != "upload.completed" || result.Size != 3 || result.SHA256 != digest("abc") {
+		t.Fatal("verified commit not acknowledged")
+	}
+	data, err := r.root.ReadFile(result.Name)
+	if err != nil || string(data) != "abc" {
+		t.Fatal("acknowledged bytes were not committed")
+	}
+}
+
 func TestReceiveCommitIsIdempotentAndPrivate(t *testing.T) {
 	r := receiver(t, 1024)
 	u, e := r.Begin("member", "report.csv", 5)
@@ -61,16 +111,6 @@ func TestReceiveCommitIsIdempotentAndPrivate(t *testing.T) {
 	}
 	if e = u.Cancel(); e != nil {
 		t.Fatal(e)
-	}
-}
-func TestReceiveNamesAndNormalization(t *testing.T) {
-	for _, name := range []string{"", "../file", ".hidden", "dir/file", "dir\\file", "NUL", "con.txt", "COM1.log", "LPT9", "x\x00y", "x\ny", "a%2fb", "a%5Cb", "a%00b", "a:b", "trailing.", " trailing", strings.Repeat("x", 181), string([]byte{0xff})} {
-		if _, e := SafeName(name); e == nil {
-			t.Errorf("accepted unsafe name %q", name)
-		}
-	}
-	if got, e := SafeName("cafe\u0301.txt"); e != nil || got != "café.txt" {
-		t.Fatal("NFC normalization", got, e)
 	}
 }
 func TestReceiveQuotasDoNotRefundCanceledTraffic(t *testing.T) {

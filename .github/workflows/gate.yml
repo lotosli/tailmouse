@@ -54,6 +54,10 @@ jobs:
       - if: runner.os != 'Linux'
         run: pnpm exec playwright install
       - run: pnpm gate
+        env:
+          # Hosted Ubuntu restricts user namespaces through AppArmor. These
+          # browser fixtures serve only the local test application.
+          TAILMOUSE_TEST_NO_SANDBOX: ${{ runner.os == 'Linux' && '1' || '0' }}
       - name: Install verified release tools
         if: runner.os == 'Linux'
         timeout-minutes: 5

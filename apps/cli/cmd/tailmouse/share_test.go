@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"runtime"
 	"strings"
 	tailcattransport "tailmouse/apps/cli/internal/transport/tailcat"
 	"testing"
@@ -37,15 +40,25 @@ func TestResourceStartupLifetimeAndTransportBoundary(t *testing.T) {
 		expectedURL string
 	}{
 		{"json receive", []string{"receive", "--json"}, "", ""},
-		{"human indefinite", []string{"receive", "--ttl", "0"}, "", ""},
-		{"custom relay file", []string{"receive", "--derp-map", "/synthetic/relay.json", "--derp-region", "7"}, "/synthetic/relay.json", ""},
-		{"custom relay URL", []string{"receive", "--derp-map", "https://relay.example.test/map.json"}, "", "https://relay.example.test/map.json"},
+		{"json web", []string{"web", "--json"}, "", ""},
+		{"human indefinite", []string{"web", "--ttl", "0"}, "", ""},
+		{"custom relay file", []string{"web", "--derp-map", "/synthetic/relay.json", "--derp-region", "7"}, "/synthetic/relay.json", ""},
+		{"custom relay URL", []string{"web", "--derp-map", "https://relay.example.test/map.json"}, "", "https://relay.example.test/map.json"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.args[0] == "receive" && runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+				t.Skip("Receive requires private Unix staging; Web covers the common lifecycle on this platform")
+			}
 			fake := newFakeTransport()
 			var output, diagnostic bytes.Buffer
 			interrupts := make(chan os.Signal, 1)
-			args := append(tc.args, t.TempDir())
+			target := t.TempDir()
+			if tc.args[0] == "web" {
+				app := httptest.NewServer(http.NotFoundHandler())
+				defer app.Close()
+				target = app.URL
+			}
+			args := append(tc.args, target)
 			env := []string{"TAILMOUSE_FRONTEND_BASE=https://ui.example.com", "TAILMOUSE_CONTENT_BASE=https://preview.example.net"}
 			code := runShare(t.Context(), nil, args, env, t.TempDir(), &output, &diagnostic, fake.start, interrupts, func() { interrupts <- os.Interrupt })
 			if code != 0 || fake.closeCalls != 1 || diagnostic.Len() != 0 {
@@ -54,7 +67,7 @@ func TestResourceStartupLifetimeAndTransportBoundary(t *testing.T) {
 			if !fake.config.BindPeer || fake.config.DERPMapFile != tc.expectedMap || fake.config.DERPMapURL != tc.expectedURL {
 				t.Fatal("resource transport lost its peer or relay boundary")
 			}
-			if tc.name == "json receive" {
+			if strings.HasPrefix(tc.name, "json ") {
 				decoder := json.NewDecoder(&output)
 				for _, name := range []string{"share.created", "share.ready", "share.closed"} {
 					var event map[string]any
@@ -77,6 +90,8 @@ func TestResourceStartupLifetimeAndTransportBoundary(t *testing.T) {
 	}
 }
 func TestResourceStartupFailuresPreserveRootAndRedactDetails(t *testing.T) {
+	app := httptest.NewServer(http.NotFoundHandler())
+	defer app.Close()
 	for _, tc := range []struct {
 		name                        string
 		startErr, copyErr, closeErr error
@@ -103,7 +118,7 @@ func TestResourceStartupFailuresPreserveRootAndRedactDetails(t *testing.T) {
 				starter = func(context.Context, tailcattransport.Config) (transportServer, error) { return nil, tc.startErr }
 			}
 			interrupts := make(chan os.Signal, 1)
-			code := runShare(t.Context(), nil, []string{"receive", t.TempDir()}, []string{"TAILMOUSE_CONTENT_BASE=https://preview.example.net"}, t.TempDir(), writer, &diagnostic, starter, interrupts, func() { interrupts <- os.Interrupt })
+			code := runShare(t.Context(), nil, []string{"web", app.URL}, []string{"TAILMOUSE_CONTENT_BASE=https://preview.example.net"}, t.TempDir(), writer, &diagnostic, starter, interrupts, func() { interrupts <- os.Interrupt })
 			if code != tc.want || strings.Contains(output.String()+diagnostic.String(), "private transport material") {
 				t.Fatal("root status or redaction changed", code)
 			}
