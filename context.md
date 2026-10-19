@@ -1,6 +1,8 @@
 # TailMouse project memory
 
-## Current recovery state — 2026-10-17
+## Current recovery state — 2026-10-19
+
+- **Observed, 2026-10-19:** The native recovery candidate now builds and passes resource/flow race tests, protected-Leash pre-admission acceptance, and a real single-origin Chromium/local-DERP journey against the improved recovered browser (terminal, HTTP preview, WebSocket, upload receipt/bytes, reload and revocation). All 11 native Go packages pass race/coverage with an init-like descendant reaper; aggregate coverage is 82.1%, while resource coverage remains 65.1%. The container PID 1 is `tail`; without the wrapper two orphan process-group cleanup tests fail. Candidate source, hashes, bounded logs and reconstructed-section limitations are preserved in `docs/evidence/native-source-recovery-2026-10-19/`. Normal source/release pipeline integration remains pending; current-checkout quick/full gates still stop at legacy Staticcheck's export-data mismatch. No deployment or native publication occurred.
 
 - **Observed, 2026-10-19:** Recovered resource Go/Wasm source and the production scheduler now rebuild byte-identically to the deployed 26,656,976-byte resource Wasm (SHA-256 `1b459cc6e9acdc96292e5cc44fc58110d1a333a00f6ade6cbaa15349ec86251e`) with Go 1.27.2 and Tailcat `52fbad3` in workspace mode. The verified source bundle and per-file hashes are preserved under `docs/evidence/native-source-recovery-2026-10-19/`. Native Host/CLI recovery and truncated tests are still being reconciled. This supersedes the earlier claim that the resource bridge source is missing; it is not a complete native release claim.
 

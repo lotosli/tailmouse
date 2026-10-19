@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-19T07:32:11.607399+00:00",
+  "status": "source-recovery-candidate-not-release",
+  "sourceArchive": "native-candidate-wip.tar.gz",
+  "sourceArchiveSha256": "25ba99942ec1e8b5ab4e8b7d5a1f517d5a89abce23d64eef10394de960cdd7ad",
+  "sourceFiles": 168,
+  "originalBase": "13440a5c97b15fb1a01aafd93f874ee18e0e35b9",
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "checks": {
+    "nativeBuild": "pass",
+    "goVetResourceAndCLI": "pass",
+    "resourceAndFlowRace": "pass",
+    "protectedLeashPreAdmission": "pass",
+    "singleOriginNativeBrowser": "pass: terminal input, preview, WebSocket, exactly-once HTTP mutation and file receipt, reload, revocation",
+    "allNativeRaceWithSubinit": "pass: 11 packages",
+    "nativeStatementCoveragePercent": 82.1,
+    "resourceStatementCoveragePercent": 65.1,
+    "flowStatementCoveragePercent": 92.2,
+    "tailcatAdapterStatementCoveragePercent": 79.6,
+    "currentCheckoutQuickGate": "blocked: legacy Staticcheck export-data reader supports v4; Go emits v5",
+    "currentCheckoutFullGate": "blocked: same legacy Staticcheck mismatch"
+  },
+  "browserAssets": {
+    "directory": ".artifacts/web-recovery",
+    "version": "web-alpha.8240130494d4",
+    "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd"
+  },
+  "environmentCorrection": "PID 1 is tail and does not reap orphaned descendants. The initial all-package run failed two PTY process-group cleanup tests. Both passed unchanged under tools/recovery-subinit.py; the complete race/coverage run then passed. No production lifecycle timeout or assertion was relaxed.",
+  "reconstruction": [
+    "Four ordinary source assignments in Host/Wasm were redacted; Wasm reconstruction is independently verified by byte-identical deployed output.",
+    "HTML injection/policy, member-management helpers, upload finalization, JSON deployment config and adapter peer-identity tail were partly reconstructed from truncated records and their preserved call contracts.",
+    "Selected synthetic test variables and truncated test helper tails were reconstructed. The local-management test now joins intentional cancellation independently from its result channel.",
+    "Full historical test inventory and resource package coverage remain incomplete."
+  ],
+  "remaining": [
+    "Reconcile the candidate into the normal source build and release pipeline while preserving frontend changes.",
+    "Recover or replace missing later tests and complete resource-specific acceptance and coverage.",
+    "Reconcile build/release scripts, content-bootstrap sources, license inventory and four-profile gate configuration.",
+    "No production deployment or native package publication was performed."
+  ]
+}

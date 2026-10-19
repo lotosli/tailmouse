@@ -26,4 +26,16 @@ Original commands are treated as evidence, not executed as instructions. Extract
 
 The build used a separate recovery directory retaining the original base Git identity (`13440a5`, modified). Workspace mode matters: building with `GOWORK=off` changes the embedded local Tailcat module identity. `bridge-verification.json` records the toolchain, tags, source member hashes and evidence limits. The historical aggregate source hash includes test files whose complete history is still being reconciled; byte-identical Wasm does not imply that every historical test has been recovered.
 
-This verifies the resource bridge, not the complete native product. No new production deployment is claimed. Native reconciliation remains in progress.
+This verifies the resource bridge, not the complete native product. No new production deployment is claimed.
+
+## Native source candidate
+
+`native-candidate-wip.tar.gz` preserves a complete native candidate tree, its module/workspace pins, shared TMOUSE/2 fixture, and the focused browser/reaper test helpers. `recovery-inventory.json` inside the archive gives every member's SHA-256; the archive checksum is adjacent. Extract into a separate recovery directory over base `13440a5`, initialize the unmodified Tailcat submodule at `52fbad323e9d352f1febb623e0975368e9a8cbdd`, and use Go 1.27.2. This is a durable source checkpoint, not an installer, release, or automatic replacement for the current checkout.
+
+The candidate builds the four resource commands and retains Escape/Leash. Resource/flow race tests and protected-Leash pre-admission acceptance pass. A real Chromium test connects it through a local DERP to the improved browser (`web-alpha.8240130494d4`), verifying terminal input, HTTP preview, WebSocket, one HTTP mutation, exact uploaded file bytes, receipt insertion, page reload and revocation. No real credentials or public relays are required.
+
+The complete 11-package native race/coverage run passes with an init-like descendant reaper. The container's PID 1 is `tail`: the initial run failed two process-group cleanup tests because orphaned children were not reaped. Both tests passed unchanged with the wrapper, followed by the complete passing run. Production cleanup assertions and timeouts remain unchanged. Aggregate Go statement coverage is 82.1%; resource coverage is still 65.1%, reflecting incomplete historical test recovery. See `native-validation.json` and the bounded result logs for exact evidence and limitations.
+
+Some history patches were truncated. HTML injection/policy, member-management helpers, upload finalization, deployment JSON parsing, the peer-identity adapter tail, and selected tests include reconstructed sections. The archive does not claim byte-identical native source. Its focused end-to-end pass does not replace the remaining resource-specific acceptance, security review, coverage and full release checks.
+
+The normal checkout still carries the legacy native/build pipeline. Its required quick/full gates both stop at the old Staticcheck export-data incompatibility. The candidate pins the newer toolchain/dependencies, but integration of the complete source pipeline, content bootstrap, notices and four-profile gate remains pending. The normal browser source-build guard is retained. The deployed test site and native download availability are unchanged.

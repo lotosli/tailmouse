@@ -2,6 +2,8 @@
 
 Status: accepted by the owner's 2026-10-17 instruction to implement the product and operations review.
 
+Recovery update, observed 2026-10-19: supported task history yielded original native and Go/Wasm source records. The bridge now rebuilds byte-identically to the deployed Wasm. A separately preserved native candidate builds and passes the focused resource browser journey plus native race tests with the container's required descendant reaper. This supersedes the earlier missing-source observation below; normal source/release integration and complete resource test recovery remain pending. See `docs/evidence/native-source-recovery-2026-10-19/README.md` for archive hashes and evidence limits. The normal source release guard remains in place.
+
 ## Evidence and scope
 
 The 2026-10-17 review observed a four-command public frontend without installation, tutorial or support actions. The owner authorizes improving this path, preserving Escape, four representative network profiles, and the existing same-origin private test deployment.
