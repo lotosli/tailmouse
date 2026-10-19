@@ -26,6 +26,10 @@
     "../../tests/e2e/**/*.ts",
     "playwright.config.ts",
     "vite.config.ts",
-    "vitest.config.ts"
-  ]
+    "vitest.config.ts",
+    "vite.recovery.config.ts",
+    "content/bridge.ts",
+    "content/shim.ts"
+  ],
+  "exclude": ["src/transport/tailcat/resource-worker.ts"]
 }

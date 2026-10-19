@@ -93,7 +93,7 @@ await test('Leash acceptance preserves exact smoke, matrix, AI CLI, official and
         '-failfast',
         ...(['official', 'ai-cli', 'chrome'].includes(mode) ? ['-v'] : []),
         mode === 'matrix'
-          ? '-timeout=3h'
+          ? '-timeout=10m'
           : mode === 'official' || mode === 'chrome'
             ? '-timeout=4m'
             : mode === 'ai-cli'

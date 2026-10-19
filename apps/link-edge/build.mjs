@@ -49,7 +49,10 @@ export function prepareStaticManifest(
   let totalBytes = source.byteLength;
   const files = Object.fromEntries(
     entries.map(([path, metadata]) => {
-      assert.match(path, /^[A-Za-z0-9_-]+(?:[./][A-Za-z0-9_-]+)*$/u);
+      assert.match(
+        path,
+        /^(?:\.tailmouse\/)?[A-Za-z0-9_-]+(?:[./][A-Za-z0-9_-]+)*$/u,
+      );
       assert.notEqual(path, 'web-manifest.json');
       assert.ok(
         Number.isSafeInteger(metadata.bytes) &&

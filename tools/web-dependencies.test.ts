@@ -3,7 +3,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { npmDependencies, wasmDependencies } from './web-dependencies.ts';
+import {
+  npmDependencies,
+  wasmDependencies,
+  resourceWasmDependencies,
+  wasmBuildTags,
+} from './web-dependencies.ts';
 
 const revision = '1'.repeat(40);
 const moduleName = 'github.com/tailscale/tailcat';
@@ -164,5 +169,60 @@ await test('npm inventory resolves shipped modules only, deduplicates and strips
   );
   assert.throws(() =>
     npmDependencies([join(directory, 'node_modules/missing/file.js')]),
+  );
+});
+
+await test('Owned resource Wasm binds source revision and only the pinned workspace dependency', () => {
+  const sourceRevision = '2'.repeat(40);
+  const owned =
+    records
+      .replace(
+        `${moduleName}/web`,
+        'tailmouse/apps/cli/internal/transport/tailcat/wasm',
+      )
+      .replace(`mod\t${moduleName}`, 'mod\ttailmouse')
+      .replace(revision, sourceRevision)
+      .replace('vcs.modified=false', 'vcs.modified=true') +
+    `dep\t${moduleName}\t(devel)\t\n`;
+  const provenance = {
+    revision: sourceRevision,
+    sourceSha256: '3'.repeat(64),
+    tailcatVersion: 'v0.6.0',
+  };
+  const result = resourceWasmDependencies(wasm(owned), revision, provenance);
+  assert.equal(result.main.name, 'tailmouse');
+  assert.equal(result.main.revision, sourceRevision);
+  assert.equal(result.tailcat.revision, revision);
+  assert.equal(result.modules.length, 1);
+  for (const invalid of [
+    owned.replace(`dep\t${moduleName}\t(devel)\t\n`, ''),
+    owned.replace(
+      'example.invalid/module\tv1.2.3',
+      'example.invalid/module\t(devel)',
+    ),
+    owned.replace(sourceRevision, revision),
+    owned + `dep\t${moduleName}\t(devel)\t\n`,
+  ])
+    assert.throws(() =>
+      resourceWasmDependencies(wasm(invalid), revision, provenance),
+    );
+  assert.throws(() =>
+    resourceWasmDependencies(wasm(owned), revision, {
+      ...provenance,
+      sourceSha256: 'unknown',
+    }),
+  );
+  const tags =
+    records + 'build\t-tags=ts_omit_udptransport,ts_omit_nattraversal\n';
+  assert.equal(
+    wasmBuildTags(wasm(tags), revision),
+    'ts_omit_udptransport,ts_omit_nattraversal',
+  );
+  assert.throws(() => wasmBuildTags(wasm(records), revision));
+  assert.throws(() =>
+    wasmBuildTags(
+      wasm(tags.replace('ts_omit_udptransport', 'ts_omit_netstack')),
+      revision,
+    ),
   );
 });

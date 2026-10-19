@@ -91,10 +91,27 @@ func TestImpairmentRestorePreservesEvidence(t *testing.T) {
 }
 
 func TestImpairmentFramesAndCancellation(t *testing.T) {
+	for _, rebuilt := range []bool{false, true} {
+		name := "hijacked-reader"
+		if rebuilt {
+			name = "rebuilt-reader"
+		}
+		t.Run(name, func(t *testing.T) { testImpairmentFramesAndCancellation(t, rebuilt) })
+	}
+}
+
+func testImpairmentFramesAndCancellation(t *testing.T, rebuilt bool) {
 	link := &relayImpairment{}
 	link.configure(impairmentProfile{RTTMS: 40, Loss: 5, Kbit: 1024})
 	source, destination := net.Pipe()
 	shaped, reader := link.connection(destination, bufio.NewReader(destination), 0)
+	if rebuilt {
+		// The updated DERP HTTP handler replaces the hijacked reader. Its
+		// underlying connection must still read exclusively through shaping.
+		reader = bufio.NewReaderSize(shaped, 1024)
+	}
+	deadline := time.AfterFunc(2*time.Second, func() { _ = source.Close(); _ = shaped.Close() })
+	t.Cleanup(func() { deadline.Stop() })
 	t.Cleanup(func() { _ = source.Close(); _ = shaped.Close() })
 	wrote := make(chan error, 1)
 	go func() {
@@ -116,6 +133,9 @@ func TestImpairmentFramesAndCancellation(t *testing.T) {
 		kind, size, err := derp.ReadFrameHeader(reader)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if size > 40 {
+			t.Fatal("invalid synthetic frame size")
 		}
 		payload := make([]byte, size)
 		if _, err := io.ReadFull(reader, payload); err != nil {

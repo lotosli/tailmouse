@@ -1,0 +1,31 @@
+{
+  "sourceRevision": "8955e4763c087c5d8529134a143534ab07d9d742",
+  "workflowURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408",
+  "qualification": "These completed native Go steps include the unchanged 80% coverage floor (80.5% observed on each architecture). Full Windows jobs later failed the Worker fixture and were canceled for diagnosis; full Linux/macOS jobs passed. This is not a passing complete workflow.",
+  "jobs": [
+    {
+      "name": "windows-latest",
+      "jobId": 118041250667,
+      "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408/job/118041250667",
+      "step": {
+        "name": "Verify Windows native Go acceptance",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-19T11:47:20Z",
+        "completed_at": "2026-10-19T11:51:24Z"
+      }
+    },
+    {
+      "name": "windows-11-arm",
+      "jobId": 118041250784,
+      "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408/job/118041250784",
+      "step": {
+        "name": "Verify Windows native Go acceptance",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-19T11:47:57Z",
+        "completed_at": "2026-10-19T11:51:31Z"
+      }
+    }
+  ]
+}

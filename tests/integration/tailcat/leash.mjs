@@ -532,6 +532,21 @@ async function main() {
           await expect
             .poll(latestProgress)
             .toBeGreaterThan(progressBeforeDisconnect);
+          // Also observe a new live update after catch-up, before asking this
+          // owned fixture to finish its work and expose the interactive prompt.
+          const recoveredProgress = await latestProgress();
+          await expect.poll(latestProgress).toBeGreaterThan(recoveredProgress);
+          stage = 'long-task-finish-work';
+          const finished = await fetch(
+            `${base.origin}/__test/finish-long-task`,
+            {
+              method: 'POST',
+              signal: AbortSignal.timeout(2000),
+            },
+          );
+          if (finished.status !== 204)
+            throw new Error('LONG_TASK_FINISH_FAILED');
+          await finished.arrayBuffer();
           await expect(output).toContainText('long-task-input', {
             timeout: 25_000,
           });

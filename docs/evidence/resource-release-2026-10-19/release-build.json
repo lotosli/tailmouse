@@ -1,0 +1,104 @@
+{
+  "verifiedOn": "2026-10-19",
+  "sourceRevision": "1d770553b3f20ebcdb9165d29838290885040613",
+  "version": "0.0.0-dev.1d770553b3f2",
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "manifestSha256": "935ef05a0dfb4cb98c4869844cd88b41fddfaab2efef347cdc7cee366748d567",
+  "qualification": "Clean detached checkout with frozen package installation and normal source build. Six cross-built native archives, eight CycloneDX SBOMs and all distribution bytes verified. Only the extracted Linux/amd64 executable is runtime-verified here; Windows/macOS native tests are recorded separately in ci.json. No public native release was published.",
+  "checksumsSha256": "f96f25316a58a91720299d59903a6c6fd9edf682f247f7849a53c53160b56f0d",
+  "verifiedFiles": 55,
+  "nativeArchives": [
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_darwin_arm64.tar.gz",
+      "sha256": "3e57a654048022a95e4c04d66041c7a5d864f8518667884475c6bd215e4ccd1a"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_linux_arm64.tar.gz",
+      "sha256": "4e333dc82ee0dee94a1e8792cfc923aa290dc2cac57e499f313c922b5978498a"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_windows_amd64.zip",
+      "sha256": "6075f6a87ed97391ef7f5c88d8c15e2c1457dd0bd928492390228e52d8f3d13e"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_darwin_amd64.tar.gz",
+      "sha256": "7cffff5110fe1ed1bbb056d52cb45e2944d7ea33cf12781421b1e72d6d948d26"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_windows_arm64.zip",
+      "sha256": "c062677d9ea5663d73decca668bec0baa2d8bec87832a6bc15fe282fd42f199d"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_linux_amd64.tar.gz",
+      "sha256": "ec492f49bb11ff506d6afa87cbaa2f0ce83138829afd6223c5d5ea22ada059b7"
+    }
+  ],
+  "sboms": [
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_windows_amd64.zip.cdx.json",
+      "sha256": "22639b5971bba196a9c86f38d79f6f6d01c36a601394d12b59db501816942d20"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_darwin_arm64.tar.gz.cdx.json",
+      "sha256": "325f257fa1e7036198465f4fb3c0fadf55267b834615e46f816f5bbe9641c543"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_darwin_amd64.tar.gz.cdx.json",
+      "sha256": "a3aeb1dae546f636a696de3d36ff8aafa43644da6d10c882e54d5660a84a630e"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_windows_arm64.zip.cdx.json",
+      "sha256": "ba6240fdebf233cb418a591c49201cba71b5a9396ec7908cff1551c0399f2942"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_edge.cdx.json",
+      "sha256": "c17c07d8dd867323494ea28d52c5b421af75770f53fad97fcdf7b63b836599e1"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_linux_arm64.tar.gz.cdx.json",
+      "sha256": "e6870843d30cca1977c224b00f8fd2603c1119b46f703fb375e49d91c373fd8d"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_web.cdx.json",
+      "sha256": "f54659b3735a16d5d9acf0f27b6a918e16b0eaf79817d4eb5875b2bde6208876"
+    },
+    {
+      "file": "tailmouse_0.0.0-dev.1d770553b3f2_linux_amd64.tar.gz.cdx.json",
+      "sha256": "f8c7e61f2b82f19d0cfcd8d87fb7e2b05e6f1e717b363b226ea4af586fb77f60"
+    }
+  ],
+  "logs": [
+    {
+      "step": "install",
+      "rawLogSha256": "37199549a5c18687b73b015268ace62569a6d89841086710712d78b3194ec8c7"
+    },
+    {
+      "step": "build",
+      "rawLogSha256": "0a267335db022e60cf46bb6d331e827bd65e35655104f967f47002c61809bbd8"
+    },
+    {
+      "step": "worker",
+      "rawLogSha256": "84ec41cfe31c45886fbee46192a96d4d12aa62023e325fad39aef7a1060bf951"
+    },
+    {
+      "step": "snapshot",
+      "rawLogSha256": "3794e6d4276892210ea374705a5187cb9d3ef238f730acd4718ed6519cd6887b"
+    },
+    {
+      "step": "sbom",
+      "rawLogSha256": "e2fc669b0367e685b597b67ccb3dca17a4414a2f038d82f4cd050613d7d98ce1"
+    },
+    {
+      "step": "verify",
+      "rawLogSha256": "e8dd627442b6e9e8f7aed978fab4db4c5e0c1810a9f5459728a9b1f81250719d"
+    },
+    {
+      "step": "checksums",
+      "rawLogSha256": "5be8e0553ced1af246c6e9994e284d3bc0f6cdf24a05a214b870e82cfb817da9"
+    },
+    {
+      "step": "native",
+      "rawLogSha256": "9604f5af43a1b6f1aa2acc81c68c1258e2b550e0468e430614cc2de5854d8776"
+    }
+  ]
+}

@@ -18,6 +18,7 @@ import (
 	"tailmouse/apps/cli/internal/leash"
 	"tailmouse/apps/cli/internal/protocol"
 	"tailmouse/apps/cli/internal/session"
+	"tailmouse/apps/cli/internal/share"
 	tailcattransport "tailmouse/apps/cli/internal/transport/tailcat"
 )
 
@@ -67,8 +68,16 @@ func runWithSignals(ctx context.Context, stdin *os.File, args, environ []string,
 	defer cancel()
 	stopStartup := startupSignals(ctx, cancel, interrupts)
 	defer stopStartup()
+	if len(args) > 0 && share.IsCommand(args[0]) {
+		return runShare(ctx, stdin, args, environ, configDir, stdout, stderr, start, interrupts, stopStartup)
+	}
 	options, help, err := config.Resolve(args, environ, configDir)
 	if help {
+		if options.Command == "" {
+			if _, e := io.WriteString(stdout, share.Help+"\nLegacy commands and options:\n"); e != nil {
+				return exitInternal
+			}
+		}
 		if err := config.WriteHelp(stdout, options.Command); err != nil {
 			return exitInternal
 		}
@@ -88,7 +97,7 @@ func runWithSignals(ctx context.Context, stdin *os.File, args, environ []string,
 	}
 	switch options.Command {
 	case "version":
-		if _, err := fmt.Fprintf(stdout, "TailMouse %s\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTailcat revision %s\n", buildVersion, tailcatRevision); err != nil {
+		if _, err := fmt.Fprintf(stdout, "TailMouse %s\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTMOUSE Resource protocol 2\nTailcat revision %s\n", buildVersion, tailcatRevision); err != nil {
 			return exitInternal
 		}
 		return exitOK

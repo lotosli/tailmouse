@@ -4,6 +4,7 @@ export interface BuildIdentity {
   readonly protocols: Readonly<{
     readonly escape: 1;
     readonly leash: 2;
+    readonly resource: 2;
   }>;
 }
 

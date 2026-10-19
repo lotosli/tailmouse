@@ -18,6 +18,12 @@ import (
 
 // Prepare all strings before allocating a terminal or starting a child. Neither
 // executable lookup nor the environment block may consult later host state.
+// Preflight validates the immutable command without starting a child process.
+func Preflight(snapshot *leash.Command) error {
+	_, _, _, _, err := commandWindows(snapshot)
+	return err
+}
+
 func commandWindows(snapshot *leash.Command) (application, arguments *uint16, environment []uint16, directory *uint16, failure error) {
 	argv, env, cwd := snapshot.Argv(), snapshot.Environment(), snapshot.Cwd()
 	for _, values := range [][]string{argv, env, {cwd}} {
@@ -37,6 +43,13 @@ func commandWindows(snapshot *leash.Command) (application, arguments *uint16, en
 	path, err := executableWindows(argv[0], cwd, env)
 	if err != nil {
 		return nil, nil, nil, nil, launchError(err)
+	}
+	// CreateProcess can silently dispatch batch files through cmd.exe. That
+	// would reinterpret the captured literal arguments as shell syntax. A
+	// caller that wants a shell must name its interpreter explicitly.
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".bat", ".cmd":
+		return nil, nil, nil, nil, launchError(windows.ERROR_BAD_EXE_FORMAT)
 	}
 	application, err = windows.UTF16PtrFromString(path)
 	if err != nil {

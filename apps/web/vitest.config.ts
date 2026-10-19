@@ -8,17 +8,22 @@ export default defineConfig({
       wasm: './tailcat/tailcat-web-testhash.wasm',
       wasmBytes: 8,
     }),
+    __TAILMOUSE_RESOURCE_ASSETS__: JSON.stringify({
+      runtime: '/tailcat/wasm_exec-testhash.js',
+      wasm: '/tailcat/resource-testhash.wasm',
+      bytes: 8,
+    }),
     __TAILMOUSE_BUILD__: JSON.stringify({
       version: '0.0.0-test',
       tailcatRevision: '1'.repeat(40),
-      protocols: { escape: 1, leash: 2 },
+      protocols: { escape: 1, leash: 2, resource: 2 },
     }),
   },
   test: {
     attachmentsDir: '../../test-results/components/attachments',
     coverage: {
       exclude: ['src/**/*.d.ts', 'src/**/*.{test,spec}.{ts,tsx}'],
-      include: ['src/**/*.{ts,tsx}', 'worker.ts'],
+      include: ['src/**/*.{ts,tsx}', 'worker.ts', 'content/*.ts'],
       provider: 'v8',
       reporter: ['text', 'json-summary', 'lcov'],
       reportOnFailure: true,
@@ -51,7 +56,12 @@ export default defineConfig({
             enabled: true,
             headless: true,
             screenshotDirectory: '../../test-results/components',
-            provider: playwright({ contextOptions: { hasTouch: true } }),
+            provider: playwright({
+              contextOptions: { hasTouch: true },
+              launchOptions: {
+                chromiumSandbox: process.env.TAILMOUSE_TEST_NO_SANDBOX !== '1',
+              },
+            }),
             instances: [{ browser: 'chromium' }],
           },
         },

@@ -214,6 +214,7 @@ function document(
   assert.match(sourceRevision, revisionPattern, 'Missing source revision.');
   assert.equal(identity.protocols.escape, 1);
   assert.equal(identity.protocols.leash, 2);
+  assert.equal(identity.protocols.resource, 2);
   assert.ok(
     files.length > 0 &&
       files.length <= 512 &&
@@ -369,6 +370,11 @@ export function webSBOM(
   npm: ModuleIdentity[],
   wasm: { main: ModuleIdentity; modules: ModuleIdentity[] },
   goVersion: string,
+  resource?: {
+    main: ModuleIdentity;
+    modules: ModuleIdentity[];
+    tailcat: ModuleIdentity;
+  },
 ) {
   assert.equal(wasm.main.name, 'github.com/tailscale/tailcat');
   assert.equal(
@@ -377,20 +383,53 @@ export function webSBOM(
     'Web Tailcat identity is not resolved.',
   );
   const binaries = files.filter((file) => file.name.endsWith('.wasm'));
-  assert.equal(binaries.length, 1, 'Web release requires one Wasm artifact.');
+  assert.equal(
+    binaries.length,
+    resource === undefined ? 1 : 2,
+    'Web release Wasm inventory is incomplete.',
+  );
+  if (resource !== undefined) {
+    assert.equal(resource.main.name, 'tailmouse');
+    assert.equal(resource.main.revision, sourceRevision);
+    assert.deepEqual(resource.tailcat, wasm.main);
+  }
   assert.ok(
     npm.length > 0 && wasm.modules.length > 0,
     'Web dependency inventory is empty.',
   );
-  for (const module of wasm.modules)
+  for (const module of [...wasm.modules, ...(resource?.modules ?? [])])
     assert.ok(module.sum !== undefined, 'Wasm dependency has no module sum.');
   const jsLibraries = npm.map((module) => library('npm', module));
-  const goLibraries = [
+  const legacyLibraries = [
     wasm.main,
     ...wasm.modules,
     { name: 'stdlib', version: goVersion },
   ].map((module) => library('golang', module));
-  const wasmRef = `file:${binaries[0]!.name}`;
+  const resourceLibraries =
+    resource === undefined
+      ? []
+      : [
+          resource.tailcat,
+          ...resource.modules,
+          { name: 'stdlib', version: goVersion },
+        ].map((module) => library('golang', module));
+  const goLibraries = [
+    ...new Map(
+      [...legacyLibraries, ...resourceLibraries].map((item) => [
+        item['bom-ref'],
+        item,
+      ]),
+    ).values(),
+  ];
+  const refs = binaries.map((file) => ({
+    ref: `file:${file.name}`,
+    dependsOn: (file.name.includes('/resource-')
+      ? resourceLibraries
+      : legacyLibraries
+    )
+      .map((item) => item['bom-ref'])
+      .sort(),
+  }));
   return document(
     identity,
     sourceRevision,
@@ -402,13 +441,10 @@ export function webSBOM(
         ref: 'tailmouse:web',
         dependsOn: [
           ...jsLibraries.map((item) => item['bom-ref']),
-          wasmRef,
+          ...refs.map((item) => item.ref),
         ].sort(),
       },
-      {
-        ref: wasmRef,
-        dependsOn: goLibraries.map((item) => item['bom-ref']).sort(),
-      },
+      ...refs,
     ],
   );
 }

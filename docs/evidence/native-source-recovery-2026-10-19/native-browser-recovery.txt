@@ -1,0 +1,1 @@
+ok  	tailmouse/apps/cli/cmd/tailmouse	10.840s

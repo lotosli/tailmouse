@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "cases": [
+    {
+      "name": "json-pong",
+      "hex": "00000018017b2274797065223a22706f6e67222c22736571223a317d",
+      "valid": true
+    },
+    {
+      "name": "binary-utf8",
+      "hex": "0000000d0268656c6c6f20e4b896e7958c",
+      "valid": true
+    },
+    {
+      "name": "empty-body-end",
+      "hex": "0000000103",
+      "valid": true
+    },
+    {
+      "name": "duplicate-json-key",
+      "hex": "0000001e017b2274797065223a22706f6e67222c2274797065223a2270696e67227d",
+      "valid": false
+    },
+    {
+      "name": "json-invalid-utf8",
+      "hex": "0000000a017b2278223a22ff227d",
+      "valid": false
+    },
+    {
+      "name": "end-with-payload",
+      "hex": "000000020300",
+      "valid": false
+    },
+    {
+      "name": "unknown-kind",
+      "hex": "0000000104",
+      "valid": false
+    },
+    {
+      "name": "declared-oversize",
+      "hex": "0001000101",
+      "valid": false
+    },
+    {
+      "name": "truncated-body",
+      "hex": "000000040261",
+      "valid": false
+    }
+  ]
+}

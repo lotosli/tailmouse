@@ -19,7 +19,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 1.27.1
+          go-version: 1.27.2
       - name: Select the current upstream candidate without changing the parent gitlink
         shell: bash
         run: |
@@ -36,7 +36,7 @@ jobs:
           candidate_artifacts="$(mktemp -d "$RUNNER_TEMP/tailcat-candidate.XXXXXX")"
           trap 'rm -rf -- "$candidate_artifacts"' EXIT
           export GOWORK=off
-          export GOTOOLCHAIN=go1.27.1
+          export GOTOOLCHAIN=go1.27.2
           export GOFLAGS=-trimpath
           go -C third_party/tailcat mod verify
           go -C third_party/tailcat mod tidy -diff
@@ -59,7 +59,7 @@ jobs:
           cp go.mod "$candidate_modfile"
           cp go.sum "$candidate_module_dir/go.sum"
           export GOWORK=off
-          export GOTOOLCHAIN=go1.27.1
+          export GOTOOLCHAIN=go1.27.2
           go mod tidy -modfile="$candidate_modfile"
           go test -run '^$' -mod=readonly -modfile="$candidate_modfile" ./apps/cli/...
           git diff --exit-code -- go.mod go.sum

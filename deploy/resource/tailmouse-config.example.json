@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "frontendBase": "https://ui.example.com",
+  "contentBase": "https://preview.example.net",
+  "releaseManifest": "/web-manifest.json"
+}

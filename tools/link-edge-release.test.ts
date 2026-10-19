@@ -465,7 +465,7 @@ await test('edge release rejects source/config/compiler/Web drift and does not r
   const child = spawnSync(
     process.execPath,
     [
-      new URL('./link-edge-release.mjs', import.meta.url).pathname,
+      resolve(import.meta.dirname, 'link-edge-release.mjs'),
       'synthetic-sensitive-argument',
     ],
     { encoding: 'utf8' },

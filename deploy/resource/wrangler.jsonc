@@ -1,0 +1,18 @@
+{
+  "$schema": "../../apps/link-edge/node_modules/wrangler/config-schema.json",
+  "name": "tailmouse-resource-test",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-07",
+  "workers_dev": false,
+  "preview_urls": false,
+  "send_metrics": false,
+  "observability": { "enabled": false },
+  "assets": {
+    "directory": "../../.artifacts/resource-deploy/assets",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
+  "routes": [{ "pattern": "tailmouse.com", "custom_domain": true }]
+}

@@ -60,9 +60,14 @@ test('explicit exit forgets invitation even when transport close fails', async (
     'tcSyntheticCloseFailure',
   );
   await page.reload();
-  await expect(page.getByRole('alert')).toHaveText(
-    'This invitation is invalid or unsupported. Request a new link from the host.',
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Let them test your work. Skip the setup.',
+    { useInnerText: true },
   );
+  await expect(
+    page.getByRole('button', { name: 'Retry connection' }),
+  ).toHaveCount(0);
+  expect(new URL(page.url()).hash).toBe('');
 });
 
 test('full map, live HUD, captured pointer movement, dash cooldown and explicit exit', async ({
@@ -233,10 +238,11 @@ test('all authoritative result summaries survive immediate host close without re
     await expect(
       page.getByRole('heading', { name: heading, exact: true }),
     ).toBeVisible();
-    await expect(page.getByText('1.2 s', { exact: true })).toBeVisible();
-    await expect(page.getByText('63 ms', { exact: true })).toBeVisible();
+    const result = page.getByRole('region', { name: heading, exact: true });
+    await expect(result.getByText('1.2 s', { exact: true })).toBeVisible();
+    await expect(result.getByText('63 ms', { exact: true })).toBeVisible();
     await expect(
-      page.getByText('relay.example.com', { exact: true }),
+      result.getByText('relay.example.com', { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Retry connection' }),

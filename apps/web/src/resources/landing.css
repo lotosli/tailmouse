@@ -1,0 +1,262 @@
+.landing {
+  max-width: 1160px;
+}
+.landing a {
+  color: #d8ff62;
+  text-underline-offset: 0.22em;
+}
+.landing-nav,
+.landing-nav nav,
+.landing-actions,
+.landing-footer nav {
+  display: flex;
+  align-items: center;
+  gap: 1.3rem;
+  flex-wrap: wrap;
+}
+.landing-nav {
+  justify-content: space-between;
+  padding: 1rem 0 3rem;
+}
+.landing-nav .workspace-brand {
+  text-decoration: none;
+}
+.alpha-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  color: #c1cbb7;
+  border: 1px solid #536045;
+  border-radius: 2rem;
+  padding: 0.25rem 0.5rem;
+  vertical-align: middle;
+}
+.landing .landing-hero {
+  max-width: 920px;
+  padding: 2rem 0 4rem;
+}
+.landing .eyebrow {
+  color: #bac5b1;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.landing h1 {
+  font-size: clamp(3rem, 8vw, 6.2rem);
+  line-height: 1.04;
+  letter-spacing: -0.05em;
+  margin: 1rem 0 1.7rem;
+}
+.landing h1 span {
+  color: #d8ff62;
+}
+.landing .hero-description {
+  max-width: 630px;
+  font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+  line-height: 1.55;
+}
+.landing .hero-footnote {
+  font-size: 0.9rem;
+  margin-top: 1.3rem;
+}
+.landing .button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 48px;
+  padding: 0.7rem 1.25rem;
+  border: 1px solid #d8ff62;
+  border-radius: 0.5rem;
+  background: #d8ff62;
+  color: #171c12;
+  font-weight: 750;
+  text-decoration: none;
+}
+.landing .button-link.secondary {
+  color: #f4f5ec;
+  background: transparent;
+  border-color: #536045;
+}
+.landing-section {
+  border-top: 1px solid #45533e;
+  padding: 3.5rem 0;
+  scroll-margin-top: 1rem;
+}
+.landing-section h2 {
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  max-width: 780px;
+}
+.landing p {
+  line-height: 1.65;
+  color: #c8d1bf;
+}
+.landing h3 {
+  font-size: 1.2rem;
+  line-height: 1.4;
+}
+.workflow-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.8rem 0;
+}
+.workflow-steps button[aria-pressed='true'] {
+  border-color: #d8ff62;
+  color: #d8ff62;
+  background: #283122;
+}
+.workflow-steps button span {
+  margin-right: 0.3rem;
+}
+.workflow-detail,
+.compatibility-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+.workflow-detail {
+  min-height: 240px;
+  margin-bottom: 2rem;
+  align-items: center;
+}
+.workflow-visual {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2.5rem;
+  min-height: 210px;
+  border: 1px solid #536045;
+  border-radius: 0.8rem;
+  padding: 1.5rem;
+  background: #1e261a;
+}
+.workflow-visual strong {
+  font-size: 1.4rem;
+  max-width: 360px;
+}
+.workflow-dots {
+  color: #d8ff62;
+  letter-spacing: 0.5rem;
+  font-size: 0.65rem;
+}
+.command-block {
+  border: 1px solid #45533e;
+  border-radius: 0.5rem;
+  background: #10140f;
+  padding: 1rem;
+  margin: 1rem 0;
+  min-width: 0;
+}
+.command-block pre {
+  margin: 0 0 0.8rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+  font-size: 0.92rem;
+}
+.command-block [role='status'] {
+  display: block;
+  color: #c8d1bf;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+.landing .landing-cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1.5rem 0;
+}
+.landing .landing-cards article {
+  padding: 1.3rem;
+  min-width: 0;
+}
+.landing-cards .command-block {
+  border: 0;
+  padding: 0.8rem;
+}
+.availability-note,
+.guide-note {
+  border-left: 3px solid #d8ff62;
+  background: #222a1c;
+  padding: 1rem 1.2rem;
+  border-radius: 0 0.4rem 0.4rem 0;
+}
+.getting-started {
+  padding-left: 1.8rem;
+}
+.getting-started li {
+  padding: 0.6rem 0 1rem 0.7rem;
+}
+.getting-started li::marker {
+  color: #d8ff62;
+  font-weight: 800;
+}
+.guide-details,
+.feedback-panel {
+  margin: 1.5rem 0;
+  border: 1px solid #45533e;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+summary {
+  cursor: pointer;
+  min-height: 30px;
+  line-height: 1.6;
+}
+.feedback-panel pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.feedback-panel a,
+.workspace-links a,
+.resource-shell > a {
+  color: #d8ff62;
+}
+.landing-footer {
+  border-top: 1px solid #45533e;
+  padding: 1.5rem 0 2rem;
+}
+.escape-section {
+  padding: 2rem 0;
+}
+.escape-section .command-block {
+  max-width: 460px;
+}
+.resource-shell :focus-visible {
+  outline: 2px solid #d8ff62;
+  outline-offset: 4px;
+}
+@media (max-width: 650px) {
+  .landing-nav {
+    padding-bottom: 1rem;
+  }
+  .landing-nav nav {
+    gap: 1rem;
+    font-size: 0.9rem;
+  }
+  .landing .landing-hero {
+    padding-top: 1rem;
+  }
+  .landing-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .landing-section {
+    padding: 2.2rem 0;
+  }
+  .workflow-detail,
+  .compatibility-grid,
+  .landing .landing-cards {
+    grid-template-columns: 1fr;
+  }
+  .workflow-detail {
+    gap: 0.8rem;
+  }
+  .workflow-steps button {
+    flex: 1 1 44%;
+    font-size: 0.85rem;
+  }
+  .getting-started {
+    padding-left: 1.2rem;
+  }
+}

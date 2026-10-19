@@ -12,6 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, relative, resolve, sep } from 'node:path';
 import { run } from './process.mjs';
+import { cloneTailcatBuildSource } from './tailcat-source.mjs';
 
 const mode = process.argv[2] ?? 'full';
 const root = resolve(import.meta.dirname, '..');
@@ -117,25 +118,21 @@ function buildWasmArtifact(revision) {
     join(tmpdir(), 'tailmouse-tailcat-wasm-'),
   );
   try {
+    const checkout = join(temporaryDirectory, 'source');
+    const output = join(temporaryDirectory, 'dist');
+    cloneTailcatBuildSource(tailcat, checkout, revision);
     run(
       'go',
-      [
-        'run',
-        './cmd/tailcat-webdist',
-        '-o',
-        temporaryDirectory,
-        '-web-dir',
-        'web',
-      ],
-      { cwd: tailcat, env: { ...goEnv, GOFLAGS: '-trimpath' } },
+      ['run', './cmd/tailcat-webdist', '-o', output, '-web-dir', 'web'],
+      { cwd: checkout, env: { ...goEnv, GOFLAGS: '-trimpath' } },
     );
     mkdirSync(artifactDirectory, { recursive: true });
     copyFileSync(
-      join(temporaryDirectory, 'main.wasm'),
+      join(output, 'main.wasm'),
       join(artifactDirectory, 'tailcat-web.wasm'),
     );
     copyFileSync(
-      join(temporaryDirectory, 'wasm_exec.js'),
+      join(output, 'wasm_exec.js'),
       join(artifactDirectory, 'wasm_exec.js'),
     );
     const files = Object.fromEntries(

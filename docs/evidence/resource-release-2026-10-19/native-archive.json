@@ -1,0 +1,14 @@
+{
+  "sourceRevision": "1d770553b3f20ebcdb9165d29838290885040613",
+  "archive": "tailmouse_0.0.0-dev.1d770553b3f2_linux_amd64.tar.gz",
+  "archiveSha256": "ec492f49bb11ff506d6afa87cbaa2f0ce83138829afd6223c5d5ea22ada059b7",
+  "version": "TailMouse 0.0.0-dev.1d770553b3f2\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTMOUSE Resource protocol 2\nTailcat revision 52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "commands": [
+    "cli",
+    "web",
+    "receive",
+    "dev"
+  ],
+  "runtime": "linux/amd64",
+  "status": "verified"
+}

@@ -30,6 +30,14 @@ const phases = [
     () =>
       run(process.execPath, [
         '--test',
+        '--experimental-test-coverage',
+        '--test-coverage-include=deploy/resource/worker.ts',
+        '--test-coverage-include=tools/tailcat-source.mjs',
+        '--test-coverage-lines=80',
+        '--test-coverage-branches=80',
+        '--test-coverage-functions=80',
+        'deploy/resource/worker.test.ts',
+        'tools/resource-deploy.test.ts',
         'tools/m0-acceptance.test.ts',
         'tools/go-gate.test.ts',
         'tools/check-architecture.test.ts',
@@ -41,6 +49,7 @@ const phases = [
         'tools/release-licenses.test.ts',
         'tools/web-assets.test.ts',
         'tools/web-dependencies.test.ts',
+        'tools/tailcat-source.test.ts',
         'tools/sbom.test.ts',
       ]),
   ],
@@ -62,7 +71,18 @@ const phases = [
   ],
   [
     'typecheck',
-    () => runPnpm(['--recursive', '--if-present', 'run', 'typecheck']),
+    () => {
+      runPnpm(['--recursive', '--if-present', 'run', 'typecheck']);
+      runPnpm([
+        'exec',
+        'tsc',
+        '--noEmit',
+        '--pretty',
+        'false',
+        '-p',
+        'deploy/resource/tsconfig.json',
+      ]);
+    },
   ],
   ['lint', () => runPnpm(['run', 'lint'])],
   ['unit tests', () => runPnpm(['--recursive', '--if-present', 'run', 'test'])],
@@ -87,7 +107,10 @@ const phases = [
   ],
   [
     'local Worker integration',
-    () => runPnpm(['--filter', '@tailmouse/link-edge', 'test:integration']),
+    () => {
+      runPnpm(['--filter', '@tailmouse/link-edge', 'test:integration']);
+      run(process.execPath, ['tools/resource-integration.mjs']);
+    },
   ],
   [
     'local public-origin verification',
@@ -132,6 +155,27 @@ const phases = [
     },
   ],
   [
+    'Resource native/browser and named TUI acceptance',
+    () => {
+      if (process.platform === 'win32') {
+        process.stdout.write(
+          'Unix resource PTY acceptance requires Linux or macOS.\n',
+        );
+        return;
+      }
+      run('go', [
+        'test',
+        '-tags=tailcatintegration',
+        '-count=1',
+        '-failfast',
+        '-timeout=3m',
+        '-run=^Test(HermeticResourceWorkspace|HermeticResourceSingleOrigin|ResourceTUIRedraw)$',
+        './apps/cli/cmd/tailmouse',
+        './apps/cli/internal/share',
+      ]);
+    },
+  ],
+  [
     'Escape impairment smoke',
     () =>
       run('go', [
@@ -140,7 +184,7 @@ const phases = [
         '-count=1',
         '-failfast',
         '-timeout=2m',
-        '-run=TestImpairment|TestEscapeNetworkRelayDisconnect|TestEscapeNetworkMatrix/rtt150-jitter30-loss0-kbit256$',
+        '-run=TestImpairment|TestEscapeNetworkRelayDisconnect|TestEscapeNetworkMatrix/rtt80-jitter20-loss1-kbit256$',
         './apps/cli/internal/transport/tailcat',
       ]),
   ],
@@ -165,11 +209,11 @@ const phases = [
           () => run(process.execPath, ['tools/go-gate.mjs', 'release']),
         ],
         [
-          'Escape complete network matrix and outages',
+          'Escape representative network profiles and outages',
           () => runPnpm(['run', 'test:escape-network']),
         ],
         [
-          'Unix Leash complete network matrix',
+          'Unix Leash representative network profiles',
           () => {
             if (process.platform === 'win32') {
               process.stdout.write(
@@ -186,6 +230,11 @@ const phases = [
 
 for (const [name, execute] of phases) {
   process.stdout.write(`\n==> ${String(name)}\n`);
+  if (process.env.GITHUB_ACTIONS === 'true') {
+    process.stdout.write(
+      `::notice title=TailMouse gate::Starting ${String(name)}\n`,
+    );
+  }
   execute();
 }
 

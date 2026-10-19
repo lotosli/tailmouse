@@ -1,0 +1,16 @@
+{
+  "origin": "https://tailmouse.com",
+  "verifiedAt": "2026-10-19T13:15:18.819Z",
+  "sourceRevision": "1d770553b3f20ebcdb9165d29838290885040613",
+  "browser": "Firefox 153.0",
+  "tls": "verified with the environment proxy CA in an isolated profile",
+  "checks": [
+    "homepage",
+    "interactive walkthrough",
+    "loopback port guidance",
+    "source build link",
+    "exact public manifest",
+    "no page errors"
+  ],
+  "status": "verified"
+}

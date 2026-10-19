@@ -1,0 +1,85 @@
+Command: pnpm gate
+Candidate: 2a5c85451ddb864c19f14c8499406102e068b5e0
+Environment: Linux/amd64; Go 1.27.2; Node 26.8.1; pnpm 11.25.0
+Exit status: 0
+Raw local log SHA-256: f2ad307ac551278f71ace03a5749c5f12ff196e283a37f6e195953ce65baacec
+
+==> architecture
+==> OpenSpec
+==> format
+==> build identity, release and static asset tests
+==> Go static checks
+==> Tailcat static checks
+==> Tailcat native and WebAssembly builds
+==> Web static artifact prerequisite
+==> typecheck
+==> lint
+==> unit tests
+==> Tailcat tests
+ok  	github.com/tailscale/tailcat	4.192s
+ok  	github.com/tailscale/tailcat/cmd/tailcat	17.517s
+ok  	github.com/tailscale/tailcat/internal/buildtags	0.002s
+ok  	github.com/tailscale/tailcat/internal/capi	5.334s
+ok  	github.com/tailscale/tailcat/internal/localhostdns	0.006s
+ok  	github.com/tailscale/tailcat/internal/perf	2.592s
+ok  	github.com/tailscale/tailcat/web	0.007s
+ok  	github.com/tailscale/tailcat/webdemo	0.007s
+==> TypeScript coverage
+apps/link-edge coverage: All files          |   99.37 |    98.98 |   97.36 |   99.64 |                   
+apps/web coverage: All files          |   83.84 |    82.07 |   80.83 |   85.35 |                   
+==> Go coverage
+ok  	tailmouse/apps/cli/cmd/tailmouse	30.080s	coverage: 81.1% of statements
+ok  	tailmouse/apps/cli/internal/config	(cached)	coverage: 97.4% of statements
+ok  	tailmouse/apps/cli/internal/escape	(cached)	coverage: 99.6% of statements
+ok  	tailmouse/apps/cli/internal/flow	(cached)	coverage: 90.6% of statements
+ok  	tailmouse/apps/cli/internal/invitation	(cached)	coverage: 94.4% of statements
+ok  	tailmouse/apps/cli/internal/leash	(cached)	coverage: 94.6% of statements
+ok  	tailmouse/apps/cli/internal/platform/pty	(cached)	coverage: 84.8% of statements
+ok  	tailmouse/apps/cli/internal/protocol	(cached)	coverage: 94.7% of statements
+ok  	tailmouse/apps/cli/internal/session	(cached)	coverage: 89.6% of statements
+ok  	tailmouse/apps/cli/internal/share	1.765s	coverage: 80.4% of statements
+ok  	tailmouse/apps/cli/internal/transport/tailcat	(cached)	coverage: 79.6% of statements
+ok  	tailmouse/tools/archiveinfo	(cached)	coverage: 88.7% of statements
+total:								(statements)			86.8%
+==> Native and edge builds
+==> local Worker integration
+==> local public-origin verification
+==> dependency notices
+==> native browser QR decoding
+==> hermetic transport integration
+ok  	tailmouse/apps/cli/internal/transport/tailcat	192.190s
+==> Unix Leash native/browser acceptance
+ok  	tailmouse/apps/cli/cmd/tailmouse	258.054s
+==> Resource native/browser and named TUI acceptance
+ok  	tailmouse/apps/cli/cmd/tailmouse	18.161s
+ok  	tailmouse/apps/cli/internal/share	0.294s
+==> Escape impairment smoke
+ok  	tailmouse/apps/cli/internal/transport/tailcat	16.551s
+==> browser end-to-end tests
+  4 skipped
+  186 passed (2.4m)
+==> Firefox and WebKit real transport acceptance
+ok  	tailmouse/apps/cli/internal/transport/tailcat	132.860s
+==> Go race and vulnerability checks
+ok  	tailmouse/apps/cli/cmd/tailmouse	32.256s
+ok  	tailmouse/apps/cli/internal/config	(cached)
+ok  	tailmouse/apps/cli/internal/escape	(cached)
+ok  	tailmouse/apps/cli/internal/flow	(cached)
+ok  	tailmouse/apps/cli/internal/invitation	(cached)
+ok  	tailmouse/apps/cli/internal/leash	(cached)
+ok  	tailmouse/apps/cli/internal/platform/pty	(cached)
+ok  	tailmouse/apps/cli/internal/protocol	(cached)
+ok  	tailmouse/apps/cli/internal/session	(cached)
+ok  	tailmouse/apps/cli/internal/share	2.934s
+ok  	tailmouse/apps/cli/internal/transport/tailcat	(cached)
+ok  	tailmouse/tools/archiveinfo	(cached)
+No vulnerabilities found.
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 6
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.
+==> Escape representative network profiles and outages
+ok  	tailmouse/apps/cli/internal/transport/tailcat	119.788s
+==> Unix Leash representative network profiles
+ok  	tailmouse/apps/cli/cmd/tailmouse	275.020s
+Gate passed (full).

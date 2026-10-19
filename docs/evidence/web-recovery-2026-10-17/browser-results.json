@@ -1,0 +1,47 @@
+{
+  "version": "web-alpha.13440a5c97b1.dirty",
+  "results": [
+    {
+      "browser": "chromium",
+      "version": "151.0.7922.34",
+      "width": 1440,
+      "checks": "landing, sections/reload, workflow, missing invitation, malformed resource and legacy invitation erasure, generic metadata, no external requests",
+      "passed": true
+    },
+    {
+      "browser": "chromium",
+      "version": "151.0.7922.34",
+      "width": 390,
+      "checks": "landing, sections/reload, workflow, missing invitation, malformed resource and legacy invitation erasure, generic metadata, no external requests",
+      "passed": true
+    },
+    {
+      "browser": "firefox",
+      "version": "153.0",
+      "width": 1440,
+      "checks": "landing, sections/reload, workflow, missing invitation, malformed resource and legacy invitation erasure, generic metadata, no external requests",
+      "passed": true
+    },
+    {
+      "browser": "firefox",
+      "version": "153.0",
+      "width": 390,
+      "checks": "landing, sections/reload, workflow, missing invitation, malformed resource and legacy invitation erasure, generic metadata, no external requests",
+      "passed": true
+    },
+    {
+      "browser": "webkit",
+      "version": "26.5",
+      "width": 1440,
+      "checks": "landing, sections/reload, workflow, missing invitation, malformed resource and legacy invitation erasure, generic metadata, no external requests",
+      "passed": true
+    },
+    {
+      "browser": "webkit",
+      "version": "26.5",
+      "width": 390,
+      "checks": "landing, sections/reload, workflow, missing invitation, malformed resource and legacy invitation erasure, generic metadata, no external requests",
+      "passed": true
+    }
+  ]
+}

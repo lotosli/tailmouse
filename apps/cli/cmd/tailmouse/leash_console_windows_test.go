@@ -162,3 +162,6 @@ func TestWindowsLeashLocalConsolePipeCancellationJoinsAndPreservesCallerHandles(
 		})
 	}
 }
+
+// Windows has no SIGWINCH; redirected streams emit no console resize event.
+func exerciseRedirectedResizeSignal(_ *leashCLIFixture) {}

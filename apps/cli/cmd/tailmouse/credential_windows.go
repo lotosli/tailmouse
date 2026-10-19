@@ -19,7 +19,3 @@ func openCredentialTerminal(_ *os.File) (*credentialTerminal, error) {
 	}
 	return &credentialTerminal{output: output, owned: true}, nil
 }
-
-func terminalFileWritable(file *os.File) bool {
-	return file != nil && term.IsTerminal(int(file.Fd()))
-}

@@ -402,53 +402,59 @@ func TestHostNegotiatesAuthorityAndNormalClose(t *testing.T) {
 }
 
 func TestHostRejectsPeersWithoutChangingTheOwner(t *testing.T) {
-	host := newTestHost(t, "leash", true)
-	owner, welcome := connectTestHost(t, host, "leash", testHostID, 2)
-	if !bytes.Contains(welcome.Payload, []byte(`"capabilities":["terminal_output"]`)) {
-		t.Fatal("readonly capability manifest was not authoritative")
-	}
-	lease := host.Authority.Inspect(time.Now()).Owner
-	for _, test := range []struct {
-		mode    string
-		id      [16]byte
-		version int
-		code    protocol.ErrorCode
-	}{
-		{"leash", testHostID, 2, protocol.CodeSessionBusy},
-		{"escape", testHostID, 1, protocol.CodeModeMismatch},
-		{"leash", [16]byte{8}, 2, protocol.CodeBadMouseCard},
-		{"leash", testHostID, 1, protocol.CodeProtocolMismatch},
-	} {
-		browser, response := connectTestHost(t, host, test.mode, test.id, test.version)
-		if code, ok := protocol.ErrorCodeOf(protocol.DecodeError(response)); !ok || code != test.code {
-			t.Fatalf("rejection = %s, want %s", code, test.code)
+	synctest.Test(t, func(t *testing.T) {
+		host := newTestHost(t, "leash", true)
+		owner, welcome := connectTestHost(t, host, "leash", testHostID, 2)
+		if !bytes.Contains(welcome.Payload, []byte(`"capabilities":["terminal_output"]`)) {
+			t.Fatal("readonly capability manifest was not authoritative")
 		}
-		_ = browser.Close()
-		if snapshot := host.Authority.Inspect(time.Now()); snapshot.State != Active || snapshot.Owner != lease {
-			t.Fatal("rejected peer displaced the owner")
+		lease := host.Authority.Inspect(time.Now()).Owner
+		for _, test := range []struct {
+			mode    string
+			id      [16]byte
+			version int
+			code    protocol.ErrorCode
+		}{
+			{"leash", testHostID, 2, protocol.CodeSessionBusy},
+			{"escape", testHostID, 1, protocol.CodeModeMismatch},
+			{"leash", [16]byte{8}, 2, protocol.CodeBadMouseCard},
+			{"leash", testHostID, 1, protocol.CodeProtocolMismatch},
+		} {
+			browser, response := connectTestHost(t, host, test.mode, test.id, test.version)
+			if code, ok := protocol.ErrorCodeOf(protocol.DecodeError(response)); !ok || code != test.code {
+				t.Fatalf("rejection = %s, want %s", code, test.code)
+			}
+			_ = browser.Close()
+			synctest.Wait()
+			if snapshot := host.Authority.Inspect(time.Now()); snapshot.State != Active || snapshot.Owner != lease {
+				t.Fatal("rejected peer displaced the owner")
+			}
 		}
-	}
-	if err := protocol.WriteFrame(context.Background(), owner, protocol.PeerBrowser, protocol.StateActiveLeash, protocol.Frame{Type: protocol.TypeTermInput, Payload: []byte("input")}); err != nil {
-		t.Fatal(err)
-	}
-	response, err := protocol.ReadFrame(context.Background(), owner, protocol.PeerBrowser, protocol.StateActiveLeash)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code, _ := protocol.ErrorCodeOf(protocol.DecodeError(response)); code != protocol.CodeReadonly {
-		t.Fatal("readonly input was not rejected at the host")
-	}
-	_ = owner.Close()
-	waitHostState(t, host, Listening)
-	replacement, response := connectTestHost(t, host, "leash", testHostID, 2)
-	if response.Type != protocol.TypeServerWelcome {
-		t.Fatal("replacement did not negotiate a fresh welcome")
-	}
-	snapshot := host.Authority.Inspect(time.Now())
-	if snapshot.Owner == lease || snapshot.Reconnects != 1 {
-		t.Fatal("reconnect reused stale ownership")
-	}
-	_ = replacement.Close()
+		if err := protocol.WriteFrame(context.Background(), owner, protocol.PeerBrowser, protocol.StateActiveLeash, protocol.Frame{Type: protocol.TypeTermInput, Payload: []byte("input")}); err != nil {
+			t.Fatal(err)
+		}
+		response, err := protocol.ReadFrame(context.Background(), owner, protocol.PeerBrowser, protocol.StateActiveLeash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if code, _ := protocol.ErrorCodeOf(protocol.DecodeError(response)); code != protocol.CodeReadonly {
+			t.Fatal("readonly input was not rejected at the host")
+		}
+		_ = owner.Close()
+		// Listening can precede worker retirement; settle the closed streams
+		// before requesting a new authentication slot.
+		synctest.Wait()
+		waitHostState(t, host, Listening)
+		replacement, response := connectTestHost(t, host, "leash", testHostID, 2)
+		if response.Type != protocol.TypeServerWelcome {
+			t.Fatal("replacement did not negotiate a fresh welcome")
+		}
+		snapshot := host.Authority.Inspect(time.Now())
+		if snapshot.Owner == lease || snapshot.Reconnects != 1 {
+			t.Fatal("reconnect reused stale ownership")
+		}
+		_ = replacement.Close()
+	})
 }
 
 func TestHostBoundsPendingWorkersAndJoinsOnClose(t *testing.T) {
