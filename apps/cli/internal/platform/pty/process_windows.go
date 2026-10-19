@@ -120,7 +120,12 @@ func Start(ctx context.Context, snapshot *leash.Command) (_ *Process, failure er
 		return nil, &StartError{code: 6, cause: err}
 	}
 	startup := windows.StartupInfoEx{
-		StartupInfo:             windows.StartupInfo{Cb: uint32(unsafe.Sizeof(windows.StartupInfoEx{}))},
+		// Without this flag, Windows duplicates a redirected parent's standard
+		// handles even when inheritHandles is false. Explicit null handles let
+		// the child attach all three streams to its own pseudoconsole instead.
+		StartupInfo: windows.StartupInfo{
+			Cb: uint32(unsafe.Sizeof(windows.StartupInfoEx{})), Flags: windows.STARTF_USESTDHANDLES,
+		},
 		ProcThreadAttributeList: attributes.List(),
 	}
 	if err := ctx.Err(); err != nil {

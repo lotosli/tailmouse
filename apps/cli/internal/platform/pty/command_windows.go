@@ -44,6 +44,13 @@ func commandWindows(snapshot *leash.Command) (application, arguments *uint16, en
 	if err != nil {
 		return nil, nil, nil, nil, launchError(err)
 	}
+	// CreateProcess can silently dispatch batch files through cmd.exe. That
+	// would reinterpret the captured literal arguments as shell syntax. A
+	// caller that wants a shell must name its interpreter explicitly.
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".bat", ".cmd":
+		return nil, nil, nil, nil, launchError(windows.ERROR_BAD_EXE_FORMAT)
+	}
 	application, err = windows.UTF16PtrFromString(path)
 	if err != nil {
 		return nil, nil, nil, nil, launchError(err)

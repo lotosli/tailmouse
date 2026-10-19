@@ -375,17 +375,42 @@ func TestConPTYStartupFailuresAllocateNoProcess(t *testing.T) {
 	if process, err := Start(t.Context(), nil); !errors.Is(err, leash.ErrCommand) || process != nil {
 		t.Fatal("nil snapshot allocated resources")
 	}
-	path := filepath.Join(t.TempDir(), "script.cmd")
-	if err := os.WriteFile(path, []byte("@echo off\r\nexit /b 0\r\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	command, err := leash.NewCommand([]string{path}, t.TempDir(), "Invalid image test", nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	process, err := Start(t.Context(), command)
-	var failure *StartError
-	if process != nil || !errors.As(err, &failure) || failure.ExitCode() != 126 || !errors.Is(err, windows.ERROR_BAD_EXE_FORMAT) {
-		t.Fatal("script was silently wrapped in a shell or misclassified", err)
+	for _, extension := range []string{".cmd", ".BAT"} {
+		for _, search := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/search=%t", extension, search), func(t *testing.T) {
+				cwd := t.TempDir()
+				path := filepath.Join(cwd, "script"+extension)
+				if err := os.WriteFile(path, []byte("@echo off\r\necho executed > unexpected.txt\r\n"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				name := path
+				if search {
+					name = "script"
+				}
+				command, err := leash.NewCommand([]string{name}, cwd, "Invalid image test", []string{"PATH=.", "PATHEXT=" + extension}, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var failure *StartError
+				if err := Preflight(command); !errors.As(err, &failure) || failure.ExitCode() != 126 || !errors.Is(err, windows.ERROR_BAD_EXE_FORMAT) {
+					t.Fatal("preflight admitted an implicit command interpreter", err)
+				}
+				process, err := Start(t.Context(), command)
+				if process != nil {
+					cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					closeErr := process.Close(cleanup)
+					cancel()
+					if closeErr != nil {
+						t.Error(closeErr)
+					}
+				}
+				if process != nil || !errors.As(err, &failure) || failure.ExitCode() != 126 || !errors.Is(err, windows.ERROR_BAD_EXE_FORMAT) {
+					t.Fatal("script was silently wrapped in a shell or misclassified", err)
+				}
+				if _, err := os.Stat(filepath.Join(cwd, "unexpected.txt")); !errors.Is(err, os.ErrNotExist) {
+					t.Fatal("rejected script had a side effect", err)
+				}
+			})
+		}
 	}
 }

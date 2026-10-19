@@ -14,6 +14,11 @@ The recovered native source builds and interoperates with the deployed browser, 
 - Complete missing permission, lifecycle, terminal, configuration, HTTP and upload failure tests. Keep existing quality floors and fail-fast gates. Use exactly four representative network profiles.
 - Use an init-like descendant reaper in Linux containers without a functioning PID 1 reaper, preserving production process cleanup and test assertions.
 - Deploy the existing static-only Worker on tailmouse.com after local acceptance. Preserve the explicitly authorized trusted-app same-origin test configuration; it does not isolate hostile previews.
+- Repair native Windows failures found by release CI: explicitly initialize ConPTY standard handles under parent redirection, and reject implicit batch-script dispatch before allocation. Keep native x64/ARM64 tests and run the inexpensive terminal boundary before the full CI build.
+
+### Windows acceptance evidence and decision
+
+Observed on 2026-10-19: both Windows CI architectures emit child readiness into the parent test log, while ConPTY reads time out or reach EOF. Microsoft documents the same redirected-parent behavior in [terminal issue 11276](https://github.com/microsoft/terminal/issues/11276#issuecomment-923207186): `STARTF_USESTDHANDLES` with null handles prevents default parent-handle duplication. CI also observes that `CreateProcessW` accepts a batch script despite the existing no-implicit-shell test. Use the native startup flag and a case-insensitive resolved-extension check before allocation. Reject skipping native tests, changing readiness deadlines, or wrapping commands in a shell because those would violate existing terminal and literal-command requirements. No dependency, helper process or configuration surface is added. Cross-compilation is only a prerequisite; the existing native tests must verify the correction on both Windows runners.
 
 ## Impact and simplicity
 
