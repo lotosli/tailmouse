@@ -1,0 +1,17 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font: 16px system-ui;
+  background: #fff;
+  color: #172019;
+}
+#application {
+  border: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#loading {
+  padding: 24px;
+}

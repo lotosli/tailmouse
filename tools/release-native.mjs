@@ -162,7 +162,7 @@ function main(args) {
       });
       assert.equal(
         output,
-        `TailMouse ${identity.version}\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTailcat revision ${identity.tailcatRevision}\n`,
+        `TailMouse ${identity.version}\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTMOUSE Resource protocol 2\nTailcat revision ${identity.tailcatRevision}\n`,
         'Native version output disagrees with release identity.',
       );
       process.stdout.write(

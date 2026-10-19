@@ -140,7 +140,7 @@ const phases = [
         '-count=1',
         '-failfast',
         '-timeout=2m',
-        '-run=TestImpairment|TestEscapeNetworkRelayDisconnect|TestEscapeNetworkMatrix/rtt150-jitter30-loss0-kbit256$',
+        '-run=TestImpairment|TestEscapeNetworkRelayDisconnect|TestEscapeNetworkMatrix/rtt150-jitter30-loss1-kbit256$',
         './apps/cli/internal/transport/tailcat',
       ]),
   ],
@@ -165,11 +165,11 @@ const phases = [
           () => run(process.execPath, ['tools/go-gate.mjs', 'release']),
         ],
         [
-          'Escape complete network matrix and outages',
+          'Escape representative network profiles and outages',
           () => runPnpm(['run', 'test:escape-network']),
         ],
         [
-          'Unix Leash complete network matrix',
+          'Unix Leash representative network profiles',
           () => {
             if (process.platform === 'win32') {
               process.stdout.write(

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"tailmouse/apps/cli/internal/share"
 )
 
 func TestDocumentedCLIExamples(t *testing.T) {
@@ -27,6 +29,36 @@ func TestDocumentedCLIExamples(t *testing.T) {
 					t.Fatal("documented example needs explicit shell-aware verification")
 				}
 				args := strings.Fields(line)[1:]
+				if share.IsCommand(args[0]) {
+					configDir := t.TempDir()
+					environ := []string{"TAILMOUSE_FRONTEND_BASE=https://ui.example.com", "TAILMOUSE_CONTENT_BASE=https://preview.example.net"}
+					configuration := slices.Index(args, "--config")
+					if configuration >= 0 {
+						if configuration+1 >= len(args) || args[configuration+1] != "./tailmouse-config.json" {
+							t.Fatal("documented configuration needs an explicit local fixture")
+						}
+						// Model the preceding download using the exact checked-in
+						// public configuration, without a network dependency.
+						path := filepath.Join(configDir, "tailmouse-config.json")
+						if err := os.WriteFile(path, []byte(readDocumentation(t, "deploy/resource/tailmouse-config.test.json")), 0600); err != nil {
+							t.Fatal(err)
+						}
+						args[configuration+1] = path
+						environ = nil
+					}
+					options, help, err := share.Parse(args, environ, configDir)
+					if err != nil || help || options.Command != args[0] {
+						t.Fatalf("documented resource command %q: help=%v error=%v", line, help, err)
+					}
+					if configuration >= 0 && (!options.TestSingleOrigin || options.FrontendBase != "https://tailmouse.com" || options.ContentBase != options.FrontendBase) {
+						t.Fatal("documented test deployment was not selected")
+					}
+					if separator := slices.Index(args, "--"); separator >= 0 && !slices.Equal(options.Argv, args[separator+1:]) {
+						t.Fatal("documented resource argv was not preserved")
+					}
+					checked++
+					continue
+				}
 				options, help, err := Resolve(args, nil, t.TempDir())
 				if err != nil || help != (args[len(args)-1] == "--help") {
 					t.Fatalf("documented command %q: help=%v error=%v", line, help, err)

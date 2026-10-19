@@ -22,26 +22,17 @@ import (
 	"tailmouse/apps/cli/internal/session"
 )
 
-// Every PRD 17.5 latency/jitter/loss/bandwidth combination is exercised. A
-// separate profile covers the explicit PRD 8.12 150/30 responsiveness case.
+// The owner selected four representative profiles instead of a Cartesian matrix.
 func TestEscapeNetworkMatrix(t *testing.T) {
-	index := 0
-	for _, rtt := range []int{20, 80, 150, 300} {
-		for _, jitter := range []int{0, 20, 60} {
-			for _, loss := range []int{0, 1, 5} {
-				for _, bandwidth := range []int{64, 256, 1024} {
-					profile := impairmentProfile{RTTMS: rtt, JitterMS: jitter, Loss: loss, Kbit: bandwidth}
-					name := fmt.Sprintf("rtt%d-jitter%d-loss%d-kbit%d", rtt, jitter, loss, bandwidth)
-					layout := escape.MapNames()[index%5]
-					index++
-					t.Run(name, func(t *testing.T) { testEscapeNetwork(t, profile, layout, "matrix") })
-				}
-			}
-		}
+	for index, profile := range []impairmentProfile{
+		{RTTMS: 20, JitterMS: 0, Loss: 0, Kbit: 1024},
+		{RTTMS: 150, JitterMS: 30, Loss: 1, Kbit: 256},
+		{RTTMS: 300, JitterMS: 60, Loss: 5, Kbit: 256},
+		{RTTMS: 80, JitterMS: 20, Loss: 1, Kbit: 64},
+	} {
+		name := fmt.Sprintf("rtt%d-jitter%d-loss%d-kbit%d", profile.RTTMS, profile.JitterMS, profile.Loss, profile.Kbit)
+		t.Run(name, func(t *testing.T) { testEscapeNetwork(t, profile, escape.MapNames()[index%5], "matrix") })
 	}
-	t.Run("rtt150-jitter30-loss0-kbit256", func(t *testing.T) {
-		testEscapeNetwork(t, impairmentProfile{RTTMS: 150, JitterMS: 30, Kbit: 256}, "courtyard", "matrix")
-	})
 }
 
 func TestEscapeNetworkOutages(t *testing.T) {

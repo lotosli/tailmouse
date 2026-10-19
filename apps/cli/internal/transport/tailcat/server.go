@@ -4,6 +4,7 @@ package tailcat
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
+	"os"
 	"slices"
 	"strings"
 	"sync"
@@ -78,6 +80,10 @@ type Config struct {
 	RegionCode   string
 	RegionName   string
 	OnConnection func(ByteStream)
+	// Resource sessions may load a local validated map and select one region.
+	DERPMapFile     string
+	PreferredRegion int
+	BindPeer        bool
 }
 
 // Server owns a started Tailcat server and its in-memory connection address.
@@ -102,8 +108,10 @@ type backend interface {
 }
 
 type realBackend struct {
-	server       *upstream.Server
-	mapTransport http.RoundTripper
+	server          *upstream.Server
+	mapTransport    http.RoundTripper
+	mapFile         string
+	preferredRegion int
 }
 
 func (b *realBackend) Start(ctx context.Context) error {
@@ -129,9 +137,33 @@ func (b *realBackend) selectRegion(ctx context.Context) error {
 	if source == "" {
 		source = upstream.DefaultDERPMapURL
 	}
-	relayMap, err := fetchRelayMap(ctx, source, b.mapTransport)
+	var relayMap *tailcfg.DERPMap
+	var err error
+	if b.mapFile != "" {
+		file, openErr := os.Open(b.mapFile)
+		if openErr != nil {
+			return errRelayMap
+		}
+		data, readErr := io.ReadAll(io.LimitReader(file, maxRelayMapBytes+1))
+		closeErr := file.Close()
+		var value tailcfg.DERPMap
+		if readErr != nil || closeErr != nil || len(data) > maxRelayMapBytes || json.Unmarshal(data, &value) != nil || !validRelayMap(&value) {
+			return errRelayMap
+		}
+		relayMap = &value
+	} else {
+		relayMap, err = fetchRelayMap(ctx, source, b.mapTransport)
+	}
 	if err != nil {
 		return err
+	}
+	if b.preferredRegion != 0 {
+		region := relayMap.Regions[tailcfg.DERPRegionID(b.preferredRegion)]
+		if region == nil {
+			return errRelayMap
+		}
+		b.server.Region = region
+		return nil
 	}
 	// Tailcat still owns selection. Supplying the complete validated map
 	// prevents its fetcher from following insecure redirects or stale data.
@@ -215,6 +247,9 @@ func startBackend(ctx context.Context, configured backend) (err error) {
 }
 
 func newBackend(config Config) (backend, Relay, error) {
+	if config.DERPMapFile != "" && (config.DERPMapURL != "" || len(config.DERPHosts) > 0) || config.PreferredRegion < 0 {
+		return nil, Relay{}, ErrInvalidConfig
+	}
 	configuredRelay, region, mapURL, err := normalizeRelay(config)
 	if err != nil {
 		return nil, Relay{}, err
@@ -226,7 +261,11 @@ func newBackend(config Config) (backend, Relay, error) {
 				return nil
 			}
 			return func(connection net.Conn) {
-				config.OnConnection(connection)
+				if config.BindPeer {
+					config.OnConnection(&peerStream{Conn: connection})
+				} else {
+					config.OnConnection(connection)
+				}
 			}
 		},
 		ServedTCPPorts: []filter.PortRange{{First: VirtualPort, Last: VirtualPort}},
@@ -237,7 +276,35 @@ func newBackend(config Config) (backend, Relay, error) {
 	if mapURL != "" {
 		server.DERPMapURL = mapURL
 	}
-	return &realBackend{server: server}, configuredRelay, nil
+	if config.DERPMapFile != "" {
+		configuredRelay.Mode = RelayCustomMap
+	}
+	return &realBackend{server: server, mapFile: config.DERPMapFile, preferredRegion: config.PreferredRegion}, configuredRelay, nil
+}
+
+// The transport binds the peer identity to its validated WireGuard address.
+type peerStream struct{ net.Conn }
+
+func (s *peerStream) PeerIdentity() string {
+	if s == nil || s.Conn == nil || s.RemoteAddr() == nil {
+		return ""
+	}
+	address, _, err := net.SplitHostPort(s.RemoteAddr().String())
+	if err != nil {
+		return ""
+	}
+	ip, err := netip.ParseAddr(address)
+	if err != nil || !ip.Is6() || ip.Zone() != "" {
+		return ""
+	}
+	return ip.String()
+}
+func PeerIdentity(stream ByteStream) string {
+	peer, ok := stream.(*peerStream)
+	if !ok {
+		return ""
+	}
+	return peer.PeerIdentity()
 }
 
 func normalizeRelay(config Config) (Relay, *tailcfg.DERPRegion, string, error) {

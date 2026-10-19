@@ -150,8 +150,8 @@ await test('CI keeps the complete fail-fast matrix ahead of packaging and fuzzin
     'browser end-to-end tests',
     'Firefox and WebKit real transport acceptance',
     'Go race and vulnerability checks',
-    'Escape complete network matrix and outages',
-    'Unix Leash complete network matrix',
+    'Escape representative network profiles and outages',
+    'Unix Leash representative network profiles',
   ]) {
     assert.match(gate, new RegExp(`'${phase.replace('/', '\\/')}'`, 'u'));
   }
@@ -209,7 +209,7 @@ await test('root build prepares Tailcat and Web artifacts before the edge build'
   ) as { scripts?: { build?: string } };
   assert.equal(
     packageJson.scripts?.build,
-    'node tools/tailcat-gate.mjs build && node tools/build-native.mjs && pnpm --filter @tailmouse/web build && pnpm --filter @tailmouse/link-edge build',
+    'node tools/tailcat-gate.mjs build && node tools/resource-bridge.mjs && node tools/build-native.mjs && pnpm --filter @tailmouse/web build && pnpm --filter @tailmouse/link-edge build',
   );
 });
 

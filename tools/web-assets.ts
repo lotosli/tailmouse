@@ -5,7 +5,7 @@ import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
 
 export const securityHeaders = Object.freeze({
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss:; frame-src https:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
   'Referrer-Policy': 'no-referrer',
   'Permissions-Policy':
     'camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(self), gyroscope=(self), magnetometer=()',
@@ -31,6 +31,27 @@ export const staticHosting = Object.freeze({
   }),
   unknownPathStatus: 404,
   requiredHeaders: securityHeaders,
+});
+
+// Content bootstrap hosts cannot use the trusted UI's frame-ancestors 'none'.
+// The deployment adds its configured trusted session wildcard as the ancestor.
+export const contentHosting = Object.freeze({
+  applicationBackend: false,
+  allowedPrefix: '/.tailmouse/',
+  unknownPathStatus: 404,
+  serviceWorker: Object.freeze({
+    path: '/.tailmouse/sw.js',
+    scope: '/',
+    requiredHeaders: Object.freeze({ 'Service-Worker-Allowed': '/' }),
+  }),
+  frameAncestors: 'trusted-session-wildcard-from-config',
+  requiredHeaders: Object.freeze({
+    'Content-Security-Policy':
+      "default-src 'none'; script-src 'self'; style-src 'self'; frame-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'",
+    'Referrer-Policy': 'no-referrer',
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': 'no-store',
+  }),
 });
 
 export type WebObjectMetadata = {
@@ -74,7 +95,7 @@ export function webObjectMetadata(fileName: string): WebObjectMetadata {
     );
   return {
     contentType,
-    cacheControl: `${immutable ? immutableCacheControl : 'no-cache'}${
+    cacheControl: `${rawName.startsWith('.tailmouse/') ? 'no-store' : immutable ? immutableCacheControl : 'no-cache'}${
       compressed ? ', no-transform' : ''
     }`,
     ...(compressed

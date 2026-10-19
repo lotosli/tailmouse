@@ -1,3 +1,4 @@
+import { resourceWasmDependencies } from './web-dependencies.ts';
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { spawnSync } from 'node:child_process';
@@ -245,6 +246,7 @@ await test('notice command explicitly updates sources and fails closed on drift 
   for (const directory of [
     'third_party/tailcat',
     'dependency',
+    'untagged-only',
     'goroot',
     'apps/web/node_modules/vite',
     'node_modules/@fission-ai/openspec',
@@ -263,10 +265,48 @@ await test('notice command explicitly updates sources and fails closed on drift 
       dependencies: { npm: [{ name: 'vite', version: '8.0.0' }], wasm },
     }),
   );
+  const resourceSource = {
+    revision: '2'.repeat(40),
+    sourceSha256: '3'.repeat(64),
+  };
+  put(
+    '.artifacts/resource-bridge/manifest.json',
+    JSON.stringify(resourceSource),
+  );
+  const resourceInfo = [
+    'path\ttailmouse/apps/cli/internal/transport/tailcat/wasm',
+    'mod\ttailmouse\tv0.0.0-20261016000000-222222222222\t',
+    `dep\t${tailcatName}\t(devel)\t`,
+    `dep\t${module.name}\t${module.version}\t${module.sum}`,
+    'build\t-trimpath=true',
+    'build\tCGO_ENABLED=0',
+    'build\tGOARCH=wasm',
+    'build\tGOOS=js',
+    `build\tvcs.revision=${resourceSource.revision}`,
+    'build\tvcs.modified=true',
+    '',
+  ].join('\n');
+  const resourceBytes = Buffer.concat([
+    Buffer.from('0061736d01000000', 'hex'),
+    Buffer.from('3077af0c9274080241e1c107e6d618e6', 'hex'),
+    Buffer.from(resourceInfo),
+    Buffer.from('f932433186182072008242104116d8f2', 'hex'),
+  ]);
+  put('.artifacts/resource-bridge/resource.wasm', resourceBytes);
+  const webManifest = JSON.parse(
+    readFileSync(resolve(fixture, 'apps/web/dist/web-manifest.json'), 'utf8'),
+  );
+  webManifest.dependencies.resourceWasm = resourceWasmDependencies(
+    resourceBytes,
+    revision,
+    { ...resourceSource, tailcatVersion },
+  );
+  put('apps/web/dist/web-manifest.json', JSON.stringify(webManifest));
   const info = [
     `path\t${tailcatName}/web`,
     `mod\t${tailcatName}\t${tailcatVersion}\t`,
     `dep\t${module.name}\t${module.version}\t${module.sum}`,
+    'build\t-tags=ts_omit_nattraversal,ts_omit_ssh,ts_omit_udptransport',
     'build\t-trimpath=true',
     'build\tCGO_ENABLED=0',
     'build\tGOARCH=wasm',
@@ -286,9 +326,15 @@ await test('notice command explicitly updates sources and fails closed on drift 
   );
   const mock = `
     export function execFileSync(command, args, options) {
-      if (command !== 'go' || options.env.GOWORK !== 'off' || options.env.CGO_ENABLED !== '0') throw new Error('Unexpected command');
+      if (command !== 'go' || !['off', ${JSON.stringify(resolve(fixture, 'go.work'))}].includes(options.env.GOWORK) || options.env.CGO_ENABLED !== '0') throw new Error('Unexpected command');
       if (args[0] === 'env') return ${JSON.stringify(`go1.27.1\n${resolve(fixture, 'goroot')}`)};
-      if (args[0] === 'list') return ${JSON.stringify(`${tailcatName}|v0.0.0|${resolve(fixture, 'third_party/tailcat')}|\n${module.name}|${module.version}|${resolve(fixture, 'dependency')}|`)};
+      if (args[0] === 'list') {
+        const listed = ${JSON.stringify(`${tailcatName}|v0.0.0|${resolve(fixture, 'third_party/tailcat')}|\n${module.name}|${module.version}|${resolve(fixture, 'dependency')}|`)};
+        // The untagged graph includes an older module version that is absent
+        // from the actual Wasm. It must not enter the distribution notices.
+        return listed + (options.env.GOOS === 'js' && !args.includes('-tags=ts_omit_nattraversal,ts_omit_ssh,ts_omit_udptransport')
+          ? ${JSON.stringify(`\n${module.name}|v1.0.0|${resolve(fixture, 'untagged-only')}|`)} : '');
+      }
       throw new Error('Unexpected Go command');
     }
   `;

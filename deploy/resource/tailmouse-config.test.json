@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "frontendBase": "https://tailmouse.com",
+  "contentBase": "https://tailmouse.com",
+  "testSingleOrigin": true,
+  "releaseManifest": "/web-manifest.json"
+}

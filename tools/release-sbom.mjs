@@ -25,12 +25,19 @@ import {
   verifySBOM,
   webSBOM,
 } from './sbom.ts';
-import { wasmDependencies } from './web-dependencies.ts';
+import {
+  wasmDependencies,
+  resourceWasmDependencies,
+} from './web-dependencies.ts';
 import {
   distributionNotices,
   verifyNoticeCoverage,
 } from './release-licenses.ts';
-import { staticHosting, webObjectMetadata } from './web-assets.ts';
+import {
+  staticHosting,
+  contentHosting,
+  webObjectMetadata,
+} from './web-assets.ts';
 import { verifyEdgeRelease } from './link-edge-release.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -126,9 +133,11 @@ function webInventory(directory, identity, versions) {
     Object.keys(manifest).sort(),
     [
       'cacheVersion',
+      'contentHosting',
       'dependencies',
       'files',
       'protocols',
+      'resourceProtocol',
       'schemaVersion',
       'staticHosting',
       'tailcatRevision',
@@ -144,6 +153,13 @@ function webInventory(directory, identity, versions) {
   );
   for (const [key, value] of Object.entries(identity))
     assert.deepEqual(manifest[key], value, 'Web build identity mismatch.');
+  assert.deepEqual(
+    manifest.contentHosting,
+    contentHosting,
+    'Content hosting contract mismatch.',
+  );
+  assert.equal(manifest.resourceProtocol.frontendMajor, 1);
+  assert.equal(manifest.resourceProtocol.protocolMajor, 2);
   const webPackage = json(resolve(root, 'apps/web/package.json'));
   const expectedNpm = [...Object.keys(webPackage.dependencies), 'vite']
     .sort()
@@ -215,15 +231,30 @@ function webInventory(directory, identity, versions) {
     return identity;
   });
   const wasmFiles = names.filter((name) => name.endsWith('.wasm'));
-  assert.equal(wasmFiles.length, 1, 'Expected one WebAssembly binary.');
+  assert.equal(
+    wasmFiles.length,
+    2,
+    'Expected legacy and resource WebAssembly binaries.',
+  );
+  const resourceFile = manifest.resourceProtocol?.wasm;
+  assert.ok(
+    wasmFiles.includes(resourceFile) &&
+      /^tailcat\/resource-[a-f0-9]{64}\.wasm$/u.test(resourceFile),
+    'Resource bridge binary is missing.',
+  );
   for (const suffix of ['.wasm.br', '.wasm.gz'])
     assert.equal(
       names.filter((name) => name.endsWith(suffix)).length,
-      1,
-      `Expected one ${suffix} WebAssembly object.`,
+      2,
+      `Expected two ${suffix} WebAssembly objects.`,
     );
   const wasm = wasmDependencies(
-    bytes(resolve(directory, wasmFiles[0])),
+    bytes(
+      resolve(
+        directory,
+        wasmFiles.find((name) => name !== resourceFile),
+      ),
+    ),
     identity.tailcatRevision,
   );
   assert.deepEqual(
@@ -232,7 +263,22 @@ function webInventory(directory, identity, versions) {
     'Embedded Wasm module inventory mismatch.',
   );
   checkSums(wasm.modules, resolve(root, 'third_party/tailcat/go.sum'));
-  return { identities, npm: expectedNpm, wasm };
+  const resource = resourceWasmDependencies(
+    bytes(resolve(directory, resourceFile)),
+    identity.tailcatRevision,
+    {
+      revision: manifest.resourceProtocol.sourceRevision,
+      sourceSha256: manifest.resourceProtocol.sourceSha256,
+      tailcatVersion: wasm.main.version,
+    },
+  );
+  assert.deepEqual(
+    manifest.dependencies.resourceWasm,
+    resource,
+    'Resource bridge module inventory mismatch.',
+  );
+  checkSums(resource.modules, resolve(root, 'go.sum'));
+  return { identities, npm: expectedNpm, wasm, resource };
 }
 
 function sourcePath(path) {
@@ -294,6 +340,7 @@ function main(args) {
         web.npm,
         web.wasm,
         `go${versions.go}`,
+        web.resource,
       ),
     },
   ];
@@ -402,6 +449,7 @@ function main(args) {
     'Native archive checksum coverage mismatch.',
   );
   const output = copies.map((copy) => copy.identity);
+  stage = 'distribution notice coverage';
   verifyNoticeCoverage(
     json(resolve(root, 'tooling/third-party-licenses.json')),
     boms.flatMap((entry) => entry.bom.components),

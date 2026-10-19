@@ -18,6 +18,12 @@ import (
 
 // Prepare all strings before allocating a terminal or starting a child. Neither
 // executable lookup nor the environment block may consult later host state.
+// Preflight validates the immutable command without starting a child process.
+func Preflight(snapshot *leash.Command) error {
+	_, _, _, _, err := commandWindows(snapshot)
+	return err
+}
+
 func commandWindows(snapshot *leash.Command) (application, arguments *uint16, environment []uint16, directory *uint16, failure error) {
 	argv, env, cwd := snapshot.Argv(), snapshot.Environment(), snapshot.Cwd()
 	for _, values := range [][]string{argv, env, {cwd}} {

@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { runPnpm } from './process.mjs';
+import { run, runPnpm } from './process.mjs';
 
 const task = process.argv[2];
 const root = resolve(import.meta.dirname, '..');
@@ -41,6 +41,9 @@ if (task === 'coverage') {
   if (!existsSync(join(webRoot, 'index.html'))) {
     throw new Error('apps/web/index.html is required once web source exists.');
   }
+  run(process.execPath, [join(root, 'tools/resource-bridge.mjs')], {
+    cwd: root,
+  });
   runPnpm(['exec', 'vite', 'build'], { cwd: webRoot });
 } else if (task === 'e2e') {
   if (!existsSync(join(webRoot, 'dist', 'index.html'))) {

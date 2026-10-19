@@ -1,8 +1,10 @@
 # TailMouse code architecture
 
-## Resource browser recovery (2026-10-17)
+## Resource sharing
 
-The accepted `improve-resource-onboarding` change restores the deployed resource browser under `apps/web/src/resources` and its Worker adapter under `src/transport/tailcat`. The existing native tree is still the legacy implementation; corresponding resource native and Go/Wasm sources are missing. The explicit recovery Vite build verifies immutable deployed artifacts and reports their provenance. It is separate from the normal source release, which must not publish a mismatched native/browser pair. Resource sessionStorage recovery is bounded to the trusted tab under the resource PRD; legacy invitations retain their original in-memory semantics. See `docs/evidence/web-recovery-2026-10-17/README.md` for the recovery boundary.
+The accepted `integrate-resource-release` change restores the native Host under `apps/cli/internal/share`, the bounded scheduler under `internal/flow`, and the owned Wasm bridge inside the Tailcat adapter. CLI/Web/Receive/Dev share one authenticated host authority while resources use distinct streams. The browser resource state remains in `apps/web/src/resources`; only its transport adapter calls Wasm. Content bootstrap sources under `apps/web/content` implement the fixed-origin HTTP/WebSocket preview with Service Worker streaming. Both Wasm artifacts and bootstrap scripts are now normal source-build inputs. Recovery archives remain historical evidence and are not release inputs.
+
+The static-only Worker under `deploy/resource` serves the authorized tailmouse.com same-origin test configuration. It never relays application traffic. Separate-origin preview remains the default security boundary; same-origin mode is explicitly for trusted test applications. Bounded per-tab resource sessionStorage recovery follows the resource PRD; legacy invitations keep their in-memory semantics. Release acceptance is recorded separately from source integration.
 
 ## Repository shape
 

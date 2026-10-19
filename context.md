@@ -1,6 +1,13 @@
 # TailMouse project memory
 
-## Current recovery state — 2026-10-19
+## Resource release integration — 2026-10-19
+
+- **Owner-directed:** Integrate restored source into the normal build, complete missing tests and release acceptance, commit/push and redeploy tailmouse.com. The accepted `integrate-resource-release` change records this authorization.
+- **Observed:** Native resource source, flow scheduler, owned Wasm and content bootstrap are now in the normal source tree. The normal Web build passes; actual local DERP/browser journeys pass in both separate-origin and authorized single-origin modes, together with named TUI redraw acceptance (17.926 s and 0.307 s). These are focused results, not a passing full release.
+- **Observed:** Tailcat main remains `52fbad323e9d352f1febb623e0975368e9a8cbdd` on 2026-10-19. Its unchanged source builds and tests after isolating SSH tests from this container's misowned system SSH include. Native cleanup tests use the Linux descendant reaper because PID 1 is `tail`.
+- **In progress:** Complete resource/lifecycle and static-deployment tests, notices, quick/full gates, release packaging and public verification. All new source is checkpointed as WIP before final acceptance. No new deployment is claimed at this checkpoint.
+
+## Historical recovery state — 2026-10-19
 
 - **Observed, 2026-10-19:** The native recovery candidate now builds and passes resource/flow race tests, protected-Leash pre-admission acceptance, and a real single-origin Chromium/local-DERP journey against the improved recovered browser (terminal, HTTP preview, WebSocket, upload receipt/bytes, reload and revocation). All 11 native Go packages pass race/coverage with an init-like descendant reaper; aggregate coverage is 82.1%, while resource coverage remains 65.1%. The container PID 1 is `tail`; without the wrapper two orphan process-group cleanup tests fail. Candidate source, hashes, bounded logs and reconstructed-section limitations are preserved in `docs/evidence/native-source-recovery-2026-10-19/`. Normal source/release pipeline integration remains pending; current-checkout quick/full gates still stop at legacy Staticcheck's export-data mismatch. No deployment or native publication occurred.
 

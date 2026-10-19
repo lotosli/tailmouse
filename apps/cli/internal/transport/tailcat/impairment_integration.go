@@ -193,6 +193,13 @@ type impairedConnection struct {
 	done   chan struct{}
 }
 
+// DERP may replace the Hijack reader with one built directly on this Conn.
+// Keep that path on the scheduled pipe too: only the framing worker may read
+// the underlying socket, otherwise both readers race and bypass impairment.
+func (connection *impairedConnection) Read(buffer []byte) (int, error) {
+	return connection.reader.Read(buffer)
+}
+
 func (connection *impairedConnection) Close() error {
 	connection.cancel()
 	_ = connection.reader.Close()

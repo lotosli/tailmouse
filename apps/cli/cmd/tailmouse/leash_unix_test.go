@@ -36,6 +36,10 @@ import (
 
 const leashEcho = "q\x03\x1b[A🐈"
 
+// The network child must live through the owning browser fixture's bounded
+// reconnect, outage, history replay, retention and cleanup sequence.
+const leashNetworkFixtureTimeout = 2 * time.Minute
+
 func TestLeashCLIChild(t *testing.T) {
 	mode := os.Getenv("TAILMOUSE_LEASH_CLI_CHILD")
 	if mode == "" {
@@ -472,7 +476,9 @@ func TestLeashCLIImmediateAndHostRetainedExitPolicies(t *testing.T) {
 
 func TestProtectedLeashCLIRejectsPreAdmissionStartTriggers(t *testing.T) {
 	fixture := startProtectedLeashCLI(t, "exit", "--start-on=connect", "--local-input=false")
-	writeHello := func(peer net.Conn, version int) {
+	stage := "initial"
+	openHello := func(version int) net.Conn {
+		t.Helper()
 		payload, _ := json.Marshal(map[string]any{
 			"protocol_min": version, "protocol_max": version, "session_id": hex.EncodeToString(fixture.card.SessionID[:]), "mode": "leash",
 			"client": map[string]string{"name": "test-browser", "version": "1", "platform": "test", "user_agent": ""},
@@ -481,18 +487,31 @@ func TestProtectedLeashCLIRejectsPreAdmissionStartTriggers(t *testing.T) {
 		binary.BigEndian.PutUint32(wire, uint32(len(payload)+2))
 		wire[4] = byte(protocol.TypeClientHello)
 		copy(wire[6:], payload)
-		if _, err := peer.Write(wire); err != nil {
-			t.Fatal(err)
+		defer clear(wire)
+		defer clear(payload)
+		deadline := time.Now().Add(3 * time.Second)
+		for {
+			server, peer := net.Pipe()
+			_ = peer.SetDeadline(deadline)
+			fixture.transport.config.OnConnection(server)
+			n, err := peer.Write(wire)
+			if err == nil {
+				return peer
+			}
+			_ = peer.Close()
+			_ = server.Close()
+			// A rejected connection can outlive its reply while the bounded
+			// authentication worker is closing. Retry only before any bytes were
+			// accepted, without widening the original handshake deadline.
+			if n != 0 || !time.Now().Before(deadline) {
+				t.Fatalf("protected pre-admission %s HELLO write: %v", stage, err)
+			}
+			time.Sleep(time.Millisecond)
 		}
-		clear(wire)
-		clear(payload)
 	}
 
-	server, stalled := net.Pipe()
+	stalled := openHello(2)
 	t.Cleanup(func() { _ = stalled.Close() })
-	_ = stalled.SetDeadline(time.Now().Add(3 * time.Second))
-	fixture.transport.config.OnConnection(server)
-	writeHello(stalled, 2)
 	challenge, err := protocol.ReadFrame(fixture.ctx, stalled, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
 	if err != nil || challenge.Type != protocol.TypeAuthChallenge {
 		t.Fatal("protected CLI did not stop the peer at authentication", err)
@@ -501,10 +520,8 @@ func TestProtectedLeashCLIRejectsPreAdmissionStartTriggers(t *testing.T) {
 
 	_ = stalled.Close()
 	for attempt := 1; attempt <= 10; attempt++ {
-		server, failed := net.Pipe()
-		_ = failed.SetDeadline(time.Now().Add(3 * time.Second))
-		fixture.transport.config.OnConnection(server)
-		writeHello(failed, 2)
+		stage = fmt.Sprintf("failed-proof-%d", attempt)
+		failed := openHello(2)
 		challenge, err = protocol.ReadFrame(fixture.ctx, failed, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
 		if err != nil || challenge.Type != protocol.TypeAuthChallenge {
 			_ = failed.Close()
@@ -533,11 +550,9 @@ func TestProtectedLeashCLIRejectsPreAdmissionStartTriggers(t *testing.T) {
 		clear(rejection.Payload)
 	}
 
-	server, throttled := net.Pipe()
+	stage = "cooldown"
+	throttled := openHello(2)
 	defer throttled.Close()
-	_ = throttled.SetDeadline(time.Now().Add(3 * time.Second))
-	fixture.transport.config.OnConnection(server)
-	writeHello(throttled, 2)
 	rejection, err := protocol.ReadFrame(fixture.ctx, throttled, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
 	if err != nil || rejection.Type != protocol.TypeError {
 		t.Fatal("protected CLI did not reject the cooldown attempt", err)
@@ -547,11 +562,9 @@ func TestProtectedLeashCLIRejectsPreAdmissionStartTriggers(t *testing.T) {
 	}
 	clear(rejection.Payload)
 
-	server, old := net.Pipe()
+	stage = "old-protocol"
+	old := openHello(1)
 	defer old.Close()
-	_ = old.SetDeadline(time.Now().Add(3 * time.Second))
-	fixture.transport.config.OnConnection(server)
-	writeHello(old, 1)
 	rejection, err = protocol.ReadFrame(fixture.ctx, old, protocol.PeerBrowser, protocol.StateAwaitServerWelcome)
 	if err != nil || rejection.Type != protocol.TypeError {
 		t.Fatal("protected CLI did not reject the old peer", err)

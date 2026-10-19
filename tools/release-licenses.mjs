@@ -10,7 +10,11 @@ import {
 import { resolve } from 'node:path';
 import { buildIdentity } from './build-identity.ts';
 import { projectNotices, thirdPartyNotices } from './release-licenses.ts';
-import { wasmDependencies } from './web-dependencies.ts';
+import {
+  wasmDependencies,
+  resourceWasmDependencies,
+  wasmBuildTags,
+} from './web-dependencies.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const namedNotice =
@@ -84,6 +88,25 @@ function main() {
     ),
     'Web notice dependencies differ from compiled Wasm.',
   );
+  const wasmTags = wasmBuildTags(
+    readFileSync(resolve(root, '.artifacts/tailcat/tailcat-web.wasm')),
+    identity.tailcatRevision,
+  );
+  const resourceBuild = JSON.parse(
+    readFileSync(
+      resolve(root, '.artifacts/resource-bridge/manifest.json'),
+      'utf8',
+    ),
+  );
+  assert.deepEqual(
+    web.dependencies.resourceWasm,
+    resourceWasmDependencies(
+      readFileSync(resolve(root, '.artifacts/resource-bridge/resource.wasm')),
+      identity.tailcatRevision,
+      { ...resourceBuild, tailcatVersion: web.dependencies.wasm.main.version },
+    ),
+    'Resource Wasm notice inventory differs from compiled artifact.',
+  );
   const execute = (args, cwd = root, env = {}) =>
     execFileSync('go', args, {
       cwd,
@@ -141,22 +164,34 @@ function main() {
     'windows/amd64',
     'windows/arm64',
     'js/wasm',
+    'js/wasm/resource',
   ];
   for (const target of targets) {
     stage = `production dependency listing ${target}`;
     const [GOOS, GOARCH] = target.split('/');
-    const wasm = GOOS === 'js';
+    const wasm = GOOS === 'js' && !target.endsWith('/resource');
     const sources = execute(
       [
         'list',
         '-mod=readonly',
+        ...(GOOS === 'js' ? [`-tags=${wasmTags}`] : []),
         '-deps',
         '-f',
         '{{if .Module}}{{.Module.Path}}|{{.Module.Version}}|{{.Module.Dir}}|{{with .Module.Replace}}{{.Path}}{{end}}{{end}}',
-        wasm ? './web' : './apps/cli/cmd/tailmouse',
+        wasm
+          ? './web'
+          : GOOS === 'js'
+            ? './apps/cli/internal/transport/tailcat/wasm'
+            : './apps/cli/cmd/tailmouse',
       ],
       wasm ? resolve(root, 'third_party/tailcat') : root,
-      { GOOS, GOARCH },
+      {
+        GOOS,
+        GOARCH,
+        ...(target.endsWith('/resource')
+          ? { GOWORK: resolve(root, 'go.work') }
+          : {}),
+      },
     );
     for (const line of new Set(sources.split('\n').filter(Boolean))) {
       const [name, version, directory, replacement] = line.split('|');

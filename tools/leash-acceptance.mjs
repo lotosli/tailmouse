@@ -36,7 +36,7 @@ run('go', [
   '-failfast',
   ...(official || aiCLI || chrome ? ['-v'] : []),
   networkMatrix
-    ? '-timeout=3h'
+    ? '-timeout=10m'
     : official || chrome
       ? '-timeout=4m'
       : aiCLI

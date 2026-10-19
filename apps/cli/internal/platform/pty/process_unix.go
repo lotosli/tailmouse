@@ -41,6 +41,25 @@ type Process struct {
 	closeErr  error
 }
 
+// Preflight validates executable lookup without starting a child process.
+func Preflight(snapshot *leash.Command) error {
+	if snapshot == nil || len(snapshot.Argv()) == 0 {
+		return leash.ErrCommand
+	}
+	path, err := executable(snapshot.Argv()[0], snapshot.Cwd(), snapshot.Environment())
+	if err != nil {
+		return err
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() || info.Mode().Perm()&0111 == 0 {
+		return os.ErrPermission
+	}
+	return nil
+}
+
 func Start(ctx context.Context, snapshot *leash.Command) (*Process, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err

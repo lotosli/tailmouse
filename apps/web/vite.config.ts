@@ -12,12 +12,14 @@ import { distributionNotices } from '../../tools/release-licenses.ts';
 import {
   npmDependencies,
   wasmDependencies,
+  resourceWasmDependencies,
 } from '../../tools/web-dependencies.ts';
 import {
   compressedAssets,
   digest,
   securityHeaders,
   staticHosting,
+  contentHosting,
   tailcatAssets,
   verifyStaticReferences,
   webObjectMetadata,
@@ -31,10 +33,6 @@ const identity = buildIdentity(
   resolve(import.meta.dirname, '../..'),
   process.env.TAILMOUSE_BUILD_VERSION,
 );
-if (!Object.hasOwn(identity.protocols, 'resource'))
-  throw new Error(
-    'Resource-sharing source release inputs are missing. Restore the native/resource build pipeline before a full release; use pnpm web:recovery-build for the explicit browser-only recovery candidate.',
-  );
 const versions = JSON.parse(
   readFileSync(
     resolve(import.meta.dirname, '../../tooling/versions.json'),
@@ -47,12 +45,49 @@ const tailcatBuild = tailcatAssets(
   `go${versions.go}`,
 );
 const artifacts = tailcatBuild.files;
+const resourceDirectory = resolve(
+  import.meta.dirname,
+  '../../.artifacts/resource-bridge',
+);
+const resourceManifest = JSON.parse(
+  readFileSync(resolve(resourceDirectory, 'manifest.json'), 'utf8'),
+) as {
+  schemaVersion: number;
+  frontendMajor: number;
+  protocolMajor: number;
+  tailcatRevision: string;
+  revision: string;
+  sourceSha256: string;
+  goVersion: string;
+  bytes: number;
+  sha256: string;
+};
+const resourceWasm = readFileSync(resolve(resourceDirectory, 'resource.wasm'));
+if (
+  resourceManifest.schemaVersion !== 1 ||
+  resourceManifest.frontendMajor !== 1 ||
+  resourceManifest.protocolMajor !== 2 ||
+  resourceManifest.tailcatRevision !== identity.tailcatRevision ||
+  resourceManifest.goVersion !== `go${versions.go}` ||
+  resourceManifest.bytes !== resourceWasm.length ||
+  resourceManifest.sha256 !== digest(resourceWasm)
+)
+  throw new Error('Resource build identity mismatch.');
+const resourceAsset = {
+  fileName: `tailcat/resource-${resourceManifest.sha256}.wasm`,
+  source: resourceWasm,
+};
 
 export default defineConfig({
   appType: 'mpa',
-  base: './',
+  base: '/',
   define: {
     __TAILMOUSE_BUILD__: JSON.stringify(identity),
+    __TAILMOUSE_RESOURCE_ASSETS__: JSON.stringify({
+      runtime: `/${artifacts[0]!.fileName}`,
+      wasm: `/${resourceAsset.fileName}`,
+      bytes: resourceWasm.length,
+    }),
     __TAILMOUSE_TAILCAT_ASSETS__: JSON.stringify({
       runtime: `./${artifacts[0]!.fileName}`,
       wasm: `./${artifacts[1]!.fileName}`,
@@ -68,12 +103,38 @@ export default defineConfig({
       name: 'tailmouse-tailcat-artifacts',
       apply: 'build',
       enforce: 'post',
-      buildStart() {
+      async buildStart() {
         for (const artifact of [
           ...artifacts,
+          resourceAsset,
           ...distributionNotices(resolve(import.meta.dirname, '../..')),
         ]) {
           this.emitFile({ ...artifact, type: 'asset' });
+        }
+        for (const name of ['bridge', 'shim', 'sw']) {
+          const source = readFileSync(
+            resolve(import.meta.dirname, `content/${name}.ts`),
+            'utf8',
+          );
+          const compiled = await transformWithOxc(source, `${name}.ts`, {
+            lang: 'ts',
+            sourceType: 'script',
+            target: 'es2023',
+          });
+          this.emitFile({
+            type: 'asset',
+            fileName: `.tailmouse/${name}.js`,
+            source: compiled.code,
+          });
+        }
+        for (const name of ['bridge.html', 'content.css']) {
+          this.emitFile({
+            type: 'asset',
+            fileName: `.tailmouse/${name}`,
+            source: readFileSync(
+              resolve(import.meta.dirname, `content/${name}`),
+            ),
+          });
         }
       },
       generateBundle: {
@@ -85,6 +146,17 @@ export default defineConfig({
                 item.type === 'chunk' ? Object.keys(item.modules) : [],
               ),
               viteVersion,
+            ),
+            resourceWasm: resourceWasmDependencies(
+              resourceWasm,
+              identity.tailcatRevision,
+              {
+                ...resourceManifest,
+                tailcatVersion: wasmDependencies(
+                  artifacts[1]!.source,
+                  identity.tailcatRevision,
+                ).main.version,
+              },
             ),
             wasm: wasmDependencies(
               artifacts[1]!.source,
@@ -109,6 +181,14 @@ export default defineConfig({
           const publicManifest = readFileSync(
             resolve(import.meta.dirname, 'public/manifest.webmanifest'),
           );
+          const socialCard = readFileSync(
+            resolve(import.meta.dirname, 'public/social-card.png'),
+          );
+          files['social-card.png'] = {
+            bytes: socialCard.length,
+            sha256: digest(socialCard),
+            ...webObjectMetadata('social-card.png'),
+          };
           files['manifest.webmanifest'] = {
             bytes: publicManifest.byteLength,
             sha256: digest(publicManifest),
@@ -136,10 +216,14 @@ export default defineConfig({
                 fileName,
               )
             ) {
-              assets.push({
-                path: fileName,
-                integrity: `sha256-${Buffer.from(sha256, 'hex').toString('base64')}`,
-              });
+              if (
+                fileName !== resourceAsset.fileName &&
+                !fileName.startsWith('assets/resource-worker-')
+              )
+                assets.push({
+                  path: fileName,
+                  integrity: `sha256-${Buffer.from(sha256, 'hex').toString('base64')}`,
+                });
               for (const compressed of compressedAssets(fileName, source)) {
                 files[compressed.fileName] = {
                   bytes: compressed.source.byteLength,
@@ -190,6 +274,16 @@ export default defineConfig({
                   dependencies,
                   toolchains,
                   staticHosting,
+                  contentHosting,
+                  resourceProtocol: {
+                    frontendMajor: 1,
+                    protocolMajor: 2,
+                    wasm: resourceAsset.fileName,
+                    contentBootstrap: '.tailmouse/bridge.html',
+                    serviceWorker: '.tailmouse/sw.js',
+                    sourceRevision: resourceManifest.revision,
+                    sourceSha256: resourceManifest.sourceSha256,
+                  },
                   files,
                 },
                 null,

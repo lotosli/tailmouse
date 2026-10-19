@@ -31,7 +31,7 @@ jobs:
           run_install: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 1.27.1
+          go-version: 1.27.2
       - name: Verify native Windows ARM64 toolchains
         if: matrix.os == 'windows-11-arm'
         shell: pwsh
@@ -118,6 +118,6 @@ jobs:
           run_install: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 1.27.1
+          go-version: 1.27.2
       - run: pnpm install --frozen-lockfile
       - run: pnpm fuzz:smoke
