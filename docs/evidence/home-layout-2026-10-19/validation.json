@@ -1,0 +1,44 @@
+{
+  "observedAt": "2026-10-19T16:24:09.003835+00:00",
+  "fullGate": {
+    "command": "pnpm gate",
+    "baseRevision": "245abd78b7ca6f77811ffa06971d323916db1d09",
+    "scope": "Layout source before the later download-copy/link update; documentation edits are excluded from application behavior.",
+    "sourceFiles": {
+      "apps/web/src/resources/landing.css": "9a72780d13d256c21580a4af779abde180efe51c4aa15682cea7eb81076d357d",
+      "apps/web/src/resources/landing.tsx": "e12cc121ba83c5f13d862153527a8dca3fd477ba5cd3ece5092358b1e27bc959"
+    },
+    "logSha256": "5a61967f527ce966e498aa64bf29910576c4e1ff6f7aacb9bf0811c944eaf50e",
+    "exitCode": 0,
+    "browserCases": {
+      "passed": 186,
+      "existingSkips": 4
+    },
+    "networkProfiles": {
+      "escape": 4,
+      "leash": 4
+    },
+    "goStatementCoverage": 86.8
+  },
+  "finalCopyValidation": {
+    "sourceFiles": {
+      "apps/web/src/resources/landing.css": "9a72780d13d256c21580a4af779abde180efe51c4aa15682cea7eb81076d357d",
+      "apps/web/src/resources/landing.tsx": "3b396dd3ab5a45b8c3384717cb361a9fd293fc8498855ffbc39fcd660ab0d9d0",
+      "apps/web/src/resources/workspace.browser.test.tsx": "291e75c6a1287fdc55c287ce68344e12efcfb5633a0ca39edd64d23ebd26bbc8"
+    },
+    "checks": [
+      {
+        "command": "pnpm --filter @tailmouse/web exec vitest run src/resources/workspace.browser.test.tsx --project=components",
+        "passed": 7,
+        "exitCode": 0,
+        "logSha256": "06c5f394eb60f0a0bdcffc48a3b934658a3f19fb70bf6d5aafac5fc1fec717cb"
+      },
+      {
+        "command": "pnpm --filter @tailmouse/web typecheck",
+        "exitCode": 0,
+        "logSha256": "f57e584942fa8812c038c74083665bdc073a130c79553facf6e6331dbfe48cc0"
+      }
+    ]
+  },
+  "deployment": "pending clean committed build and public verification"
+}

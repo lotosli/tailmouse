@@ -1,5 +1,5 @@
 .landing {
-  max-width: 1160px;
+  max-width: 1440px;
 }
 .landing a {
   color: #d8ff62;
@@ -31,7 +31,6 @@
   vertical-align: middle;
 }
 .landing .landing-hero {
-  max-width: 920px;
   padding: 2rem 0 4rem;
 }
 .landing .eyebrow {
@@ -47,10 +46,10 @@
   margin: 1rem 0 1.7rem;
 }
 .landing h1 span {
+  display: block;
   color: #d8ff62;
 }
 .landing .hero-description {
-  max-width: 630px;
   font-size: clamp(1.1rem, 2.6vw, 1.5rem);
   line-height: 1.55;
 }

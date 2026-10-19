@@ -2,11 +2,9 @@
 
 Share a terminal, preview a local web app, and receive files through one browser link. The host runs TailMouse; guests need only a browser. No account or guest installation is required. The Escape minigame remains available.
 
-[Releases](https://github.com/lotosli/tailmouse/releases) · [Website and guide](https://tailmouse.com/#guide) · [Resource documentation](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.1/docs/resource-sharing.md) · [Feedback](https://github.com/lotosli/tailmouse/issues/new)
+[Download v0.1.0-alpha.1](https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.1) · [Website and guide](https://tailmouse.com/#guide) · [Resource documentation](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.1/docs/resource-sharing.md) · [Feedback](https://github.com/lotosli/tailmouse/issues/new)
 
 ## Download and run
-
-**Publication pending:** the six v0.1.0-alpha.1 packages are built and verified. Public downloads are planned, but repository visibility and release uploads are still blocked by GitHub permissions. The repository remains private and the release remains a draft; the links below will work after publication.
 
 **v0.1.0-alpha.1 is a preview release.** Choose the archive for the machine that will host the session. Guests do not download anything.
 

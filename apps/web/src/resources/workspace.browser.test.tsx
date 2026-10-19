@@ -119,9 +119,17 @@ describe('onboarding and support', () => {
         .getByRole('link', { name: 'Get TailMouse', exact: true })
         .elements()[0],
     ).toHaveAttribute('href', '#get-started');
-    expect(root.textContent).toContain(
-      'Public CLI downloads are being prepared',
-    );
+    await expect
+      .element(
+        page.getByRole('link', {
+          name: 'Download v0.1.0-alpha.1 ↗',
+          exact: true,
+        }),
+      )
+      .toHaveAttribute(
+        'href',
+        'https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.1',
+      );
     expect(root.textContent).toContain('127.0.0.1:8080');
     expect(root.textContent).toContain('not a sandbox');
     await page

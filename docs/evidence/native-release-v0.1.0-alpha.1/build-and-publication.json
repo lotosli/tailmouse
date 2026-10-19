@@ -140,67 +140,24 @@
     }
   ],
   "publication": {
-    "status": "blocked_before_asset_upload",
-    "repositoryVisibility": "private",
+    "status": "published_and_public_downloads_verified",
+    "repositoryVisibility": "public",
+    "visibilityChangedBy": "owner",
     "releaseId": 417417113,
     "tag": "v0.1.0-alpha.1",
-    "draft": true,
-    "uploadedAssets": 0,
-    "apiWrite": "Release draft creation succeeds through api.github.com.",
-    "uploadFailure": "Official uploads.github.com returns HTTP 401 Bad credentials with both gh release upload and an explicit gh api request.",
-    "apiHostProbe": "POST to the ordinary api.github.com asset path returns 404; it is not the upload endpoint.",
-    "requiredSecret": "TAILMOUSE_GITHUB_RELEASE_TOKEN",
-    "configurationDraftSaved": true,
-    "requiresEnvironmentPublish": true,
-    "visibilityChange": {
-      "ownerAuthorized": true,
-      "requestedVisibility": "public",
-      "verifiedDate": "2026-10-19",
-      "method": "PATCH /repos/lotosli/tailmouse",
-      "request": {
-        "private": false
-      },
-      "httpStatus": 403,
-      "message": "Resource not accessible by integration",
-      "subsequentReadVisibility": "private",
-      "requiredAction": "Repository Settings > General > Danger Zone > Change visibility > Public"
-    },
-    "requestedAccess": {
-      "secretName": "TAILMOUSE_GITHUB_RELEASE_TOKEN",
-      "repository": "lotosli/tailmouse",
-      "permissions": {
-        "contents": "write",
-        "administration": "write"
-      },
-      "requiredDestinations": [
-        "api.github.com",
-        "uploads.github.com"
-      ],
-      "savedDestinations": [
-        "api.github.com",
-        "uploads.github.com"
-      ],
-      "destinationUpdateStatus": "saved_by_owner",
-      "destinationUpdateSaved": true,
-      "requiredAction": "Resolve the reported settings UI conflict and apply the saved configuration; verify runtime delivery and actual GitHub authorization.",
-      "initialToolDestinationUpdateStatus": "rejected_existing_requirement_conflict"
-    },
-    "secretDestinations": [
-      "api.github.com",
-      "uploads.github.com"
-    ],
-    "bindingObservation": {
-      "verifiedDate": "2026-10-19",
-      "draftRevision": 13,
-      "hasSavedBinding": true,
-      "bindingError": null,
-      "pendingRuntimeRequirements": [],
-      "runtimeSpecRevision": "4",
-      "observationsCurrent": true,
-      "runtimeReadiness": "unknown",
-      "presentInNewShellProcess": false,
-      "ownerReportedBlocker": "Cannot save/publish after an Environment changed UI conflict.",
-      "githubAuthorizationVerified": false
-    }
+    "url": "https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.1",
+    "draft": false,
+    "prerelease": true,
+    "publishedAt": "2026-10-19T16:02:20Z",
+    "uploadedAssets": 15,
+    "uploadedDigests": "All 15 GitHub SHA-256 digests match the staged release assets.",
+    "downloadVerification": "public-downloads.json",
+    "credentialReadiness": "ready; observations_current true",
+    "history": [
+      "Initial platform authentication returned HTTP 401 on uploads.github.com.",
+      "The owner saved a scoped release token with both official hosts; the binding later became ready and all uploads succeeded.",
+      "Administration API requests still returned HTTP 403 despite the owner showing Administration and Contents read/write selected. The authentication-routing cause was not established.",
+      "The owner changed repository visibility to Public; the public state was independently verified before release publication."
+    ]
   }
 }

@@ -48,7 +48,7 @@ export function ResourceLanding() {
     <main class="resource-shell landing">
       <header class="landing-nav">
         <a class="workspace-brand" href="/" aria-label="TailMouse home">
-          TailMouse <span class="alpha-badge">Private alpha</span>
+          TailMouse <span class="alpha-badge">Alpha preview</span>
         </a>
         <nav aria-label="Main navigation">
           <a href="#guide">Guide</a>
@@ -65,11 +65,7 @@ export function ResourceLanding() {
       <section class="landing-hero" aria-labelledby="hero-title">
         <p class="eyebrow">Your machine. Their browser.</p>
         <h1 id="hero-title">
-          Let them test
-          <br />
-          your work.
-          <br />
-          <span>Skip the setup.</span>
+          Let them test your work. <span>Skip the setup.</span>
         </h1>
         <p class="hero-description">
           One link to preview your app, send reproduction files, and use a
@@ -153,25 +149,30 @@ export function ResourceLanding() {
         <p class="eyebrow">Start on the sharing machine</p>
         <h2 id="get-title">Get the matching TailMouse build.</h2>
         <div class="availability-note">
-          <strong>Public CLI downloads are being prepared.</strong>
+          <strong>TailMouse v0.1.0-alpha.1 is available.</strong>
           <p>
-            Build the sharing app from source or use the matching test build
-            supplied by your host. Guests do not install anything.
+            Download the sharing app for Linux, macOS or Windows on x64 or
+            ARM64. Guests do not install anything.
           </p>
           <a
-            href="https://github.com/lotosli/tailmouse/tree/codex/product-onboarding-2026-10#build-from-source"
+            href="https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.1"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Download v0.1.0-alpha.1 ↗
+          </a>{' '}
+          <a
+            href="https://github.com/lotosli/tailmouse#build-from-source"
             target="_blank"
             rel="noopener noreferrer"
           >
             Build from source ↗
-          </a>{' '}
-          <a
-            href="https://github.com/lotosli/tailmouse/releases"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Check release availability ↗
           </a>
+          <p>
+            These preview builds are unsigned. Windows support is experimental
+            and does not include Receive. On macOS, Receive requires an APFS
+            folder.
+          </p>
         </div>
         <p>
           On the sharing machine, check that your build provides the four
@@ -209,9 +210,9 @@ export function ResourceLanding() {
               label="Copy first-share command"
             />
             <p>
-              The command downloads the public configuration for this private
-              tailmouse.com test. Keep the host terminal open; TailMouse prints
-              a sharing link and the session settings.
+              The command downloads the test configuration for trusted apps on
+              tailmouse.com. Keep the host terminal open; TailMouse prints a
+              sharing link and the session settings.
             </p>
           </li>
           <li>
@@ -348,9 +349,9 @@ export function ResourceLanding() {
           <article>
             <h3>Current test setup</h3>
             <p>
-              The interface and preview use tailmouse.com during this private
-              test. Open only apps you trust. This setup does not provide
-              isolation from untrusted preview pages.
+              The interface and preview share tailmouse.com in this test setup.
+              Open only apps you trust. This setup does not provide isolation
+              from untrusted preview pages.
             </p>
           </article>
           <article>

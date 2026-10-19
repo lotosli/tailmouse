@@ -1,0 +1,52 @@
+[
+  {
+    "viewport": 390,
+    "horizontalOverflow": false,
+    "firstSentenceLines": 2,
+    "accentLines": 1,
+    "descriptionLines": 3,
+    "titleFontSize": "48px",
+    "titleWidth": 362,
+    "descriptionWidth": 362
+  },
+  {
+    "viewport": 768,
+    "horizontalOverflow": false,
+    "firstSentenceLines": 1,
+    "accentLines": 1,
+    "descriptionLines": 2,
+    "titleFontSize": "61.44px",
+    "titleWidth": 720,
+    "descriptionWidth": 720
+  },
+  {
+    "viewport": 1280,
+    "horizontalOverflow": false,
+    "firstSentenceLines": 1,
+    "accentLines": 1,
+    "descriptionLines": 1,
+    "titleFontSize": "99.2px",
+    "titleWidth": 1232,
+    "descriptionWidth": 1232
+  },
+  {
+    "viewport": 1920,
+    "horizontalOverflow": false,
+    "firstSentenceLines": 1,
+    "accentLines": 1,
+    "descriptionLines": 1,
+    "titleFontSize": "99.2px",
+    "titleWidth": 1392,
+    "descriptionWidth": 1392
+  },
+  {
+    "viewport": 2700,
+    "horizontalOverflow": false,
+    "firstSentenceLines": 1,
+    "accentLines": 1,
+    "descriptionLines": 1,
+    "titleFontSize": "99.2px",
+    "titleWidth": 1392,
+    "descriptionWidth": 1392
+  }
+]
