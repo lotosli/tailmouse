@@ -1,0 +1,210 @@
+{
+  "verifiedOn": "2026-10-19",
+  "completedWorkflowEvidence": {
+    "sourceRevision": "8955e4763c087c5d8529134a143534ab07d9d742",
+    "testedMergeRevision": "b24ced02cfc7a3c5dd643b9f27cf9acbb89f88c2",
+    "sourceTree": "229b509fc983a91f102d89dbb6a2613273c2059e",
+    "qualification": "The PR merge tree equals the source tree. Linux and macOS jobs passed. Windows native Go steps passed at 80.5%; their subsequent Worker fixtures failed and retained processes. The run was canceled for diagnosis; Windows full jobs and dependent fuzz are not passes.",
+    "workflowURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408",
+    "runId": 39247007408,
+    "runAttempt": 1,
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "cancelled",
+    "jobs": [
+      {
+        "name": "ubuntu-latest",
+        "jobId": 118041250319,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408/job/118041250319",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-19T11:46:00Z",
+        "completedAt": "2026-10-19T12:37:40Z",
+        "steps": [
+          {
+            "name": "Run pnpm gate",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T11:47:32Z",
+            "completed_at": "2026-10-19T12:28:06Z"
+          },
+          {
+            "name": "Build six native snapshot archives",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T12:28:07Z",
+            "completed_at": "2026-10-19T12:36:34Z"
+          },
+          {
+            "name": "Generate per-artifact SBOMs",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T12:36:34Z",
+            "completed_at": "2026-10-19T12:36:43Z"
+          },
+          {
+            "name": "Independently verify the distribution",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T12:36:43Z",
+            "completed_at": "2026-10-19T12:36:52Z"
+          },
+          {
+            "name": "Check source and submodule cleanliness",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T12:36:52Z",
+            "completed_at": "2026-10-19T12:36:52Z"
+          }
+        ]
+      },
+      {
+        "name": "windows-latest",
+        "jobId": 118041250667,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408/job/118041250667",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "startedAt": "2026-10-19T11:46:01Z",
+        "completedAt": "2026-10-19T12:47:39Z",
+        "steps": [
+          {
+            "name": "Verify Windows native Go acceptance",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T11:47:20Z",
+            "completed_at": "2026-10-19T11:51:24Z"
+          },
+          {
+            "name": "Run pnpm gate",
+            "status": "completed",
+            "conclusion": "cancelled",
+            "started_at": "2026-10-19T11:52:18Z",
+            "completed_at": "2026-10-19T12:47:28Z"
+          }
+        ]
+      },
+      {
+        "name": "macos-latest",
+        "jobId": 118041250668,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408/job/118041250668",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-10-19T11:46:04Z",
+        "completedAt": "2026-10-19T12:15:09Z",
+        "steps": [
+          {
+            "name": "Run pnpm gate",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T11:46:49Z",
+            "completed_at": "2026-10-19T12:14:39Z"
+          },
+          {
+            "name": "Check source and submodule cleanliness",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T12:14:39Z",
+            "completed_at": "2026-10-19T12:14:39Z"
+          }
+        ]
+      },
+      {
+        "name": "windows-11-arm",
+        "jobId": 118041250784,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408/job/118041250784",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "startedAt": "2026-10-19T11:46:01Z",
+        "completedAt": "2026-10-19T12:47:46Z",
+        "steps": [
+          {
+            "name": "Verify Windows native Go acceptance",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T11:47:57Z",
+            "completed_at": "2026-10-19T11:51:31Z"
+          },
+          {
+            "name": "Run pnpm gate",
+            "status": "completed",
+            "conclusion": "cancelled",
+            "started_at": "2026-10-19T11:52:55Z",
+            "completed_at": "2026-10-19T12:47:28Z"
+          }
+        ]
+      },
+      {
+        "name": "Go fuzz smoke",
+        "jobId": 118067436074,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408/job/118067436074",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "startedAt": "2026-10-19T12:47:47Z",
+        "completedAt": "2026-10-19T12:47:46Z",
+        "steps": []
+      }
+    ]
+  },
+  "blockedWorkflow": {
+    "sourceRevision": "1d770553b3f20ebcdb9165d29838290885040613",
+    "workflowURL": "https://github.com/lotosli/tailmouse/actions/runs/39256404223",
+    "runId": 39256404223,
+    "runAttempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "qualification": "GitHub refused to start jobs before executing any code. Final Windows confirmation of Worker teardown remains pending.",
+    "annotation": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+    "jobs": [
+      {
+        "name": "macos-latest",
+        "jobId": 118072701612,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39256404223/job/118072701612",
+        "status": "completed",
+        "conclusion": "failure",
+        "startedAt": "2026-10-19T12:59:39Z",
+        "completedAt": "2026-10-19T12:59:44Z",
+        "steps": []
+      },
+      {
+        "name": "windows-11-arm",
+        "jobId": 118072701821,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39256404223/job/118072701821",
+        "status": "completed",
+        "conclusion": "failure",
+        "startedAt": "2026-10-19T12:59:39Z",
+        "completedAt": "2026-10-19T12:59:42Z",
+        "steps": []
+      },
+      {
+        "name": "ubuntu-latest",
+        "jobId": 118072701864,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39256404223/job/118072701864",
+        "status": "completed",
+        "conclusion": "failure",
+        "startedAt": "2026-10-19T12:59:39Z",
+        "completedAt": "2026-10-19T12:59:42Z",
+        "steps": []
+      },
+      {
+        "name": "windows-latest",
+        "jobId": 118072702104,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39256404223/job/118072702104",
+        "status": "completed",
+        "conclusion": "failure",
+        "startedAt": "2026-10-19T12:59:39Z",
+        "completedAt": "2026-10-19T12:59:42Z",
+        "steps": []
+      },
+      {
+        "name": "Go fuzz smoke",
+        "jobId": 118072856693,
+        "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39256404223/job/118072856693",
+        "status": "completed",
+        "conclusion": "skipped",
+        "startedAt": "2026-10-19T13:00:01Z",
+        "completedAt": "2026-10-19T13:00:00Z",
+        "steps": []
+      }
+    ]
+  }
+}

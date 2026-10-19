@@ -1,0 +1,105 @@
+Source: 1d770553b3f20ebcdb9165d29838290885040613
+Environment: Linux/amd64; Go 1.27.2; Node 26.8.1; pnpm 11.25.0
+Both commands exited 0. Full-gate and cross-platform evidence are separate records.
+
+Command: pnpm gate:quick
+Raw local log SHA-256: 282e97d5752c76ed6231dfae0123c24ff37cf0b9a071d15d14b0f2d88b50f02d
+==> architecture
+==> OpenSpec
+==> format
+==> build identity, release and static asset tests
+==> Go static checks
+==> Tailcat static checks
+==> Tailcat native and WebAssembly builds
+==> Web static artifact prerequisite
+==> typecheck
+==> lint
+==> unit tests
+==> Tailcat tests
+ok  	github.com/tailscale/tailcat	4.221s
+ok  	github.com/tailscale/tailcat/cmd/tailcat	18.670s
+ok  	github.com/tailscale/tailcat/internal/buildtags	0.002s
+ok  	github.com/tailscale/tailcat/internal/capi	5.312s
+ok  	github.com/tailscale/tailcat/internal/localhostdns	0.006s
+ok  	github.com/tailscale/tailcat/internal/perf	2.575s
+ok  	github.com/tailscale/tailcat/web	0.006s
+ok  	github.com/tailscale/tailcat/webdemo	0.007s
+==> TypeScript coverage
+apps/link-edge coverage: All files          |   99.37 |    98.98 |   97.36 |   99.64 |                   
+apps/web coverage: All files          |   83.82 |    82.04 |   80.83 |   85.35 |                   
+==> Go coverage
+ok  	tailmouse/apps/cli/cmd/tailmouse	30.056s	coverage: 81.3% of statements
+ok  	tailmouse/apps/cli/internal/config	(cached)	coverage: 97.4% of statements
+ok  	tailmouse/apps/cli/internal/escape	(cached)	coverage: 99.6% of statements
+ok  	tailmouse/apps/cli/internal/flow	(cached)	coverage: 90.6% of statements
+ok  	tailmouse/apps/cli/internal/invitation	(cached)	coverage: 94.4% of statements
+ok  	tailmouse/apps/cli/internal/leash	(cached)	coverage: 94.6% of statements
+ok  	tailmouse/apps/cli/internal/platform/pty	(cached)	coverage: 84.8% of statements
+ok  	tailmouse/apps/cli/internal/protocol	(cached)	coverage: 94.7% of statements
+ok  	tailmouse/apps/cli/internal/session	(cached)	coverage: 89.6% of statements
+ok  	tailmouse/apps/cli/internal/share	(cached)	coverage: 80.4% of statements
+ok  	tailmouse/apps/cli/internal/transport/tailcat	(cached)	coverage: 79.6% of statements
+ok  	tailmouse/tools/archiveinfo	(cached)	coverage: 88.7% of statements
+total:								(statements)			86.8%
+==> Native and edge builds
+==> local Worker integration
+ok 1 - real static Worker serves source-built assets, scoped bootstrap and decoded Wasm
+==> local public-origin verification
+==> dependency notices
+==> native browser QR decoding
+==> hermetic transport integration
+ok  	tailmouse/apps/cli/internal/transport/tailcat	194.752s
+==> Unix Leash native/browser acceptance
+ok  	tailmouse/apps/cli/cmd/tailmouse	257.292s
+==> Resource native/browser and named TUI acceptance
+ok  	tailmouse/apps/cli/cmd/tailmouse	18.062s
+ok  	tailmouse/apps/cli/internal/share	0.243s
+==> Escape impairment smoke
+ok  	tailmouse/apps/cli/internal/transport/tailcat	16.260s
+==> browser end-to-end tests
+  4 skipped
+  186 passed (2.4m)
+Gate passed (quick).
+
+Command: pnpm fuzz:smoke
+Raw local log SHA-256: aba9e657fa2153d5958836b257d67f452b50d3738f8d691c1f2a973700f07374
+fuzz: elapsed: 0s, gathering baseline coverage: 0/133 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 133/133 completed, now fuzzing with 4 workers
+fuzz: elapsed: 3s, execs: 106276 (35418/sec), new interesting: 12 (total: 145)
+fuzz: elapsed: 6s, execs: 235949 (43224/sec), new interesting: 30 (total: 163)
+fuzz: elapsed: 9s, execs: 364389 (42817/sec), new interesting: 35 (total: 168)
+fuzz: elapsed: 10s, execs: 406412 (40034/sec), new interesting: 36 (total: 169)
+PASS
+ok  	tailmouse/apps/cli/internal/invitation	10.066s
+fuzz: elapsed: 0s, gathering baseline coverage: 0/31 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 31/31 completed, now fuzzing with 4 workers
+fuzz: elapsed: 3s, execs: 99617 (33197/sec), new interesting: 0 (total: 31)
+fuzz: elapsed: 6s, execs: 237898 (46096/sec), new interesting: 1 (total: 32)
+fuzz: elapsed: 9s, execs: 300168 (20754/sec), new interesting: 1 (total: 32)
+fuzz: elapsed: 11s, execs: 310014 (4880/sec), new interesting: 1 (total: 32)
+PASS
+ok  	tailmouse/apps/cli/internal/invitation	11.024s
+fuzz: elapsed: 0s, gathering baseline coverage: 0/220 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 220/220 completed, now fuzzing with 4 workers
+fuzz: elapsed: 3s, execs: 102558 (34178/sec), new interesting: 9 (total: 229)
+fuzz: elapsed: 6s, execs: 476620 (124699/sec), new interesting: 32 (total: 252)
+fuzz: elapsed: 9s, execs: 811423 (111586/sec), new interesting: 63 (total: 283)
+fuzz: elapsed: 11s, execs: 811423 (0/sec), new interesting: 63 (total: 283)
+PASS
+ok  	tailmouse/apps/cli/internal/protocol	11.049s
+fuzz: elapsed: 0s, gathering baseline coverage: 0/84 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 84/84 completed, now fuzzing with 4 workers
+fuzz: elapsed: 3s, execs: 107421 (35797/sec), new interesting: 9 (total: 93)
+fuzz: elapsed: 6s, execs: 160050 (17519/sec), new interesting: 16 (total: 100)
+fuzz: elapsed: 9s, execs: 235914 (25322/sec), new interesting: 30 (total: 114)
+fuzz: elapsed: 11s, execs: 267470 (15681/sec), new interesting: 32 (total: 116)
+PASS
+ok  	tailmouse/apps/cli/internal/protocol	11.028s
+fuzz: elapsed: 0s, gathering baseline coverage: 0/9 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 9/9 completed, now fuzzing with 4 workers
+fuzz: elapsed: 3s, execs: 97121 (32367/sec), new interesting: 1 (total: 10)
+fuzz: elapsed: 6s, execs: 202978 (35286/sec), new interesting: 1 (total: 10)
+fuzz: elapsed: 9s, execs: 303039 (33359/sec), new interesting: 1 (total: 10)
+fuzz: elapsed: 10s, execs: 339076 (32828/sec), new interesting: 1 (total: 10)
+PASS
+ok  	tailmouse/apps/cli/internal/share	10.109s

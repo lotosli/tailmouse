@@ -1,0 +1,130 @@
+CI evidence observed on 2026-10-19.
+Source 8955e4763c087c5d8529134a143534ab07d9d742; workflow 39247007408.
+Linux/macOS jobs pass. Windows native Go tests/80.5% coverage pass; Windows full jobs and fuzz were canceled and are not passes.
+
+Platform/job: linux
+Raw log SHA-256: 4b2f9150b2e8ea7ebb39f1776e105a0dd6dbb3677462383b98d64ba747c076af
+2026-10-19T11:47:32.9889369Z ==> architecture
+2026-10-19T11:47:33.2070360Z ==> OpenSpec
+2026-10-19T11:47:34.9602780Z ==> format
+2026-10-19T11:47:43.1303155Z ==> build identity, release and static asset tests
+2026-10-19T11:48:00.3344915Z ==> Go static checks
+2026-10-19T11:50:42.5434363Z ==> Tailcat static checks
+2026-10-19T11:52:52.4350786Z ==> Tailcat native and WebAssembly builds
+2026-10-19T11:54:27.2098294Z ==> Web static artifact prerequisite
+2026-10-19T11:54:42.1085529Z ==> typecheck
+2026-10-19T11:54:51.3685090Z ==> lint
+2026-10-19T11:54:53.3644862Z ==> unit tests
+2026-10-19T11:55:10.8218691Z ==> Tailcat tests
+2026-10-19T11:56:56.4333001Z ==> TypeScript coverage
+2026-10-19T11:57:16.4737109Z ==> Go coverage
+2026-10-19T11:58:02.0706510Z total:								(statements)			86.9%
+2026-10-19T11:58:02.0707087Z ==> Native and edge builds
+2026-10-19T11:59:28.8960186Z ==> local Worker integration
+2026-10-19T11:59:46.4828888Z ✔ real static Worker serves source-built assets, scoped bootstrap and decoded Wasm (4112.257789ms)
+2026-10-19T11:59:46.5302796Z ==> local public-origin verification
+2026-10-19T11:59:48.7124549Z ==> dependency notices
+2026-10-19T11:59:50.4282208Z ==> native browser QR decoding
+2026-10-19T11:59:50.4285667Z ==> hermetic transport integration
+2026-10-19T12:03:31.8880275Z ==> Unix Leash native/browser acceptance
+2026-10-19T12:08:19.7856356Z ==> Resource native/browser and named TUI acceptance
+2026-10-19T12:08:42.2929038Z ==> Escape impairment smoke
+2026-10-19T12:09:00.8761804Z ==> browser end-to-end tests
+2026-10-19T12:14:52.4352525Z   4 skipped
+2026-10-19T12:14:52.4353135Z   186 passed (5.8m)
+2026-10-19T12:14:52.4412404Z ##[notice]  4 skipped
+  186 passed (5.8m)
+2026-10-19T12:14:52.6281198Z ==> Firefox and WebKit real transport acceptance
+2026-10-19T12:17:21.5963165Z ==> Go race and vulnerability checks
+2026-10-19T12:20:33.6855765Z ==> Escape representative network profiles and outages
+2026-10-19T12:22:58.3857342Z ==> Unix Leash representative network profiles
+2026-10-19T12:28:06.4586406Z Gate passed (full).
+2026-10-19T12:36:34.6834789Z [1;94m  •[m [1mrelease succeeded after 8m25s[m
+2026-10-19T12:36:43.8798487Z Distribution generated: six native archives, 33 Web files, 8 edge files, eight CycloneDX 1.7 SBOMs and complete SHA-256 coverage.
+2026-10-19T12:36:52.5271687Z Distribution verified: six native archives, 33 Web files, 8 edge files, eight CycloneDX 1.7 SBOMs and complete SHA-256 coverage.
+
+Platform/job: macos
+Raw log SHA-256: 75cbb74f991ab341e0be4ba6911e714f90f7dac335e1c1af3e7316ba6d1adba5
+2026-10-19T11:46:49.7185740Z ==> architecture
+2026-10-19T11:46:49.9424460Z ==> OpenSpec
+2026-10-19T11:46:50.9130360Z ==> format
+2026-10-19T11:46:54.2262010Z ==> build identity, release and static asset tests
+2026-10-19T11:47:01.6431710Z ==> Go static checks
+2026-10-19T11:47:51.6338660Z ==> Tailcat static checks
+2026-10-19T11:48:18.8554190Z ==> Tailcat native and WebAssembly builds
+2026-10-19T11:48:48.0125350Z ==> Web static artifact prerequisite
+2026-10-19T11:49:00.1163230Z ==> typecheck
+2026-10-19T11:49:04.1947810Z ==> lint
+2026-10-19T11:49:05.2082200Z ==> unit tests
+2026-10-19T11:49:13.9451070Z ==> Tailcat tests
+2026-10-19T11:49:57.3344330Z ==> TypeScript coverage
+2026-10-19T11:50:05.4433960Z ==> Go coverage
+2026-10-19T11:50:50.5939330Z total:								(statements)			86.8%
+2026-10-19T11:50:50.5939570Z ==> Native and edge builds
+2026-10-19T11:51:15.5534220Z ==> local Worker integration
+2026-10-19T11:51:26.3625490Z ✔ real static Worker serves source-built assets, scoped bootstrap and decoded Wasm (2401.830541ms)
+2026-10-19T11:51:26.3811680Z ==> local public-origin verification
+2026-10-19T11:51:27.7723890Z ==> dependency notices
+2026-10-19T11:51:29.6331090Z ==> native browser QR decoding
+2026-10-19T11:51:31.3111370Z ==> hermetic transport integration
+2026-10-19T11:55:02.8028040Z ==> Unix Leash native/browser acceptance
+2026-10-19T11:59:31.8100980Z ==> Resource native/browser and named TUI acceptance
+2026-10-19T11:59:50.3329540Z ==> Escape impairment smoke
+2026-10-19T12:00:07.7834280Z ==> browser end-to-end tests
+2026-10-19T12:03:41.2953460Z   4 skipped
+2026-10-19T12:03:41.2953890Z   186 passed (3.5m)
+2026-10-19T12:03:41.2983480Z ##[notice]  4 skipped
+  186 passed (3.5m)
+2026-10-19T12:03:41.3801310Z ==> Firefox and WebKit real transport acceptance
+2026-10-19T12:05:56.7740610Z ==> Go race and vulnerability checks
+2026-10-19T12:07:25.3023820Z ==> Escape representative network profiles and outages
+2026-10-19T12:09:41.3510050Z ==> Unix Leash representative network profiles
+2026-10-19T12:14:39.6561080Z Gate passed (full).
+
+Platform/job: windows
+Raw log SHA-256: a0e3dfbd5428c9bdfe66a5d02edc2e83fa7147b8d80cc8dee7fde9042fa5f192
+2026-10-19T11:51:24.3426097Z total:									(statements)			80.5%
+2026-10-19T11:52:19.6361897Z ==> architecture
+2026-10-19T11:52:20.9450376Z ==> OpenSpec
+2026-10-19T11:52:23.3156893Z ==> format
+2026-10-19T11:52:33.2192696Z ==> build identity, release and static asset tests
+2026-10-19T11:53:15.8081471Z ==> Go static checks
+2026-10-19T11:55:23.7187161Z ==> Tailcat static checks
+2026-10-19T11:58:33.4243566Z ==> Tailcat native and WebAssembly builds
+2026-10-19T12:00:55.5128395Z ==> Web static artifact prerequisite
+2026-10-19T12:01:17.7532147Z ==> typecheck
+2026-10-19T12:01:30.2384471Z ==> lint
+2026-10-19T12:01:33.0546043Z ==> unit tests
+2026-10-19T12:01:56.5439710Z ==> Tailcat tests
+2026-10-19T12:04:30.9096062Z ==> TypeScript coverage
+2026-10-19T12:04:56.7882374Z ==> Go coverage
+2026-10-19T12:05:57.6746856Z total:									(statements)			80.5%
+2026-10-19T12:05:57.6747508Z ==> Native and edge builds
+2026-10-19T12:07:55.4098727Z ==> local Worker integration
+2026-10-19T12:08:24.1829704Z ✖ real static Worker serves source-built assets, scoped bootstrap and decoded Wasm (7568.0089ms)
+
+Platform/job: windows-arm
+Raw log SHA-256: 8831c6c530008bb09422611657c734ba4eb19efc99781fb91ee6c2b7ee696a64
+2026-10-19T11:51:31.5621251Z total:									(statements)			80.5%
+2026-10-19T11:52:57.2369301Z ==> architecture
+2026-10-19T11:53:00.0225653Z ==> OpenSpec
+2026-10-19T11:53:02.7752296Z ==> format
+2026-10-19T11:53:10.5651572Z ==> build identity, release and static asset tests
+2026-10-19T11:53:59.6612318Z ==> Go static checks
+2026-10-19T11:55:31.7878482Z ==> Tailcat static checks
+2026-10-19T11:57:24.7333598Z ==> Tailcat native and WebAssembly builds
+2026-10-19T11:59:15.1263500Z ==> Web static artifact prerequisite
+2026-10-19T11:59:40.0388864Z ==> typecheck
+2026-10-19T11:59:56.2515685Z ==> lint
+2026-10-19T12:00:04.4040421Z ==> unit tests
+2026-10-19T12:00:42.1559824Z ==> Tailcat tests
+2026-10-19T12:02:59.9199781Z ==> TypeScript coverage
+2026-10-19T12:03:36.1539510Z ==> Go coverage
+2026-10-19T12:04:25.1959117Z total:									(statements)			80.5%
+2026-10-19T12:04:25.1987498Z ==> Native and edge builds
+2026-10-19T12:05:59.6836571Z ==> local Worker integration
+2026-10-19T12:06:35.5666045Z ✖ real static Worker serves source-built assets, scoped bootstrap and decoded Wasm (8048.9576ms)
+
+Source 1d770553b3f20ebcdb9165d29838290885040613; workflow 39256404223.
+No job steps executed. GitHub annotation:
+The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings
