@@ -1,0 +1,23 @@
+{
+  "sourceRevision": "638e72fe87f2210b91bd95383368e2f1cc94514a",
+  "runUrl": "https://github.com/lotosli/tailmouse/actions/runs/39241467490",
+  "scope": "Native ConPTY package tests only; not a complete workflow result.",
+  "checks": [
+    {
+      "jobId": 118023053013,
+      "platform": "windows-11-arm",
+      "name": "Verify Windows native terminal boundary",
+      "conclusion": "success",
+      "startedAt": "2026-10-19T11:02:03Z",
+      "completedAt": "2026-10-19T11:02:40Z"
+    },
+    {
+      "jobId": 118023057150,
+      "platform": "windows-latest",
+      "name": "Verify Windows native terminal boundary",
+      "conclusion": "success",
+      "startedAt": "2026-10-19T11:01:34Z",
+      "completedAt": "2026-10-19T11:02:19Z"
+    }
+  ]
+}

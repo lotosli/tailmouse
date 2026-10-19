@@ -204,6 +204,32 @@ func TestConPTYTerminateClosesHandlersAndForcesDetachedDescendant(t *testing.T) 
 	}
 }
 
+func TestConPTYForceCleanupJoinsRunningRootAndDescendant(t *testing.T) {
+	for _, mode := range []string{"terminate-tree", "terminate-tree-detached"} {
+		t.Run(mode, func(t *testing.T) {
+			command := conPTYCommand(t, mode)
+			process := startConPTY(t, command)
+			conPTYReady(t, process)
+			leaf, _ := conPTYLeafHandle(t, command.Cwd())
+			ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
+			defer cancel()
+			if err := process.Close(ctx); err != nil {
+				t.Fatal("forced cleanup of multiple active members failed", err)
+			}
+			if result, err := process.Wait(ctx); err != nil || result.ExitCode != 1 {
+				t.Fatal("root did not retain its forced result", err)
+			}
+			if status, err := windows.WaitForSingleObject(leaf, 0); err != nil || status != windows.WAIT_OBJECT_0 {
+				t.Fatal("forced cleanup returned before descendant exit", err)
+			}
+			var code uint32
+			if err := windows.GetExitCodeProcess(leaf, &code); err != nil || code != 1 {
+				t.Fatalf("forced descendant exit = %d, expected 1: %v", code, err)
+			}
+		})
+	}
+}
+
 func TestConPTYTerminateCancellationForcesJobAndJoinsConcurrentCalls(t *testing.T) {
 	command := conPTYCommand(t, "terminate-tree-detached-exited")
 	process := startConPTY(t, command)
