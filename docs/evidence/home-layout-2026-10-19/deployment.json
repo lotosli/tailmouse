@@ -1,0 +1,12 @@
+{
+  "verifiedAt": "2026-10-19T16:26:46.972096+00:00",
+  "origin": "https://tailmouse.com",
+  "worker": "tailmouse-resource-test",
+  "deploymentId": "b4210ddd-9daa-493a-9637-6658fc5171f4",
+  "workerVersionId": "a1a67d54-7c27-4a76-b211-c1bdab127e87",
+  "trafficPercentage": 100,
+  "createdOn": "2026-10-19T16:26:07.774675Z",
+  "sourceRevision": "649b0a90c3d0b907039d920cd03982532b3a2a14",
+  "version": "0.0.0-dev.649b0a90c3d0",
+  "manifestSha256": "5863043051dcc2b7b3b7eb5c2a40d4dd65e37b9a63c234a8a9accb2b7dbea48e"
+}

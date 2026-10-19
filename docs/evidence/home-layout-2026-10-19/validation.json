@@ -37,8 +37,38 @@
         "command": "pnpm --filter @tailmouse/web typecheck",
         "exitCode": 0,
         "logSha256": "f57e584942fa8812c038c74083665bdc073a130c79553facf6e6331dbfe48cc0"
+      },
+      {
+        "command": "prettier --check changed files and git diff --check",
+        "exitCode": 0
+      },
+      {
+        "command": "pnpm exec oxlint --type-aware --deny-warnings apps/web/src/resources/landing.tsx apps/web/src/resources/workspace.browser.test.tsx",
+        "exitCode": 0
       }
     ]
   },
-  "deployment": "pending clean committed build and public verification"
+  "deployment": {
+    "sourceRevision": "649b0a90c3d0b907039d920cd03982532b3a2a14",
+    "cleanBuild": {
+      "command": "pnpm build",
+      "exitCode": 0,
+      "logSha256": "a6dc519530b2f29894f65149909a9051506c0190d790e98d4dbba9dfb742a3be"
+    },
+    "workerIntegration": {
+      "command": "node tools/resource-integration.mjs",
+      "exitCode": 0,
+      "passed": 1,
+      "logSha256": "da3fc59833c86e6abd087eaec598347d1306290afaa4f22bf0c9bf64b831d2d1"
+    },
+    "publication": {
+      "command": "node tools/resource-deploy.mjs publish",
+      "exitCode": 0,
+      "logSha256": "3ff71c52d54527a2c676b1ffb774605abbcdb703a3916c8afef17a0b1a8ce689",
+      "record": "deployment.json"
+    },
+    "publicAssets": "public-assets.json",
+    "publicBrowser": "public-browser.json",
+    "status": "verified"
+  }
 }

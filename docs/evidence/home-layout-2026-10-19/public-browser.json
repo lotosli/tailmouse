@@ -1,0 +1,52 @@
+{
+  "origin": "https://tailmouse.com",
+  "sourceRevision": "649b0a90c3d0b907039d920cd03982532b3a2a14",
+  "browser": "Firefox 153.0",
+  "tls": "verified with the environment proxy CA in an isolated profile",
+  "layouts": [
+    {
+      "viewport": 390,
+      "horizontalOverflow": false,
+      "firstSentenceLines": 2,
+      "accentLines": 1,
+      "descriptionLines": 3
+    },
+    {
+      "viewport": 768,
+      "horizontalOverflow": false,
+      "firstSentenceLines": 1,
+      "accentLines": 1,
+      "descriptionLines": 2
+    },
+    {
+      "viewport": 1280,
+      "horizontalOverflow": false,
+      "firstSentenceLines": 1,
+      "accentLines": 1,
+      "descriptionLines": 1
+    },
+    {
+      "viewport": 1920,
+      "horizontalOverflow": false,
+      "firstSentenceLines": 1,
+      "accentLines": 1,
+      "descriptionLines": 1
+    },
+    {
+      "viewport": 2700,
+      "horizontalOverflow": false,
+      "firstSentenceLines": 1,
+      "accentLines": 1,
+      "descriptionLines": 1
+    }
+  ],
+  "checks": [
+    "public release link",
+    "main source link",
+    "interactive walkthrough",
+    "loopback port guidance",
+    "exact published manifest",
+    "no page errors"
+  ],
+  "status": "verified"
+}
