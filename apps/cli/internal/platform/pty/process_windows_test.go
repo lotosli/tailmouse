@@ -282,7 +282,7 @@ func TestConPTYDescendantOutlivesRootUntilExitOrExplicitClose(t *testing.T) {
 			}
 			var code uint32
 			if err := windows.GetExitCodeProcess(leaf, &code); err != nil || code != want {
-				t.Fatal("descendant did not preserve its normal or forced result", err)
+				t.Fatalf("descendant exit = %d, expected %d: %v", code, want, err)
 			}
 		})
 	}

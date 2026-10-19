@@ -176,12 +176,15 @@ func (process *Process) wait(handle windows.Handle) {
 	// or launcher may leave attached descendants running in the owned job.
 	process.mu.RLock()
 	process.releaseErr = waitForEmptyJob(process.ioCtx, process.job)
-	if errors.Is(process.releaseErr, context.Canceled) {
+	forced := errors.Is(process.releaseErr, context.Canceled)
+	if forced {
 		// Final Close canceled observation and now owns forced job cleanup.
 		process.releaseErr = nil
 	}
 	process.mu.RUnlock()
-	process.requestConsoleClose()
+	if !forced {
+		process.requestConsoleClose()
+	}
 	<-process.consoleClosed
 	close(process.released)
 }
@@ -409,9 +412,11 @@ func (process *Process) Close(ctx context.Context) error {
 			process.job = 0
 		}
 		process.closed = true
+		// A canceled job observer must not close ConPTY ahead of job
+		// termination: its close event could replace the requested exit code.
+		process.requestConsoleClose()
 		if !process.started {
 			close(process.done)
-			process.requestConsoleClose()
 			close(process.released)
 		}
 	}
