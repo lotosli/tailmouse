@@ -10,6 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { pathToFileURL } from 'node:url';
 
 await test('M0 acceptance redacts browser failures, preserves the primary phase and joins cleanup', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'tailmouse-m0-redaction-'));
@@ -130,7 +131,7 @@ await test('M0 acceptance redacts browser failures, preserves the primary phase 
       process.execPath,
       [
         '--import',
-        join(root, 'loader.mjs'),
+        pathToFileURL(join(root, 'loader.mjs')).href,
         join(root, 'tools/m0-acceptance.mjs'),
         '--custom-host',
         'relay.example.invalid',

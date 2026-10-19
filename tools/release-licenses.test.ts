@@ -15,6 +15,7 @@ import {
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
+import { pathToFileURL } from 'node:url';
 import {
   distributionNotices,
   projectNotices,
@@ -350,7 +351,7 @@ await test('notice command explicitly updates sources and fails closed on drift 
       process.execPath,
       [
         '--import',
-        resolve(fixture, 'mock.mjs'),
+        pathToFileURL(resolve(fixture, 'mock.mjs')).href,
         resolve(fixture, 'tools/release-licenses.mjs'),
         action,
       ],
