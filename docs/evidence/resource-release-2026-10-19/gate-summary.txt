@@ -1,0 +1,76 @@
+Command: pnpm gate
+Candidate: c9464c60ce576d0601ed69b1bcb130000b3a4259
+Environment: Linux/amd64; Go 1.27.2; Node 26.8.1; pnpm 11.25.0
+Exit status: 0
+Raw local log SHA-256: 65d30a81e745865a8bd84148a05fbaf32c71444f67f35bc811e3190c62d319e1
+
+==> architecture
+==> OpenSpec
+==> format
+==> build identity, release and static asset tests
+==> Go static checks
+==> Tailcat static checks
+==> Tailcat native and WebAssembly builds
+==> Web static artifact prerequisite
+==> typecheck
+==> lint
+==> unit tests
+==> Tailcat tests
+==> TypeScript coverage
+apps/link-edge coverage: All files          |   99.37 |    98.98 |   97.36 |   99.64 |                   
+apps/web coverage: All files          |   83.79 |    82.07 |   80.83 |   85.32 |                   
+==> Go coverage
+ok  	tailmouse/apps/cli/cmd/tailmouse	(cached)	coverage: 81.2% of statements
+ok  	tailmouse/apps/cli/internal/config	(cached)	coverage: 97.4% of statements
+ok  	tailmouse/apps/cli/internal/escape	(cached)	coverage: 99.6% of statements
+ok  	tailmouse/apps/cli/internal/flow	(cached)	coverage: 92.2% of statements
+ok  	tailmouse/apps/cli/internal/invitation	(cached)	coverage: 94.4% of statements
+ok  	tailmouse/apps/cli/internal/leash	(cached)	coverage: 94.6% of statements
+ok  	tailmouse/apps/cli/internal/platform/pty	(cached)	coverage: 84.8% of statements
+ok  	tailmouse/apps/cli/internal/protocol	(cached)	coverage: 94.7% of statements
+ok  	tailmouse/apps/cli/internal/session	(cached)	coverage: 89.6% of statements
+ok  	tailmouse/apps/cli/internal/share	(cached)	coverage: 80.5% of statements
+ok  	tailmouse/apps/cli/internal/transport/tailcat	(cached)	coverage: 79.6% of statements
+ok  	tailmouse/tools/archiveinfo	(cached)	coverage: 88.7% of statements
+total:								(statements)			86.8%
+==> Native and edge builds
+==> local Worker integration
+==> local public-origin verification
+==> dependency notices
+==> native browser QR decoding
+==> hermetic transport integration
+ok  	tailmouse/apps/cli/internal/transport/tailcat	192.661s
+==> Unix Leash native/browser acceptance
+ok  	tailmouse/apps/cli/cmd/tailmouse	262.024s
+==> Resource native/browser and named TUI acceptance
+ok  	tailmouse/apps/cli/cmd/tailmouse	17.937s
+ok  	tailmouse/apps/cli/internal/share	0.305s
+==> Escape impairment smoke
+ok  	tailmouse/apps/cli/internal/transport/tailcat	16.318s
+==> browser end-to-end tests
+  4 skipped
+  186 passed (2.5m)
+==> Firefox and WebKit real transport acceptance
+ok  	tailmouse/apps/cli/internal/transport/tailcat	133.422s
+==> Go race and vulnerability checks
+ok  	tailmouse/apps/cli/cmd/tailmouse	32.324s
+ok  	tailmouse/apps/cli/internal/config	1.044s
+ok  	tailmouse/apps/cli/internal/escape	1.425s
+ok  	tailmouse/apps/cli/internal/flow	1.010s
+ok  	tailmouse/apps/cli/internal/invitation	1.345s
+ok  	tailmouse/apps/cli/internal/leash	1.337s
+ok  	tailmouse/apps/cli/internal/platform/pty	12.669s
+ok  	tailmouse/apps/cli/internal/protocol	2.240s
+ok  	tailmouse/apps/cli/internal/session	2.050s
+ok  	tailmouse/apps/cli/internal/share	2.925s
+ok  	tailmouse/apps/cli/internal/transport/tailcat	3.791s
+ok  	tailmouse/tools/archiveinfo	1.138s
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 6
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.
+==> Escape representative network profiles and outages
+ok  	tailmouse/apps/cli/internal/transport/tailcat	119.382s
+==> Unix Leash representative network profiles
+ok  	tailmouse/apps/cli/cmd/tailmouse	282.861s
+Gate passed (full).

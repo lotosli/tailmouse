@@ -212,8 +212,11 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 		title, wantCode = "Native Shell acceptance", 19
 	} else if scenario == "long-task" {
 		// A standard shell task emits progress while disconnected, then exposes
-		// an interactive prompt on the same terminal before completing.
-		script := `printf 'long-task-ready\n'; i=0; while [ "$i" -lt 200 ]; do i=$((i + 1)); printf 'long-task-progress:%s\n' "$i"; sleep 0.2; done; printf 'long-task-input\n'; IFS= read -r answer; printf 'long-task-complete:%s\n' "$answer"`
+		// an interactive prompt on the same terminal before completing. Let the
+		// probe end progress after verifying recovery; a fixed producer duration
+		// races browser startup and the mandatory 31-second offline interval.
+		// The existing 100-second owner deadline still bounds the entire child.
+		script := `printf 'long-task-ready\n'; i=0; while [ ! -f .tailmouse-test-long-task-finished ]; do i=$((i + 1)); printf 'long-task-progress:%s\n' "$i"; sleep 0.2; done; printf 'long-task-input\n'; IFS= read -r answer; printf 'long-task-complete:%s\n' "$answer"`
 		argv = []string{"/bin/sh", "-c", script}
 		title, wantCode = "Native long task acceptance", 0
 	} else if scenario == "readonly" {
@@ -347,6 +350,17 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 		})
 		mux.HandleFunc("POST /__test/restore", func(w http.ResponseWriter, r *http.Request) {
 			network.Restore()
+			w.WriteHeader(http.StatusNoContent)
+		})
+		staticHandler = mux
+	} else if scenario == "long-task" {
+		mux := http.NewServeMux()
+		mux.Handle("/", staticHandler)
+		mux.HandleFunc("POST /__test/finish-long-task", func(w http.ResponseWriter, _ *http.Request) {
+			if err := os.WriteFile(filepath.Join(directory, ".tailmouse-test-long-task-finished"), nil, 0o600); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 			w.WriteHeader(http.StatusNoContent)
 		})
 		staticHandler = mux
