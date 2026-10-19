@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -99,6 +100,9 @@ func TestLeashCLIChild(t *testing.T) {
 		data := make([]byte, 1700)
 		if _, err := io.ReadFull(os.Stdin, data); err != nil {
 			os.Exit(123)
+		}
+		if err := os.WriteFile("records.bin", data, 0o600); err != nil {
+			os.Exit(125)
 		}
 		os.Stdout.Write(data)
 		os.Exit(37)
@@ -523,4 +527,207 @@ func TestChildOutcomeIsNotAHostRootFailure(t *testing.T) {
 			t.Fatalf("root failure classified as a child outcome: %s", outcome)
 		}
 	}
+}
+
+func TestLeashCLITitleSurvivesRestartAndExit(t *testing.T) {
+	binary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, title := range []string{"", "--", "<terminal> 🐈", strings.Repeat("<", 256)} {
+		t.Run(title, func(t *testing.T) {
+			fixture := startLeashCLI(t, "wait", "--start-on=connect", "--post-exit-ttl=200ms", "--title", title)
+			browser := fixture.connect(t)
+			first := waitLeashRunning(t, fixture, browser, 1)
+			want := title
+			if want == "" {
+				want = filepath.Base(binary)
+			}
+			if first.Title != want {
+				t.Fatal("original command title was not delivered")
+			}
+			sendLeashControl(t, fixture, browser, "restart", 1)
+			second := waitLeashRunning(t, fixture, browser, 2)
+			if second.Title != want || first.PID == nil || second.PID == nil || *first.PID == *second.PID {
+				t.Fatal("restart changed the title or did not replace the process")
+			}
+			if _, err := fixture.input.Write([]byte("x")); err != nil {
+				t.Fatal(err)
+			}
+			exited := false
+			for {
+				frame := terminalFrame(t, fixture, browser)
+				if frame.Type == protocol.TypeProcessState {
+					state, err := protocol.DecodeProcessState(frame)
+					if err != nil || state.Title != want {
+						t.Fatal("process lifecycle lost its immutable title")
+					}
+					exited = state.State == "exited" && state.ExitCode != nil && *state.ExitCode == 37
+				}
+				if frame.Type == protocol.TypeClose {
+					ack, _ := protocol.CloseFrame("normal")
+					if err := protocol.WriteFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateClosing, ack); err != nil {
+						t.Fatal(err)
+					}
+					browser.Close()
+					break
+				}
+			}
+			fixture.result(t, 37)
+			if !exited {
+				t.Fatal("final titled exit state was not delivered")
+			}
+		})
+	}
+}
+
+func TestLeashCLIReadonlyAndDisabledActionsRejectWithoutClosingChild(t *testing.T) {
+	for _, test := range []struct {
+		flag, action string
+		code         protocol.ErrorCode
+	}{
+		{"--readonly", "input", protocol.CodeReadonly},
+		{"--no-restart", "restart", protocol.CodeRestartDisabled},
+		{"--no-terminate", "terminate", protocol.CodeTerminateDisabled},
+	} {
+		t.Run(test.flag, func(t *testing.T) {
+			fixture := startLeashCLI(t, "wait", "--start-on=connect", test.flag)
+			browser := fixture.connect(t)
+			waitLeashRunning(t, fixture, browser, 1)
+			if test.action == "input" {
+				if err := protocol.WriteFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateActiveLeash, protocol.Frame{Type: protocol.TypeTermInput, Payload: []byte("DENIED_INPUT")}); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				sendLeashControl(t, fixture, browser, test.action, 1)
+			}
+			for {
+				frame := terminalFrame(t, fixture, browser)
+				if frame.Type != protocol.TypeError {
+					continue
+				}
+				if code, _ := protocol.ErrorCodeOf(protocol.DecodeError(frame)); code != test.code {
+					t.Fatalf("denied action = %s", code)
+				}
+				break
+			}
+			fixture.input.Write([]byte("x"))
+			closeLeashBrowser(t, fixture, browser)
+			fixture.result(t, 37)
+			if strings.Contains(fixture.output.text(), "DENIED_INPUT") || strings.Contains(fixture.output.text(), "restarted process") {
+				t.Fatal("denied action reached the child")
+			}
+		})
+	}
+}
+
+func TestLeashCLICleanupFailureDoesNotMasqueradeAsChildExit(t *testing.T) {
+	fixture := startLeashCLI(t, "wait", "--start-on=connect")
+	fixture.transport.mu.Lock()
+	fixture.transport.closeErr = errors.New("synthetic private transport detail")
+	fixture.transport.mu.Unlock()
+	browser := fixture.connect(t)
+	waitLeashRunning(t, fixture, browser, 1)
+	if _, err := fixture.input.Write([]byte("x")); err != nil {
+		t.Fatal(err)
+	}
+	closeLeashBrowser(t, fixture, browser)
+	fixture.result(t, exitTransport)
+}
+
+func TestLeashCLIResizeAndConcurrentInput(t *testing.T) {
+	t.Run("resize", func(t *testing.T) {
+		fixture := startLeashCLI(t, "size", "--start-on=connect")
+		browser := fixture.connect(t)
+		waitLeashRunning(t, fixture, browser, 1)
+		for _, payload := range [][]byte{{0, 90, 0, 30}, {0, 120, 0, 41}} {
+			if err := protocol.WriteFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateActiveLeash, protocol.Frame{Type: protocol.TypeTermResize, Payload: payload}); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for !strings.Contains(fixture.output.text(), "size 120x41") {
+			if _, err := fixture.input.Write([]byte("s")); err != nil {
+				t.Fatal(err)
+			}
+			select {
+			case <-time.After(10 * time.Millisecond):
+			case <-fixture.ctx.Done():
+				t.Fatal("browser resize did not reach the native child")
+			}
+		}
+		exerciseRedirectedResizeSignal(fixture)
+		fixture.input.Write([]byte("x"))
+		closeLeashBrowser(t, fixture, browser)
+		fixture.result(t, 37)
+	})
+	t.Run("atomic chunks", func(t *testing.T) {
+		directory := t.TempDir()
+		fixture := startLeashCLI(t, "records", "--start-on=connect", "--cwd="+directory)
+		browser := fixture.connect(t)
+		waitLeashRunning(t, fixture, browser, 1)
+		var local, remote bytes.Buffer
+		for index := 0; index < 50; index++ {
+			fmt.Fprintf(&local, "LOCAL-%010d\n", index)
+			fmt.Fprintf(&remote, "PHONE-%010d\n", index)
+		}
+		done := make(chan error, 2)
+		go func() { _, err := fixture.input.Write(local.Bytes()); done <- err }()
+		go func() {
+			done <- protocol.WriteFrame(fixture.ctx, browser, protocol.PeerBrowser, protocol.StateActiveLeash, protocol.Frame{Type: protocol.TypeTermInput, Payload: remote.Bytes()})
+		}()
+		for range 2 {
+			if err := <-done; err != nil {
+				t.Fatal(err)
+			}
+		}
+		closeLeashBrowser(t, fixture, browser)
+		fixture.result(t, 37)
+		data, err := os.ReadFile(filepath.Join(directory, "records.bin"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(data, append(append([]byte(nil), local.Bytes()...), remote.Bytes()...)) && !bytes.Equal(data, append(append([]byte(nil), remote.Bytes()...), local.Bytes()...)) {
+			t.Fatal("accepted local/browser byte chunks interleaved")
+		}
+	})
+}
+
+func TestLeashCLIFinalDiagnosticFailurePreservesEarlierRoot(t *testing.T) {
+	for _, transportFailure := range []bool{false, true} {
+		t.Run(fmt.Sprintf("transport-failure-%t", transportFailure), func(t *testing.T) {
+			input, writer, err := os.Pipe()
+			if err != nil {
+				t.Fatal(err)
+			}
+			diagnostic := &failFinalLeashDiagnostic{}
+			fixture := startLeashCLIWithInput(t, "wait", input, writer, diagnostic, "--start-on=connect", "--json")
+			want := exitInternal
+			if transportFailure {
+				fixture.transport.mu.Lock()
+				fixture.transport.closeErr = errors.New("synthetic private transport detail")
+				fixture.transport.mu.Unlock()
+				want = exitTransport
+			}
+			browser := fixture.connect(t)
+			waitLeashRunning(t, fixture, browser, 1)
+			if _, err := fixture.input.Write([]byte("x")); err != nil {
+				t.Fatal(err)
+			}
+			closeLeashBrowser(t, fixture, browser)
+			fixture.result(t, want)
+			if diagnostic.failures != 1 {
+				t.Fatal("final diagnostic failure was not exercised exactly once")
+			}
+		})
+	}
+}
+
+type failFinalLeashDiagnostic struct{ failures int }
+
+func (writer *failFinalLeashDiagnostic) Write(data []byte) (int, error) {
+	if bytes.Contains(data, []byte(`"event":"terminal_failure"`)) {
+		writer.failures++
+		return 0, errors.New("synthetic private diagnostic detail")
+	}
+	return len(data), nil
 }
