@@ -1,5 +1,10 @@
 # TailMouse project memory
 
+## First public native preview — 2026-10-19
+
+- **Owner-directed:** Update the README to the current product state, commit directly to `main`, and publish common-platform binaries on GitHub for users to download. Keep the owner's `[skip ci]` preference; GitHub Actions billing is not a prerequisite for this explicitly authorized publication.
+- **Decision/in progress:** Prepare `v0.1.0-alpha.1` as a public prerelease with Linux/macOS/Windows x64 and ARM64 archives, per-archive CycloneDX SBOMs, SHA-256 checksums and a source manifest. Build the exact tagged source with the existing verifiers. Retain Windows Receive as unsupported and final native Windows Worker confirmation as deferred. Source and build evidence will identify actual publication separately; no public release exists at this checkpoint.
+
 ## Resource release integration — 2026-10-19
 
 - **Observed, 2026-10-19:** PR #1 is merged into `main` at `27bb348c1a5306678a159a234817c27e575e1395`. Its tree exactly matches preserved PR head `5fb9ce060b49953076c68313ea392b0758ff1ce5` and contains deployed source `1d77055` plus the acceptance evidence. The update and merge messages include `[skip ci]`; GitHub reports no Actions runs for either commit. The active workspace is synchronized to `main`. The retained Windows CI limit is deferred by the owner and is not reported as passed.
