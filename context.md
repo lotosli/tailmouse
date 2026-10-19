@@ -2,6 +2,8 @@
 
 ## Current recovery state — 2026-10-17
 
+- **Observed, 2026-10-19:** Recovered resource Go/Wasm source and the production scheduler now rebuild byte-identically to the deployed 26,656,976-byte resource Wasm (SHA-256 `1b459cc6e9acdc96292e5cc44fc58110d1a333a00f6ade6cbaa15349ec86251e`) with Go 1.27.2 and Tailcat `52fbad3` in workspace mode. The verified source bundle and per-file hashes are preserved under `docs/evidence/native-source-recovery-2026-10-19/`. Native Host/CLI recovery and truncated tests are still being reconciled. This supersedes the earlier claim that the resource bridge source is missing; it is not a complete native release claim.
+
 - **Observed, 2026-10-19:** Supported task history is now readable. The original Tailcat-upgrade final explicitly reported that code was uncommitted. Literal historical write commands yield 56 source file versions (55 distinct paths, 30 Go files), including the native resource modules and Go/Wasm bridge. They are preserved in docs/evidence/native-source-recovery-2026-10-19/initial-source.tar.gz with checked member hashes. Later edits and some truncated patches still need reconciliation; this is source recovery progress, not a passing native build or release. The prior statement that history tools are unavailable is historical.
 
 - **Owner-directed:** Implement the product/operations review, preserve Escape, keep the private interface and preview on tailmouse.com, and use only four representative impairment profiles.
