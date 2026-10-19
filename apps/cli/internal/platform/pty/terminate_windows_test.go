@@ -260,6 +260,9 @@ func TestConPTYJobObservationPropagatesCancellationAndInvalidHandle(t *testing.T
 	if err := waitForEmptyJob(t.Context(), windows.InvalidHandle); !errors.Is(err, windows.ERROR_INVALID_HANDLE) {
 		t.Fatal("invalid job observation was reported as completion", err)
 	}
+	if err := terminateJobAndWait(t.Context(), windows.InvalidHandle); !errors.Is(err, windows.ERROR_INVALID_HANDLE) {
+		t.Fatal("invalid job termination was reported as completion", err)
+	}
 	process := startConPTY(t, conPTYCommand(t, "idle"))
 	conPTYReady(t, process)
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)

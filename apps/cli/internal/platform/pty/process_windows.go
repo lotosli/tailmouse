@@ -218,6 +218,81 @@ func waitForEmptyJob(ctx context.Context, job windows.Handle) error {
 	}
 }
 
+// Job accounting reaches zero before every terminated process handle becomes
+// signaled. Retain identity-stable handles before forcing exit and join them.
+// A limit of one prevents any remaining member from spawning another child
+// during collection; existing members remain owned until termination.
+func terminateJobAndWait(ctx context.Context, job windows.Handle) error {
+	limits := windows.JOBOBJECT_EXTENDED_LIMIT_INFORMATION{}
+	limits.BasicLimitInformation.LimitFlags = windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | windows.JOB_OBJECT_LIMIT_ACTIVE_PROCESS
+	limits.BasicLimitInformation.ActiveProcessLimit = 1
+	_, failure := windows.SetInformationJobObject(job, windows.JobObjectExtendedLimitInformation,
+		uintptr(unsafe.Pointer(&limits)), uint32(unsafe.Sizeof(limits)))
+	// Bound native enumeration to a 64 KiB PID list. Even a collection error
+	// must still force the job; it cannot be reported as successful cleanup.
+	var members struct {
+		Assigned, Listed uint32
+		PIDs             [8192]uintptr
+	}
+	err := windows.QueryInformationJobObject(job, windows.JobObjectBasicProcessIdList,
+		uintptr(unsafe.Pointer(&members)), uint32(unsafe.Sizeof(members)), nil)
+	if err == nil && (members.Assigned != members.Listed || members.Listed > uint32(len(members.PIDs))) {
+		err = errors.New("terminal job exceeded its cleanup observation bound")
+	}
+	failure = errors.Join(failure, err)
+	var handles []windows.Handle
+	if err == nil {
+		membership := windows.NewLazySystemDLL("kernel32.dll").NewProc("IsProcessInJob")
+		for _, pid := range members.PIDs[:members.Listed] {
+			if err := ctx.Err(); err != nil {
+				failure = errors.Join(failure, err)
+				break
+			}
+			handle, err := windows.OpenProcess(windows.SYNCHRONIZE|windows.PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
+			if errors.Is(err, windows.ERROR_INVALID_PARAMETER) {
+				continue // The enumerated process has already exited.
+			}
+			if err != nil {
+				failure = errors.Join(failure, err)
+				break
+			}
+			var owned int32
+			ok, _, memberErr := membership.Call(uintptr(handle), uintptr(job), uintptr(unsafe.Pointer(&owned)))
+			if ok == 0 || owned == 0 {
+				// An exited PID can be reused before OpenProcess. Never wait on
+				// or act on a handle outside the generation's owned job.
+				failure = errors.Join(failure, windows.CloseHandle(handle))
+				if ok == 0 {
+					failure = errors.Join(failure, memberErr)
+					break
+				}
+				continue
+			}
+			handles = append(handles, handle)
+		}
+	}
+	failure = errors.Join(failure, windows.TerminateJobObject(job, 1))
+	for _, handle := range handles {
+		for {
+			if err := ctx.Err(); err != nil {
+				failure = errors.Join(failure, err)
+				break
+			}
+			status, err := windows.WaitForSingleObject(handle, 20)
+			if err != nil || status == windows.WAIT_OBJECT_0 {
+				failure = errors.Join(failure, err)
+				break
+			}
+			if status != uint32(windows.WAIT_TIMEOUT) {
+				failure = errors.Join(failure, errors.New("terminal job process wait returned an invalid state"))
+				break
+			}
+		}
+		failure = errors.Join(failure, windows.CloseHandle(handle))
+	}
+	return failure
+}
+
 func (process *Process) requestConsoleClose() {
 	process.consoleOnce.Do(func() {
 		process.consoleMu.Lock()
@@ -389,7 +464,7 @@ func (process *Process) Close(ctx context.Context) error {
 	process.mu.Lock()
 	if !process.closed {
 		if process.job != 0 {
-			process.closeErr = windows.TerminateJobObject(process.job, 1)
+			process.closeErr = terminateJobAndWait(ctx, process.job)
 		}
 		if process.started {
 			// Preserve TerminateJobObject's result before channel closure can
