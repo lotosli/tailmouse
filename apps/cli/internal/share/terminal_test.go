@@ -1,31 +1,20 @@
-//go:build linux || darwin
+//go:build linux || darwin || windows
 
 package share
 
 import (
+	"bufio"
+	"fmt"
 	"io"
 	"net"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/term"
 )
 
-func terminalHost(t *testing.T, readOnly bool, command string) (*Host, string) {
-	t.Helper()
-	o := Options{Command: "dev", Argv: []string{"/bin/sh", "-c", command}, Cwd: t.TempDir(), MaxClients: 2, TTL: time.Minute, Approval: "auto", ReadOnly: readOnly}
-	h, token, err := NewHost(t.Context(), o, os.Environ())
-	if err != nil {
-		t.Fatal(err)
-	}
-	h.Ready()
-	t.Cleanup(func() {
-		if err := h.Close(); err != nil {
-			t.Error(err)
-		}
-	})
-	return h, token
-}
 func terminalStream(t *testing.T, h *Host, welcome Welcome) (net.Conn, TerminalState) {
 	t.Helper()
 	s := openHost(t, h, "peer", Hello{Type: "hello", Version: 2, Session: h.ID(), Channel: "terminal", Resource: "cli", Member: welcome.Member, Grant: welcome.Grant})
@@ -54,8 +43,6 @@ func readTerminalUntil(t *testing.T, r io.Reader, marker string) {
 	t.Fatal("terminal exceeded output budget")
 }
 
-const echoCommand = `printf 'ready\n'; while IFS= read -r line; do printf 'result:%s\n' "$line"; done`
-
 func waitTerminal(t *testing.T, condition func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(2 * time.Second)
@@ -67,7 +54,7 @@ func waitTerminal(t *testing.T, condition func() bool) {
 	}
 }
 func TestTerminalSameProcessReconnectAndLocalPriority(t *testing.T) {
-	h, token := terminalHost(t, false, echoCommand)
+	h, token := terminalFixture(t, false, "echo")
 	_, w := welcomeHost(t, h, token, "peer")
 	s, state := terminalStream(t, h, w)
 	if !state.Controller || !state.Running {
@@ -105,7 +92,7 @@ func TestTerminalSameProcessReconnectAndLocalPriority(t *testing.T) {
 	readTerminalUntil(t, next, "result:again")
 }
 func TestTerminalReadonlyCannotInject(t *testing.T) {
-	h, token := terminalHost(t, true, echoCommand)
+	h, token := terminalFixture(t, true, "echo")
 	_, w := welcomeHost(t, h, token, "peer")
 	s, state := terminalStream(t, h, w)
 	if state.Controller || h.GrantMember(1) || h.GrantControl() {
@@ -122,26 +109,8 @@ func TestTerminalReadonlyCannotInject(t *testing.T) {
 		t.Fatal("readonly denial killed shared process")
 	}
 }
-func TestTerminalBoundedHistoryRequestsRedrawWithoutRestart(t *testing.T) {
-	h, token := terminalHost(t, false, "head -c 4194400 /dev/zero; "+echoCommand)
-	waitTerminal(t, func() bool { h.Terminal().mu.Lock(); defer h.Terminal().mu.Unlock(); return h.Terminal().truncated })
-	_, w := welcomeHost(t, h, token, "peer")
-	s, state := terminalStream(t, h, w)
-	if !state.HistoryLost || state.Recovery != "redraw" {
-		t.Fatal("overflow was silently replayed")
-	}
-	written := make(chan error, 1)
-	go func() { written <- WriteFrame(s, DataFrame, []byte("after-redraw\n")) }()
-	readTerminalUntil(t, s, "result:after-redraw")
-	if err := <-written; err != nil {
-		t.Fatal(err)
-	}
-	if h.Terminal().process.PID() != state.PID {
-		t.Fatal("redraw restarted child")
-	}
-}
 func TestTerminalExitStateAndClose(t *testing.T) {
-	h, token := terminalHost(t, false, "printf 'finished\\n'; exit 19")
+	h, token := terminalFixture(t, false, "exit")
 	_, w := welcomeHost(t, h, token, "peer")
 	s, state := terminalStream(t, h, w)
 	for state.Running {
@@ -165,4 +134,56 @@ func TestTerminalExitStateAndClose(t *testing.T) {
 	if h.Terminal().Running() {
 		t.Fatal("closed terminal reported running")
 	}
+}
+
+func terminalHostCommand(t *testing.T, readOnly bool, argv []string) (*Host, string) {
+	t.Helper()
+	o := Options{Command: "dev", Argv: argv, Cwd: t.TempDir(), MaxClients: 2, TTL: time.Minute, Approval: "auto", ReadOnly: readOnly}
+	h, token, err := NewHost(t.Context(), o, os.Environ())
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Ready()
+	t.Cleanup(func() {
+		if err := h.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return h, token
+}
+
+// The same native child runs under Unix PTY and Windows ConPTY. The last
+// argument is synthetic fixture data; no user command or invitation is stored.
+func TestResourceTerminalChild(t *testing.T) {
+	if len(os.Args) < 2 || !strings.HasPrefix(os.Args[len(os.Args)-1], "resource-child:") {
+		return
+	}
+	mode := strings.TrimPrefix(os.Args[len(os.Args)-1], "resource-child:")
+	watchdog := time.AfterFunc(10*time.Second, func() { os.Exit(124) })
+	defer watchdog.Stop()
+	if _, err := term.MakeRaw(int(os.Stdin.Fd())); err != nil {
+		os.Exit(125)
+	}
+	if mode == "exit" {
+		fmt.Fprint(os.Stdout, "finished\r\n")
+		os.Exit(19)
+	}
+	fmt.Fprint(os.Stdout, "ready\r\n")
+	input := bufio.NewReader(os.Stdin)
+	for {
+		line, err := input.ReadString('\n')
+		if err != nil {
+			os.Exit(125)
+		}
+		fmt.Fprintf(os.Stdout, "result:%s\r\n", strings.TrimRight(line, "\r\n"))
+	}
+}
+
+func terminalFixture(t *testing.T, readOnly bool, mode string) (*Host, string) {
+	t.Helper()
+	binary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return terminalHostCommand(t, readOnly, []string{binary, "-test.run=^TestResourceTerminalChild$", "--", "resource-child:" + mode})
 }

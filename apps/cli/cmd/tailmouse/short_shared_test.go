@@ -1,4 +1,4 @@
-//go:build darwin || linux
+//go:build darwin || linux || windows
 
 package main
 
@@ -203,12 +203,20 @@ func TestOfficialShortCLIPublicationAndCleanup(t *testing.T) {
 				return &http.Response{StatusCode: 204, Header: http.Header{"Cache-Control": {"no-store"}}, Body: io.NopCloser(strings.NewReader(""))}, nil
 			}))
 			args := append([]string{"leash", "--no-qr", "--json"}, test.flags...)
-			args = append(args, "--", "/bin/sh", "-c", "printf 'short-test-child-started\\n'; exit 7")
+			binary, err := os.Executable()
+			if err != nil {
+				t.Fatal(err)
+			}
+			args = append(args, "--", binary, "-test.run=^TestLeashCLIChild$")
 			options, _, err := config.Resolve(args, nil, t.TempDir())
 			if err != nil {
 				t.Fatal(err)
 			}
-			command, err := leash.NewCommand(options.Leash.Argv, t.TempDir(), "", nil, nil)
+			environment := []string{"TAILMOUSE_LEASH_CLI_CHILD=short-exit"}
+			if directory := os.Getenv("GOCOVERDIR"); directory != "" {
+				environment = append(environment, "GOCOVERDIR="+directory)
+			}
+			command, err := leash.NewCommand(options.Leash.Argv, t.TempDir(), "", environment, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
