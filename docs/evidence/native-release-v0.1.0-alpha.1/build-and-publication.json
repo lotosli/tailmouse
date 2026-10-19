@@ -147,7 +147,7 @@
     "tag": "v0.1.0-alpha.1",
     "url": "https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.1",
     "draft": false,
-    "prerelease": true,
+    "prerelease": false,
     "publishedAt": "2026-10-19T16:02:20Z",
     "uploadedAssets": 15,
     "uploadedDigests": "All 15 GitHub SHA-256 digests match the staged release assets.",
@@ -157,7 +157,21 @@
       "Initial platform authentication returned HTTP 401 on uploads.github.com.",
       "The owner saved a scoped release token with both official hosts; the binding later became ready and all uploads succeeded.",
       "Administration API requests still returned HTTP 403 despite the owner showing Administration and Contents read/write selected. The authentication-routing cause was not established.",
-      "The owner changed repository visibility to Public; the public state was independently verified before release publication."
-    ]
+      "The owner changed repository visibility to Public; the public state was independently verified before release publication.",
+      "Initially published as a prerelease. On 2026-10-20 (Asia/Shanghai), the owner requested removing the prerelease flag and setting Latest; the update and latest API result were verified with all 15 asset identities, sizes and digests unchanged."
+    ],
+    "latest": true,
+    "latestVerification": {
+      "verifiedAt": "2026-10-19T16:32:42.884210+00:00",
+      "verifiedDateAsiaShanghai": "2026-10-20",
+      "releaseId": 417417113,
+      "tag": "v0.1.0-alpha.1",
+      "url": "https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.1",
+      "prerelease": false,
+      "latest": true,
+      "assetCount": 15,
+      "assetIdsSizesDigestsUnchanged": true,
+      "releaseNotesUnchanged": true
+    }
   }
 }
