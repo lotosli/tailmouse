@@ -1,7 +1,7 @@
 {
   "origin": "https://tailmouse.com",
-  "verifiedAt": "2026-10-19T10:02:52.601Z",
-  "sourceRevision": "400e146855e2925857f79d414ff4b0441a3cf9fd",
+  "verifiedAt": "2026-10-19T12:01:57.559Z",
+  "sourceRevision": "8955e4763c087c5d8529134a143534ab07d9d742",
   "browser": "Firefox 153.0",
   "tls": "verified with the environment proxy CA in an isolated profile",
   "checks": [

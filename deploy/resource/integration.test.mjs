@@ -19,7 +19,25 @@ await test(
     const directory = mkdtempSync(
       resolve(tmpdir(), 'tailmouse-resource-runtime-'),
     );
-    t.after(() => rmSync(directory, { recursive: true, force: true }));
+    let server;
+    // Node stops subsequent after hooks when an earlier hook throws. Release
+    // the runtime's Windows file handles before removing its asset directory.
+    t.after(async () => {
+      const failures = [];
+      try {
+        await server?.close();
+      } catch (error) {
+        failures.push(error);
+      }
+      try {
+        rmSync(directory, { recursive: true, force: true });
+      } catch (error) {
+        failures.push(error);
+      }
+      if (failures.length) {
+        throw new AggregateError(failures, 'Resource fixture cleanup failed.');
+      }
+    });
     const source = resolve(root, 'apps/web/dist');
     const destination = resolve(directory, 'assets');
     const { manifest, manifestSha256 } = prepareResourceDeployment(
@@ -29,7 +47,7 @@ await test(
     const configuration = JSON.parse(
       readFileSync(resolve(import.meta.dirname, 'wrangler.jsonc'), 'utf8'),
     );
-    const server = createTestHarness({
+    server = createTestHarness({
       root: directory,
       workers: [
         {
@@ -42,7 +60,6 @@ await test(
         },
       ],
     });
-    t.after(() => server.close());
     const { url } = await server.listen();
     const get = (path, options) =>
       fetch(new URL(path, url), {

@@ -57,6 +57,10 @@ jobs:
           GOWORK: 'off'
         run: node tools/go-gate.mjs coverage
       - run: pnpm install --frozen-lockfile
+      - name: Verify Windows static Worker teardown
+        if: runner.os == 'Windows'
+        timeout-minutes: 15
+        run: node tools/tailcat-gate.mjs build && pnpm --filter @tailmouse/web build && node tools/resource-integration.mjs
       - if: runner.os == 'Linux'
         run: pnpm exec playwright install --with-deps
       - if: runner.os != 'Linux'

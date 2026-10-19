@@ -1,14 +1,14 @@
 {
   "worker": "tailmouse-resource-test",
   "origin": "https://tailmouse.com",
-  "deploymentId": "ba6698a4-0ce0-4744-be7f-7820242696db",
-  "createdOn": "2026-10-19T10:02:13.756799Z",
+  "deploymentId": "97c0a643-82ae-4e36-8c47-4dc43ddeb4e0",
+  "createdOn": "2026-10-19T12:01:20.251633Z",
   "versions": [
     {
-      "version_id": "d475e00f-8985-4913-92de-42cb84b60407",
+      "version_id": "1ceb2b09-31fa-4255-bdd9-98ea99a348fb",
       "percentage": 100
     }
   ],
-  "sourceRevision": "400e146855e2925857f79d414ff4b0441a3cf9fd",
-  "manifestSha256": "c45fba651e9567679c6ae186f8cd736a4bbc3d701ed0528e73fb3828dc8eccad"
+  "sourceRevision": "8955e4763c087c5d8529134a143534ab07d9d742",
+  "manifestSha256": "7eb4d2079ce9afabd8ead2b20dec528a87eacfc81362112ad65bd8e2b207e4e1"
 }

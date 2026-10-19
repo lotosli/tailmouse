@@ -109,7 +109,7 @@ const phases = [
     'local Worker integration',
     () => {
       runPnpm(['--filter', '@tailmouse/link-edge', 'test:integration']);
-      run(process.execPath, ['--test', 'deploy/resource/integration.test.mjs']);
+      run(process.execPath, ['tools/resource-integration.mjs']);
     },
   ],
   [
@@ -230,6 +230,11 @@ const phases = [
 
 for (const [name, execute] of phases) {
   process.stdout.write(`\n==> ${String(name)}\n`);
+  if (process.env.GITHUB_ACTIONS === 'true') {
+    process.stdout.write(
+      `::notice title=TailMouse gate::Starting ${String(name)}\n`,
+    );
+  }
   execute();
 }
 

@@ -1,23 +1,31 @@
 {
-  "sourceRevision": "adbf8e52f7bd47b75a0f84ad09a3424cad148185",
-  "runUrl": "https://github.com/lotosli/tailmouse/actions/runs/39241966808",
-  "scope": "Native ConPTY package tests, including forced cleanup with multiple active members; not a complete workflow result.",
-  "checks": [
+  "sourceRevision": "8955e4763c087c5d8529134a143534ab07d9d742",
+  "workflowURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408",
+  "qualification": "These completed native Go steps include the unchanged 80% coverage floor (80.5% observed on each architecture). Full Windows jobs later failed the Worker fixture and were canceled for diagnosis; full Linux/macOS jobs passed. This is not a passing complete workflow.",
+  "jobs": [
     {
-      "jobId": 118024691881,
-      "platform": "windows-11-arm",
-      "name": "Verify Windows native terminal boundary",
-      "conclusion": "success",
-      "startedAt": "2026-10-19T11:06:05Z",
-      "completedAt": "2026-10-19T11:06:41Z"
+      "name": "windows-latest",
+      "jobId": 118041250667,
+      "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408/job/118041250667",
+      "step": {
+        "name": "Verify Windows native Go acceptance",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-19T11:47:20Z",
+        "completed_at": "2026-10-19T11:51:24Z"
+      }
     },
     {
-      "jobId": 118024692206,
-      "platform": "windows-latest",
-      "name": "Verify Windows native terminal boundary",
-      "conclusion": "success",
-      "startedAt": "2026-10-19T11:05:38Z",
-      "completedAt": "2026-10-19T11:06:15Z"
+      "name": "windows-11-arm",
+      "jobId": 118041250784,
+      "htmlURL": "https://github.com/lotosli/tailmouse/actions/runs/39247007408/job/118041250784",
+      "step": {
+        "name": "Verify Windows native Go acceptance",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-19T11:47:57Z",
+        "completed_at": "2026-10-19T11:51:31Z"
+      }
     }
   ]
 }
