@@ -7,11 +7,35 @@ const baseHeaders = {
   'Referrer-Policy': 'no-referrer',
   'X-Content-Type-Options': 'nosniff',
   'Permissions-Policy':
-    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), document-domain=()',
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), document-domain=(), accelerometer=(self), gyroscope=(self), magnetometer=()',
   'Origin-Agent-Cluster': '?1',
 };
-// This Worker only serves release assets. Business HTTP always travels through
-// the authenticated browser/native resource stream, never through Cloudflare.
+function representation(
+  header: string | null,
+): 'br' | 'gzip' | 'identity' | undefined {
+  const quality = new Map<string, number>();
+  for (const item of (header ?? '').split(',')) {
+    const [name, ...parameters] = item.trim().toLowerCase().split(';');
+    if (!name) continue;
+    let q = 1;
+    for (const parameter of parameters) {
+      const value = /^\s*q=(0(?:\.\d{0,3})?|1(?:\.0{0,3})?)\s*$/u.exec(
+        parameter,
+      )?.[1];
+      q = value === undefined ? 0 : Number(value);
+    }
+    quality.set(name, q);
+  }
+  const br = quality.get('br') ?? quality.get('*') ?? 0;
+  const gzip = quality.get('gzip') ?? quality.get('*') ?? 0;
+  if (br > 0 && br >= gzip) return 'br';
+  if (gzip > 0) return 'gzip';
+  if ((quality.get('identity') ?? (quality.get('*') === 0 ? 0 : 1)) > 0)
+    return 'identity';
+  return undefined;
+}
+
+// Static release assets only. Authorized application traffic uses Tailcat.
 export default {
   async fetch(request: Request, env: { ASSETS: Assets }): Promise<Response> {
     const url = new URL(request.url);
@@ -35,42 +59,66 @@ export default {
           },
         },
       );
-    const bridge = /^\/\.tailmouse\/p\/[a-f0-9]{32}\/bridge\.html$/u.test(
-      url.pathname,
-    );
+    const bridge =
+      /^\/\.tailmouse\/p\/[a-f0-9]{32}\/bridge\.html$/u.test(url.pathname) ||
+      url.pathname === '/.tailmouse/bridge.html';
     if (bridge) url.pathname = '/.tailmouse/bridge.html';
     else if (url.pathname === '/' || url.pathname === '/.tailmouse/workspace/')
       url.pathname = '/index.html';
-    // All remaining paths resolve only to bundled static files or a 404.
     url.search = '';
-    let encoding: 'br' | 'gzip' | undefined;
-    let decompress = false;
     const wasm = /^\/tailcat\/[\w.-]+\.wasm$/u.test(url.pathname);
+    const encoded = /^\/tailcat\/[\w.-]+\.wasm\.(br|gz)$/u.exec(
+      url.pathname,
+    )?.[1];
+    let encoding: 'br' | 'gzip' | 'identity' | undefined;
     if (wasm) {
-      const accepted = request.headers.get('Accept-Encoding') ?? '';
-      if (/\bbr\b/u.test(accepted)) {
-        url.pathname += '.br';
-        encoding = 'br';
-      } else {
-        url.pathname += '.gz';
-        encoding = 'gzip';
-        decompress = !/\bgzip\b/u.test(accepted);
-      }
+      // Cloudflare normalizes the header; cf preserves the client's real offer.
+      const cf = (
+        request as Request & { cf?: { clientAcceptEncoding?: unknown } }
+      ).cf;
+      encoding = representation(
+        typeof cf?.clientAcceptEncoding === 'string'
+          ? cf.clientAcceptEncoding
+          : request.headers.get('Accept-Encoding'),
+      );
+      if (encoding === undefined)
+        return new Response(null, {
+          status: 406,
+          headers: {
+            ...baseHeaders,
+            Vary: 'Accept-Encoding',
+            'Cache-Control': 'no-store',
+          },
+        });
+      url.pathname += encoding === 'br' ? '.br' : '.gz';
     }
+    const incoming = new Headers(request.headers);
+    if (wasm) incoming.delete('Range');
     const asset = await env.ASSETS.fetch(
-      new Request(url, { method: request.method, headers: request.headers }),
+      new Request(url, { method: request.method, headers: incoming }),
     );
     const headers = new Headers(asset.headers);
     for (const [key, value] of Object.entries(baseHeaders))
       headers.set(key, value);
     headers.set(
       'Cache-Control',
-      /^\/(assets|tailcat)\//u.test(url.pathname)
+      asset.ok && /^\/(assets|tailcat)\//u.test(url.pathname)
         ? 'public, max-age=31536000, immutable'
         : 'no-store',
     );
-    if (url.pathname.endsWith('.js'))
+    const compressed = /^\/(?:assets|tailcat)\/[\w.-]+\.(br|gz)$/u.exec(
+      url.pathname,
+    )?.[1];
+    const rawPath =
+      compressed === undefined ? url.pathname : url.pathname.slice(0, -3);
+    if (rawPath.endsWith('.js'))
       headers.set('Content-Type', 'text/javascript; charset=utf-8');
+    if (rawPath.endsWith('.css'))
+      headers.set('Content-Type', 'text/css; charset=utf-8');
+    if (rawPath === '/LICENSE' || rawPath === '/NOTICE')
+      headers.set('Content-Type', 'text/plain; charset=utf-8');
+    if (compressed !== undefined && asset.ok)
+      headers.set('Content-Encoding', compressed === 'br' ? 'br' : 'gzip');
     if (url.pathname === '/.tailmouse/sw.js')
       headers.set('Service-Worker-Allowed', '/.tailmouse/p/');
     if (url.pathname === '/index.html')
@@ -81,20 +129,29 @@ export default {
     if (bridge)
       headers.set(
         'Content-Security-Policy',
-        "default-src 'self'; script-src 'self'; style-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'",
+        "default-src 'none'; script-src 'self'; style-src 'self'; frame-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'",
       );
-    let body = asset.body;
-    if (wasm && asset.ok) {
+    let body = request.method === 'HEAD' ? null : asset.body;
+    if ((wasm || encoded !== undefined) && asset.ok) {
       headers.set('Content-Type', 'application/wasm');
-      headers.set('Vary', 'Accept-Encoding');
-      if (decompress) {
+      if (wasm) headers.set('Vary', 'Accept-Encoding');
+      if (encoding === 'identity') {
         headers.delete('Content-Encoding');
         headers.delete('Content-Length');
         if (body !== null)
           body = body.pipeThrough(new DecompressionStream('gzip'));
-      } else if (encoding !== undefined)
-        headers.set('Content-Encoding', encoding);
+      } else
+        headers.set(
+          'Content-Encoding',
+          encoding ?? (encoded === 'br' ? 'br' : 'gzip'),
+        );
     }
-    return new Response(body, { status: asset.status, headers });
+    // These bytes are already compressed. Workers must not encode them again.
+    const init: ResponseInit & { encodeBody: 'manual' } = {
+      status: asset.status,
+      headers,
+      encodeBody: 'manual',
+    };
+    return new Response(body, init);
   },
 };

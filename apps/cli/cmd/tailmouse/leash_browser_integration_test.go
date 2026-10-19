@@ -113,9 +113,9 @@ func TestHermeticLeashNetwork(t *testing.T) {
 func TestHermeticLeashNetworkMatrix(t *testing.T) {
 	for _, profile := range []tailcattransport.TestNetworkProfile{
 		{RTTMS: 20, JitterMS: 0, Loss: 0, Kbit: 1024},
-		{RTTMS: 150, JitterMS: 30, Loss: 1, Kbit: 256},
-		{RTTMS: 300, JitterMS: 60, Loss: 5, Kbit: 256},
-		{RTTMS: 80, JitterMS: 20, Loss: 1, Kbit: 64},
+		{RTTMS: 80, JitterMS: 20, Loss: 1, Kbit: 256},
+		{RTTMS: 300, JitterMS: 20, Loss: 0, Kbit: 64},
+		{RTTMS: 300, JitterMS: 60, Loss: 5, Kbit: 64},
 	} {
 		name := fmt.Sprintf("rtt%d-jitter%d-loss%d-kbit%d", profile.RTTMS, profile.JitterMS, profile.Loss, profile.Kbit)
 		t.Run(name, func(t *testing.T) { testNativeBrowser(t, "network", &profile) })
@@ -286,8 +286,11 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	if scenario == "long-task" {
 		deadline = 100 * time.Second
 	}
-	if scenario == "startup" || isNetwork || isEscape || official {
+	if scenario == "startup" || isEscape || official {
 		deadline = 90 * time.Second
+	}
+	if isNetwork {
+		deadline = leashNetworkFixtureTimeout
 	}
 	if scenario == "protected" {
 		deadline = 150 * time.Second
@@ -412,6 +415,9 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	retention := "1s"
 	if scenario == "retained-exit" || scenario == "readonly" || strings.HasPrefix(scenario, "ai-") {
 		retention = "5s" // Includes a fresh browser context and real Wasm startup.
+	}
+	if isNetwork {
+		retention = "5s"
 	}
 	args := []string{"leash", "--web-base-url=https://mouse.example/", "--no-qr", "--start-on=connect", "--post-exit-ttl=" + retention, "--cwd=" + directory, "--title=" + title}
 	if !official {

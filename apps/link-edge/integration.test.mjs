@@ -417,7 +417,11 @@ await test(
           new Promise((resolveDelay) => setTimeout(resolveDelay, ms)),
       },
     );
-    assert.equal(lifecycleEvidence.status, 'verified');
+    assert.equal(
+      lifecycleEvidence.status,
+      'verified',
+      lifecycleEvidence.classification,
+    );
     assert.equal(lifecycleEvidence.createdMappings, 1);
     assert.equal(lifecycleEvidence.requestCount, 8);
     assert.equal(lifecycleEvidence.cleanup, 'verified');

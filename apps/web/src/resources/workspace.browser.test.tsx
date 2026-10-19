@@ -128,7 +128,7 @@ describe('onboarding and support', () => {
       .getByRole('button', { name: 'Copy first-share command' })
       .click();
     expect(clipboard).toHaveBeenCalledWith(
-      'mkdir -p ./tailmouse-uploads\ntailmouse receive ./tailmouse-uploads',
+      'curl -fSso ./tailmouse-config.json https://tailmouse.com/tailmouse-config.json\nmkdir -p ./tailmouse-uploads\ntailmouse receive --config ./tailmouse-config.json ./tailmouse-uploads',
     );
     await expect
       .element(page.getByText('Copied. Review the command before running it.'))

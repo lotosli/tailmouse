@@ -8,7 +8,7 @@ Let colleagues test your work without setting up your environment. One link brin
 
 Public resource-sharing CLI downloads are not yet available. Use the matching test build supplied by the host. A CLI that lists only `escape` and `leash` cannot run the four resource commands below.
 
-**Source recovery in progress (17 October 2026):** this branch recovers the deployed browser from verified source maps and preserves its immutable Tailcat `52fbad323e9d352f1febb623e0975368e9a8cbdd` binaries. The corresponding resource native source, Go/Wasm bridge source, native tests and release packages are still missing from the current environment and public Git history. The native files in this checkout remain the older Escape/Leash implementation. Do not publish them as a matching resource CLI. See [recovery evidence](docs/evidence/web-recovery-2026-10-17/README.md).
+The native resource implementation, browser, two Wasm bridges and preview scripts are restored in this branch and built from source. Tailcat is pinned to `52fbad323e9d352f1febb623e0975368e9a8cbdd` with Go 1.27.2. Historical [recovery evidence](docs/evidence/native-source-recovery-2026-10-19/README.md) is retained for provenance; release builds do not consume recovery archives.
 
 ## First successful share
 
@@ -17,8 +17,9 @@ On a machine with the matching test CLI:
 ```sh
 tailmouse version
 tailmouse receive --help
+curl -fSso ./tailmouse-config.json https://tailmouse.com/tailmouse-config.json
 mkdir -p ./tailmouse-uploads
-tailmouse receive ./tailmouse-uploads
+tailmouse receive --config ./tailmouse-config.json ./tailmouse-uploads
 ```
 
 Keep the host terminal running. Open its private sharing link on a second device, send one small non-sensitive file, and wait for **Received by host**. Check the saved name in the receipt and in the host folder. End sharing on the host: access ends and the confirmed file remains. Leaving the browser only disconnects that visitor.
@@ -33,7 +34,7 @@ Keep the host terminal running. Open its private sharing link on a second device
 | Receive files               | `tailmouse receive ./tailmouse-uploads`                        | Existing writable folder                                     |
 | Combined Dev workspace      | `tailmouse dev --web 5173 --receive ./tailmouse-uploads -- sh` | Running app, existing folder and Unix shell                  |
 
-Dev combines at least two resources. A useful collaboration flow is preview → send a reproduction → explicitly insert the received path into terminal input → verify the fix in preview → end sharing. Received files never execute automatically; insertion does not press Enter.
+The table assumes the deployment configuration is already selected. For this private test, pass `--config ./tailmouse-config.json` as in the first-share example. Dev combines at least two resources. A useful collaboration flow is preview → send a reproduction → explicitly insert the received path into terminal input → verify the fix in preview → end sharing. Received files never execute automatically; insertion does not press Enter.
 
 `8080` refers to the sharing machine's loopback address. A listener on `0.0.0.0:8080` usually accepts that connection; one bound only to a LAN/public interface does not. An explicit non-loopback target requires `--allow-remote`. The whole configured origin is shared, not just an initial path. Web is a browser preview, not a public HTTP tunnel for curl, webhooks or OAuth callbacks.
 
@@ -49,16 +50,20 @@ The private test uses `tailmouse.com` for both interface and preview, as request
 
 The browser's **Help & feedback** panel prepares an inspectable, manually copied report with build, protocol, browser family and coarse stage. Nothing is sent automatically. Do not include invitations, terminal contents, private addresses, project names or file names in public issues. [Pilot plan](docs/operations/private-alpha-pilot.md) records real task outcomes without adding telemetry.
 
-## Work on the recovered frontend
+## Build from source
 
-Use the repository's pinned Node and pnpm versions, then:
+Use Go 1.27.2, Node 26.8.1 and pnpm 11.25.0. From a checkout of this branch:
 
 ```sh
+git submodule update --init --recursive
 pnpm install --frozen-lockfile
-pnpm web:recovery-build
-node tools/verify-recovery-web.mjs
+pnpm build
+pnpm gate:quick
+pnpm gate
 ```
 
-The recovery builder verifies every reused asset against the checked-in deployment manifest and emits `.artifacts/web-recovery`. It deliberately reports that resource Wasm has not been rebuilt from source. This browser-only path does not replace `pnpm gate:quick`, `pnpm gate`, or native release acceptance. The normal source release remains blocked until the missing implementation is restored.
+The normal build emits `.artifacts/native/tailmouse` (`tailmouse.exe` on Windows) and `apps/web/dist`, including both source-built Wasm bridges and the preview bootstrap. Add the native output directory to your PATH before following the guide. Native Linux resource journeys are tested locally; cross-compilation is not macOS/Windows runtime acceptance.
+
+`pnpm release:snapshot`, `pnpm release:sbom` and `pnpm release:verify` require a clean source commit and the pinned release tools. They create and verify six native archives and per-artifact inventories locally; they do not publish GitHub releases. [Resource configuration and lifecycle](docs/resource-sharing.md) describes the commands. The separate `web:recovery-build` remains a historical recovery tool and is not a release path.
 
 TailMouse is an unofficial application built on [Tailcat](https://github.com/tailscale/tailcat), not affiliated with or endorsed by Tailscale. The host embeds Tailcat and the browser uses its Wasm transport; guests do not install the Tailcat CLI. Treat invitation links as credentials.

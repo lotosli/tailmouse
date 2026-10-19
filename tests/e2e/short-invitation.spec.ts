@@ -130,7 +130,10 @@ test('short invitations prompt separately before dialing, reconnect explicitly a
       JSON.stringify({ state, requests: site.requests, output }),
     ).not.toContain(secret);
   await page.reload();
-  await expect(page.getByRole('alert')).toContainText('Request a new link');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Let them test your work. Skip the setup.',
+    { useInnerText: true },
+  );
   await expect(page.getByLabel('Access code')).toHaveCount(0);
   expect(site.requests).toHaveLength(1);
 });
@@ -202,7 +205,15 @@ test('short-path and fragment ambiguity is rejected and page restoration cannot 
   await page.getByLabel('Access code').fill(accessCode);
   await page.goto('about:blank');
   await page.goBack();
-  await expect(page.getByRole('alert')).toContainText('Request a new link');
+  await expect(
+    page
+      .getByRole('alert')
+      .filter({ hasText: 'Request a new link' })
+      .or(page.getByRole('heading', { level: 1, name: /Let them test/u })),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: /^Connected$/u }),
+  ).toHaveCount(0);
   await expect(page.getByLabel('Access code')).toHaveCount(0);
   expect(site.requests).toHaveLength(1);
   expect(await page.locator('body').innerText()).not.toContain(accessCode);

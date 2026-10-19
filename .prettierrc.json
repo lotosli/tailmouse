@@ -6,8 +6,13 @@
   "trailingComma": "all",
   "overrides": [
     {
-      "files": "apps/link-edge/wrangler.jsonc",
-      "options": { "parser": "json" }
+      "files": [
+        "apps/link-edge/wrangler.jsonc",
+        "deploy/resource/wrangler.jsonc"
+      ],
+      "options": {
+        "parser": "json"
+      }
     }
   ]
 }

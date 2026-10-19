@@ -30,6 +30,13 @@ const phases = [
     () =>
       run(process.execPath, [
         '--test',
+        '--experimental-test-coverage',
+        '--test-coverage-include=deploy/resource/worker.ts',
+        '--test-coverage-lines=80',
+        '--test-coverage-branches=80',
+        '--test-coverage-functions=80',
+        'deploy/resource/worker.test.ts',
+        'tools/resource-deploy.test.ts',
         'tools/m0-acceptance.test.ts',
         'tools/go-gate.test.ts',
         'tools/check-architecture.test.ts',
@@ -62,7 +69,18 @@ const phases = [
   ],
   [
     'typecheck',
-    () => runPnpm(['--recursive', '--if-present', 'run', 'typecheck']),
+    () => {
+      runPnpm(['--recursive', '--if-present', 'run', 'typecheck']);
+      runPnpm([
+        'exec',
+        'tsc',
+        '--noEmit',
+        '--pretty',
+        'false',
+        '-p',
+        'deploy/resource/tsconfig.json',
+      ]);
+    },
   ],
   ['lint', () => runPnpm(['run', 'lint'])],
   ['unit tests', () => runPnpm(['--recursive', '--if-present', 'run', 'test'])],
@@ -87,7 +105,10 @@ const phases = [
   ],
   [
     'local Worker integration',
-    () => runPnpm(['--filter', '@tailmouse/link-edge', 'test:integration']),
+    () => {
+      runPnpm(['--filter', '@tailmouse/link-edge', 'test:integration']);
+      run(process.execPath, ['--test', 'deploy/resource/integration.test.mjs']);
+    },
   ],
   [
     'local public-origin verification',
@@ -132,6 +153,27 @@ const phases = [
     },
   ],
   [
+    'Resource native/browser and named TUI acceptance',
+    () => {
+      if (process.platform === 'win32') {
+        process.stdout.write(
+          'Unix resource PTY acceptance requires Linux or macOS.\n',
+        );
+        return;
+      }
+      run('go', [
+        'test',
+        '-tags=tailcatintegration',
+        '-count=1',
+        '-failfast',
+        '-timeout=3m',
+        '-run=^Test(HermeticResourceWorkspace|HermeticResourceSingleOrigin|ResourceTUIRedraw)$',
+        './apps/cli/cmd/tailmouse',
+        './apps/cli/internal/share',
+      ]);
+    },
+  ],
+  [
     'Escape impairment smoke',
     () =>
       run('go', [
@@ -140,7 +182,7 @@ const phases = [
         '-count=1',
         '-failfast',
         '-timeout=2m',
-        '-run=TestImpairment|TestEscapeNetworkRelayDisconnect|TestEscapeNetworkMatrix/rtt150-jitter30-loss1-kbit256$',
+        '-run=TestImpairment|TestEscapeNetworkRelayDisconnect|TestEscapeNetworkMatrix/rtt80-jitter20-loss1-kbit256$',
         './apps/cli/internal/transport/tailcat',
       ]),
   ],

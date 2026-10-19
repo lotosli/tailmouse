@@ -47,7 +47,7 @@ func TestDocumentedCLIExamples(t *testing.T) {
 						environ = nil
 					}
 					options, help, err := share.Parse(args, environ, configDir)
-					if err != nil || help || options.Command != args[0] {
+					if err != nil || help != (args[len(args)-1] == "--help") || options.Command != args[0] {
 						t.Fatalf("documented resource command %q: help=%v error=%v", line, help, err)
 					}
 					if configuration >= 0 && (!options.TestSingleOrigin || options.FrontendBase != "https://tailmouse.com" || options.ContentBase != options.FrontendBase) {

@@ -139,7 +139,7 @@ if (mode === 'release' || mode === 'full') {
   }
   if (target[0] === 'windows' && target[1] === 'arm64') {
     process.stdout.write(
-      '[go:race] skipped: Go 1.27.1 does not support the race detector on windows/arm64. Native tests, coverage and vulnerability checks remain required.\n',
+      '[go:race] skipped: Go 1.27.2 does not support the race detector on windows/arm64. Native tests, coverage and vulnerability checks remain required.\n',
     );
   } else {
     run('go', ['test', '-race', './...'], { cwd: root, env: goEnv });

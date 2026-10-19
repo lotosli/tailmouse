@@ -190,7 +190,10 @@ test('an update waits for live clients then deletes only its old scoped cache', 
   context,
   site,
 }) => {
-  await page.goto(site.url);
+  // The retained legacy app owns this cache; the resource homepage does not.
+  // An invalid synthetic invitation exercises registration without a dial.
+  await page.goto(`${site.url}#/v1/not+base64`);
+  await expect(page.getByRole('alert')).toContainText('invalid or unsupported');
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });

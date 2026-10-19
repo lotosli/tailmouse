@@ -23,7 +23,7 @@ export default defineConfig({
     attachmentsDir: '../../test-results/components/attachments',
     coverage: {
       exclude: ['src/**/*.d.ts', 'src/**/*.{test,spec}.{ts,tsx}'],
-      include: ['src/**/*.{ts,tsx}', 'worker.ts'],
+      include: ['src/**/*.{ts,tsx}', 'worker.ts', 'content/*.ts'],
       provider: 'v8',
       reporter: ['text', 'json-summary', 'lcov'],
       reportOnFailure: true,
@@ -58,7 +58,9 @@ export default defineConfig({
             screenshotDirectory: '../../test-results/components',
             provider: playwright({
               contextOptions: { hasTouch: true },
-              launchOptions: { chromiumSandbox: true },
+              launchOptions: {
+                chromiumSandbox: process.env.TAILMOUSE_TEST_NO_SANDBOX !== '1',
+              },
             }),
             instances: [{ browser: 'chromium' }],
           },

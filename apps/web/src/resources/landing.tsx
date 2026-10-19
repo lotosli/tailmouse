@@ -134,7 +134,7 @@ export function ResourceLanding() {
         </p>
         <CopyCommand
           command={
-            'mkdir -p ./tailmouse-uploads\ntailmouse dev --web 5173 --receive ./tailmouse-uploads -- sh'
+            'curl -fSso ./tailmouse-config.json https://tailmouse.com/tailmouse-config.json\nmkdir -p ./tailmouse-uploads\ntailmouse dev --config ./tailmouse-config.json --web 5173 --receive ./tailmouse-uploads -- sh'
           }
           label="Copy Dev example"
         />
@@ -155,10 +155,16 @@ export function ResourceLanding() {
         <div class="availability-note">
           <strong>Public CLI downloads are being prepared.</strong>
           <p>
-            For this private alpha, use the resource-sharing test build supplied
-            by the host. Guests do not install anything. Check the release page
-            for published packages and checksums before downloading a new build.
+            Build the sharing app from source or use the matching test build
+            supplied by your host. Guests do not install anything.
           </p>
+          <a
+            href="https://github.com/lotosli/tailmouse/tree/codex/product-onboarding-2026-10#build-from-source"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Build from source ↗
+          </a>{' '}
           <a
             href="https://github.com/lotosli/tailmouse/releases"
             target="_blank"
@@ -198,13 +204,14 @@ export function ResourceLanding() {
             <h3>Create a dedicated folder and start sharing.</h3>
             <CopyCommand
               command={
-                'mkdir -p ./tailmouse-uploads\ntailmouse receive ./tailmouse-uploads'
+                'curl -fSso ./tailmouse-config.json https://tailmouse.com/tailmouse-config.json\nmkdir -p ./tailmouse-uploads\ntailmouse receive --config ./tailmouse-config.json ./tailmouse-uploads'
               }
               label="Copy first-share command"
             />
             <p>
-              Keep the host terminal open. TailMouse prints a sharing link and
-              the session settings.
+              The command downloads the public configuration for this private
+              tailmouse.com test. Keep the host terminal open; TailMouse prints
+              a sharing link and the session settings.
             </p>
           </li>
           <li>

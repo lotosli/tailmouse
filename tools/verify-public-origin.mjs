@@ -217,12 +217,26 @@ function readManifest(manifestPath) {
     return { name, identity, bytes };
   });
   const wasm = files.filter(({ name }) => name.endsWith('.wasm'));
-  assert.equal(wasm.length, 1, 'Expected one raw WebAssembly object.');
-  for (const suffix of ['.wasm.br', '.wasm.gz'])
-    assert.equal(
-      files.filter(({ name }) => name.endsWith(suffix)).length,
-      1,
-      `Expected one ${suffix} WebAssembly object.`,
+  const resource = manifest.resourceProtocol;
+  assert.equal(
+    wasm.length,
+    resource === undefined ? 1 : 2,
+    'Unexpected WebAssembly inventory.',
+  );
+  if (resource !== undefined) {
+    assert.equal(resource.protocolMajor, 2, 'Unsupported resource protocol.');
+    assert.ok(
+      wasm.some(({ name }) => name === resource.wasm),
+      'Missing resource WebAssembly object.',
+    );
+  }
+  for (const suffix of ['.br', '.gz'])
+    assert.deepEqual(
+      files
+        .filter(({ name }) => name.endsWith('.wasm' + suffix))
+        .map(({ name }) => name),
+      wasm.map(({ name }) => name + suffix),
+      'WebAssembly representation inventory mismatch.',
     );
   return { path, source, manifest, files, wasm: wasm[0] };
 }

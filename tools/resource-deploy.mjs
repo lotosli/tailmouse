@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -18,7 +19,9 @@ export function prepareResourceDeployment(source, destination) {
   assert.deepEqual(manifest.protocols, { escape: 1, leash: 2, resource: 2 });
   assert.equal(manifest.resourceProtocol?.frontendMajor, 1);
   assert.equal(manifest.resourceProtocol?.protocolMajor, 2);
-  const paths = Object.keys(manifest.files).sort();
+  const paths = Object.keys(manifest.files).sort((a, b) =>
+    a.localeCompare(b, 'en'),
+  );
   assert.ok(
     paths.length > 0 && paths.length <= 512,
     'Invalid release inventory.',
@@ -38,8 +41,8 @@ export function prepareResourceDeployment(source, destination) {
   }
   collect(source);
   assert.deepEqual(
-    found.sort(),
-    [...paths, 'web-manifest.json'].sort(),
+    found.sort((a, b) => a.localeCompare(b, 'en')),
+    [...paths, 'web-manifest.json'].sort((a, b) => a.localeCompare(b, 'en')),
     'Unlisted or missing release asset.',
   );
   for (const name of paths) {
@@ -115,6 +118,18 @@ if (
     const identity = buildIdentity(root, manifest.version);
     for (const [key, value] of Object.entries(identity))
       assert.deepEqual(manifest[key], value, 'Deployment identity mismatch.');
+    assert.ok(
+      !identity.version.endsWith('.dirty'),
+      'Rebuild from clean sources.',
+    );
+    assert.equal(
+      manifest.resourceProtocol.sourceRevision,
+      execFileSync('git', ['rev-parse', 'HEAD'], {
+        cwd: root,
+        encoding: 'utf8',
+      }).trim(),
+      'Deployment was built from a different source revision.',
+    );
   }
   const result = prepareResourceDeployment(
     source,

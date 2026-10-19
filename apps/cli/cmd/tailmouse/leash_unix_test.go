@@ -53,7 +53,7 @@ func TestLeashCLIChild(t *testing.T) {
 		// A new browser must reload Wasm and reconnect after an abrupt loss.
 		deadline = 60 * time.Second
 	} else if mode == "network" {
-		deadline = 90 * time.Second
+		deadline = leashNetworkFixtureTimeout
 	}
 	time.AfterFunc(deadline, func() { os.Exit(124) })
 	if mode == "exit" {

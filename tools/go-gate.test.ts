@@ -209,7 +209,7 @@ await test('root build prepares Tailcat and Web artifacts before the edge build'
   ) as { scripts?: { build?: string } };
   assert.equal(
     packageJson.scripts?.build,
-    'node tools/tailcat-gate.mjs build && node tools/resource-bridge.mjs && node tools/build-native.mjs && pnpm --filter @tailmouse/web build && pnpm --filter @tailmouse/link-edge build',
+    'node tools/tailcat-gate.mjs build && node tools/resource-bridge.mjs && node tools/build-native.mjs && pnpm --filter @tailmouse/web build && pnpm --filter @tailmouse/link-edge build && node tools/resource-deploy.mjs check',
   );
 });
 

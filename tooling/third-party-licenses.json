@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "noticeSha256": "22998f7418681588bb68b2856052e00f545301bf2dfa6df56ee70fb6ae53837c",
+  "noticeSha256": "73cc0e25c4cc4b0f83883a1a04dcf2d32d8d0b1f21056d7acb54fc8f72965a72",
   "libraries": [
     {
       "ecosystem": "golang",
@@ -72,7 +72,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/coder/websocket",
-      "version": "v1.8.14",
+      "version": "v1.8.15",
       "scope": "distribution",
       "files": [
         {
@@ -85,7 +85,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/creachadair/msync",
-      "version": "v0.8.1",
+      "version": "v0.10.1",
       "scope": "distribution",
       "files": [
         {
@@ -111,26 +111,13 @@
     {
       "ecosystem": "golang",
       "name": "github.com/dblohm7/wingoes",
-      "version": "v0.0.0-20240119213807-a09d6be7affa",
+      "version": "v0.0.0-20260526185140-fb298caac7ca",
       "scope": "distribution",
       "files": [
         {
           "name": "LICENSE",
           "bytes": 1522,
           "sha256": "d92e8b4d5e41d2effe12a1df45143765c2256bb915553a4515a16ffd9603c06a"
-        }
-      ]
-    },
-    {
-      "ecosystem": "golang",
-      "name": "github.com/fxamacker/cbor/v2",
-      "version": "v2.9.0",
-      "scope": "distribution",
-      "files": [
-        {
-          "name": "LICENSE",
-          "bytes": 1076,
-          "sha256": "78cad457d5ea7318230f3d969d4cdf29cef45524a1fc8ca3a97646da1ad7a841"
         }
       ]
     },
@@ -150,20 +137,20 @@
     {
       "ecosystem": "golang",
       "name": "github.com/gaissmai/bart",
-      "version": "v0.26.1",
+      "version": "v0.29.0",
       "scope": "distribution",
       "files": [
         {
           "name": "LICENSE",
           "bytes": 1072,
-          "sha256": "12d27746d111da33969df0ecaa9b799e22c42db7d0b6a5164f383ec934233a41"
+          "sha256": "8fc2dc86e3a004c34bf613d4f72365ca4c16a35d26fbc4ce1d8deac83c6eae15"
         }
       ]
     },
     {
       "ecosystem": "golang",
       "name": "github.com/go-json-experiment/json",
-      "version": "v0.0.0-20260623181947-01eb4420fa68",
+      "version": "v0.0.0-20260820222146-c27c302e5fc3",
       "scope": "distribution",
       "files": [
         {
@@ -233,7 +220,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/jsimonetti/rtnetlink",
-      "version": "v1.4.1",
+      "version": "v1.4.2",
       "scope": "distribution",
       "files": [
         {
@@ -246,7 +233,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/klauspost/compress",
-      "version": "v1.19.1",
+      "version": "v1.20.0",
       "scope": "distribution",
       "files": [
         {
@@ -322,20 +309,20 @@
     {
       "ecosystem": "golang",
       "name": "github.com/mdlayher/netlink",
-      "version": "v1.7.3-0.20250113171957-fbb4dce95f42",
+      "version": "v1.11.2",
       "scope": "distribution",
       "files": [
         {
           "name": "LICENSE.md",
           "bytes": 1075,
-          "sha256": "fc7c6fc520ba7d8bded1f601c13ed3918709b13e8b45c37820fdeddaecc9992a"
+          "sha256": "756eb71e459f59a9d187b8f6d09181157f8a5fb2b1d30ca359e1d7f35f91cb9d"
         }
       ]
     },
     {
       "ecosystem": "golang",
       "name": "github.com/mdlayher/socket",
-      "version": "v0.5.1",
+      "version": "v0.7.0",
       "scope": "distribution",
       "files": [
         {
@@ -361,7 +348,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/pires/go-proxyproto",
-      "version": "v0.8.1",
+      "version": "v0.15.0",
       "scope": "distribution",
       "files": [
         {
@@ -374,7 +361,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/pkg/sftp",
-      "version": "v1.13.6",
+      "version": "v1.13.11",
       "scope": "distribution",
       "files": [
         {
@@ -387,13 +374,13 @@
     {
       "ecosystem": "golang",
       "name": "github.com/safchain/ethtool",
-      "version": "v0.3.0",
+      "version": "v0.7.0",
       "scope": "distribution",
       "files": [
         {
           "name": "LICENSE",
-          "bytes": 11358,
-          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+          "bytes": 11354,
+          "sha256": "9b630bec609d7f1fa60387ecf3ccc3e1c86e8e18503ae07d050c26b174bbc8d9"
         }
       ]
     },
@@ -452,7 +439,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/tailscale/hujson",
-      "version": "v0.0.0-20260302212456-ecc657c15afd",
+      "version": "v0.0.0-20260727124030-b80ff77dac4f",
       "scope": "distribution",
       "files": [
         {
@@ -483,9 +470,9 @@
     {
       "ecosystem": "golang",
       "name": "github.com/tailscale/tailcat",
-      "version": "v0.6.0",
+      "version": "v0.0.0-20261007201807-52fbad323e9d",
       "scope": "distribution",
-      "revision": "790406204c002a6f109ef7c6a30a436601a1f6a8",
+      "revision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
       "files": [
         {
           "name": "LICENSE",
@@ -497,7 +484,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/tailscale/web-client-prebuilt",
-      "version": "v0.0.0-20250124233751-d4cd19a26976",
+      "version": "v0.0.0-20260917222731-e0ed2d0d0fea",
       "scope": "distribution",
       "files": [
         {
@@ -510,7 +497,7 @@
     {
       "ecosystem": "golang",
       "name": "github.com/tailscale/wireguard-go",
-      "version": "v0.0.0-20260904023712-e855235c55a2",
+      "version": "v0.0.0-20260924224943-0a83b87f7908",
       "scope": "distribution",
       "files": [
         {
@@ -523,13 +510,13 @@
     {
       "ecosystem": "golang",
       "name": "github.com/u-root/u-root",
-      "version": "v0.14.0",
+      "version": "v0.16.0",
       "scope": "distribution",
       "files": [
         {
           "name": "AUTHORS",
-          "bytes": 742,
-          "sha256": "cff67718ad0993ae37c9aaf029dfe00648de32a7fae980d8395c60512bcc1dd3"
+          "bytes": 791,
+          "sha256": "0b831b951cc3fac041b4aa87f0a562c1706dec3b34a78b54b76fd1eea6d2e2f5"
         },
         {
           "name": "LICENSE",
@@ -585,7 +572,7 @@
     {
       "ecosystem": "golang",
       "name": "golang.org/x/crypto",
-      "version": "v0.55.0",
+      "version": "v0.57.0",
       "scope": "distribution",
       "files": [
         {
@@ -603,7 +590,7 @@
     {
       "ecosystem": "golang",
       "name": "golang.org/x/exp",
-      "version": "v0.0.0-20260410095643-746e56fc9e2f",
+      "version": "v0.0.0-20260908205506-85c1c2202aba",
       "scope": "distribution",
       "files": [
         {
@@ -621,7 +608,7 @@
     {
       "ecosystem": "golang",
       "name": "golang.org/x/net",
-      "version": "v0.58.0",
+      "version": "v0.59.0",
       "scope": "distribution",
       "files": [
         {
@@ -639,7 +626,7 @@
     {
       "ecosystem": "golang",
       "name": "golang.org/x/sync",
-      "version": "v0.22.0",
+      "version": "v0.23.0",
       "scope": "distribution",
       "files": [
         {
@@ -657,7 +644,7 @@
     {
       "ecosystem": "golang",
       "name": "golang.org/x/sys",
-      "version": "v0.47.0",
+      "version": "v0.48.0",
       "scope": "distribution",
       "files": [
         {
@@ -675,7 +662,7 @@
     {
       "ecosystem": "golang",
       "name": "golang.org/x/term",
-      "version": "v0.45.0",
+      "version": "v0.46.0",
       "scope": "distribution",
       "files": [
         {
@@ -693,7 +680,7 @@
     {
       "ecosystem": "golang",
       "name": "golang.org/x/text",
-      "version": "v0.41.0",
+      "version": "v0.42.0",
       "scope": "distribution",
       "files": [
         {
@@ -711,7 +698,7 @@
     {
       "ecosystem": "golang",
       "name": "golang.org/x/time",
-      "version": "v0.15.0",
+      "version": "v0.16.0",
       "scope": "distribution",
       "files": [
         {
@@ -742,20 +729,20 @@
     {
       "ecosystem": "golang",
       "name": "golang.zx2c4.com/wireguard/windows",
-      "version": "v0.5.3",
+      "version": "v1.0.1",
       "scope": "distribution",
       "files": [
         {
           "name": "COPYING",
           "bytes": 1084,
-          "sha256": "76ab82fe34e6ad03d064b0fdf4ba892e28fc20f740aeda49b5ac8d58c727a20f"
+          "sha256": "fb2a821211c8d0022e3e630a126783b23b58c6dc21c1855154fc77c9c6452166"
         }
       ]
     },
     {
       "ecosystem": "golang",
       "name": "gvisor.dev/gvisor",
-      "version": "v0.0.0-20260224225140-573d5e7127a8",
+      "version": "v0.0.0-20260915211658-a6f909f08a72",
       "scope": "distribution",
       "files": [
         {
@@ -773,7 +760,7 @@
     {
       "ecosystem": "golang",
       "name": "stdlib",
-      "version": "go1.27.1",
+      "version": "go1.27.2",
       "scope": "distribution",
       "files": [
         {
@@ -966,7 +953,7 @@
     {
       "ecosystem": "golang",
       "name": "tailscale.com",
-      "version": "v1.103.0-pre.0.20260904030409-31d8badb3bfb",
+      "version": "v1.103.0-pre.0.20260929142145-a0e471a35b8f",
       "scope": "distribution",
       "files": [
         {

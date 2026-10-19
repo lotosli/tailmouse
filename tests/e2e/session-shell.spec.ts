@@ -324,7 +324,10 @@ test('invitation is memory-only across reload and stays out of storage, referrer
 
   const beforeReload = requests.length;
   await page.reload();
-  await expect(page.getByRole('alert')).toContainText('Request a new link');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Let them test your work. Skip the setup.',
+    { useInnerText: true },
+  );
   await expect(page).toHaveURL('http://127.0.0.1:4173/');
   await expect(
     page.getByRole('button', { name: 'Retry connection' }),
@@ -397,9 +400,16 @@ test('protected access stays out of durable state and page-cache restoration', a
 
   await page.goto('about:blank');
   await page.goBack();
-  await expect(page.getByRole('alert')).toContainText(
-    'Request a new link from the host.',
-  );
+  // A bfcache restore rejects the old session; a document reload shows home.
+  await expect(
+    page
+      .getByRole('alert')
+      .filter({ hasText: 'Request a new link from the host.' })
+      .or(page.getByRole('heading', { level: 1, name: /Let them test/u })),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: /^Connected$/u }),
+  ).toHaveCount(0);
   await expect(page.getByLabel('Access code')).toHaveCount(0);
   expect(await page.locator('body').innerText()).not.toContain(code);
 });

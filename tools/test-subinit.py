@@ -1,4 +1,4 @@
-"""Run Linux recovery checks with an init-like orphan reaper.
+"""Run Linux process-lifecycle checks with an init-like orphan reaper.
 
 The cloud container's PID 1 is tail. Reap only descendants of this command;
 do not change production lifecycle code, test assertions, or their deadlines.

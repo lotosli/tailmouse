@@ -365,7 +365,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-=== golang:github.com/coder/websocket@v1.8.14 (distribution) ===
+=== golang:github.com/coder/websocket@v1.8.15 (distribution) ===
 
 --- LICENSE.txt ---
 Copyright (c) 2025 Coder
@@ -383,7 +383,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
-=== golang:github.com/creachadair/msync@v0.8.1 (distribution) ===
+=== golang:github.com/creachadair/msync@v0.10.1 (distribution) ===
 
 --- LICENSE ---
 Copyright (C) 2022, Michael J. Fromberger
@@ -442,7 +442,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-=== golang:github.com/dblohm7/wingoes@v0.0.0-20240119213807-a09d6be7affa (distribution) ===
+=== golang:github.com/dblohm7/wingoes@v0.0.0-20260526185140-fb298caac7ca (distribution) ===
 
 --- LICENSE ---
 BSD 3-Clause License
@@ -476,31 +476,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:github.com/fxamacker/cbor/v2@v2.9.0 (distribution) ===
-
---- LICENSE ---
-MIT License
-
-Copyright (c) 2019-present Faye Amacker
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
 === golang:github.com/fxamacker/cbor/v2@v2.9.3 (distribution) ===
 
 --- LICENSE ---
@@ -526,12 +501,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-=== golang:github.com/gaissmai/bart@v0.26.1 (distribution) ===
+=== golang:github.com/gaissmai/bart@v0.29.0 (distribution) ===
 
 --- LICENSE ---
 MIT License
 
-Copyright (c) 2024 Karl Gaissmaier
+Copyright (c) 2026 Karl Gaissmaier
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -552,7 +527,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-=== golang:github.com/go-json-experiment/json@v0.0.0-20260623181947-01eb4420fa68 (distribution) ===
+=== golang:github.com/go-json-experiment/json@v0.0.0-20260820222146-c27c302e5fc3 (distribution) ===
 
 --- AUTHORS ---
 # This source code refers to The Go Authors for copyright purposes.
@@ -1056,7 +1031,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:github.com/jsimonetti/rtnetlink@v1.4.1 (distribution) ===
+=== golang:github.com/jsimonetti/rtnetlink@v1.4.2 (distribution) ===
 
 --- LICENSE.md ---
 MIT License
@@ -1071,7 +1046,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-=== golang:github.com/klauspost/compress@v1.19.1 (distribution) ===
+=== golang:github.com/klauspost/compress@v1.20.0 (distribution) ===
 
 --- gzhttp/LICENSE ---
                                  Apache License
@@ -1844,12 +1819,12 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:github.com/mdlayher/netlink@v1.7.3-0.20250113171957-fbb4dce95f42 (distribution) ===
+=== golang:github.com/mdlayher/netlink@v1.11.2 (distribution) ===
 
 --- LICENSE.md ---
 # MIT License
 
-Copyright (C) 2016-2022 Matt Layher
+Copyright (C) 2016-2026 Matt Layher
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -1858,7 +1833,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-=== golang:github.com/mdlayher/socket@v0.5.1 (distribution) ===
+=== golang:github.com/mdlayher/socket@v0.7.0 (distribution) ===
 
 --- LICENSE.md ---
 # MIT License
@@ -1898,7 +1873,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-=== golang:github.com/pires/go-proxyproto@v0.8.1 (distribution) ===
+=== golang:github.com/pires/go-proxyproto@v0.15.0 (distribution) ===
 
 --- LICENSE ---
                                  Apache License
@@ -2104,7 +2079,7 @@ THE SOFTWARE.
    limitations under the License.
 
 
-=== golang:github.com/pkg/sftp@v1.13.6 (distribution) ===
+=== golang:github.com/pkg/sftp@v1.13.11 (distribution) ===
 
 --- LICENSE ---
 Copyright (c) 2013, Dave Cheney
@@ -2118,7 +2093,7 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:github.com/safchain/ethtool@v0.3.0 (distribution) ===
+=== golang:github.com/safchain/ethtool@v0.7.0 (distribution) ===
 
 --- LICENSE ---
                                  Apache License
@@ -2309,7 +2284,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright {yyyy} {name of copyright owner}
+   Copyright (c) 2015 The Ethtool Authors
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -2434,7 +2409,7 @@ SOFTWARE.
 
 
 
-=== golang:github.com/tailscale/hujson@v0.0.0-20260302212456-ecc657c15afd (distribution) ===
+=== golang:github.com/tailscale/hujson@v0.0.0-20260727124030-b80ff77dac4f (distribution) ===
 
 --- LICENSE ---
 Copyright (c) 2019 Tailscale Inc. All rights reserved.
@@ -2504,8 +2479,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:github.com/tailscale/tailcat@v0.6.0 (distribution) ===
-Source revision: 790406204c002a6f109ef7c6a30a436601a1f6a8
+=== golang:github.com/tailscale/tailcat@v0.0.0-20261007201807-52fbad323e9d (distribution) ===
+Source revision: 52fbad323e9d352f1febb623e0975368e9a8cbdd
 
 --- LICENSE ---
 BSD 3-Clause License
@@ -2538,7 +2513,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:github.com/tailscale/web-client-prebuilt@v0.0.0-20250124233751-d4cd19a26976 (distribution) ===
+=== golang:github.com/tailscale/web-client-prebuilt@v0.0.0-20260917222731-e0ed2d0d0fea (distribution) ===
 
 --- LICENSE ---
 BSD 3-Clause License
@@ -2571,7 +2546,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:github.com/tailscale/wireguard-go@v0.0.0-20260904023712-e855235c55a2 (distribution) ===
+=== golang:github.com/tailscale/wireguard-go@v0.0.0-20260924224943-0a83b87f7908 (distribution) ===
 
 --- LICENSE ---
 Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -2593,7 +2568,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-=== golang:github.com/u-root/u-root@v0.14.0 (distribution) ===
+=== golang:github.com/u-root/u-root@v0.16.0 (distribution) ===
 
 --- AUTHORS ---
 # This is the official list of u-root authors for copyright purposes. This will
@@ -2613,6 +2588,7 @@ Andrey Mirtchovski <mirtchovski@gmail.com>
 Facebook, Inc.
 Genesys Telecommunications Laboratories, Inc.
 Google LLC
+Jonathan Bluett-Duncan <jbluettduncan@gmail.com>
 Oracle Corporation <simran.p.singh@oracle.com>
 Ron Minnich <rminnich@gmail.com>
 
@@ -2922,7 +2898,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-=== golang:golang.org/x/crypto@v0.55.0 (distribution) ===
+=== golang:golang.org/x/crypto@v0.57.0 (distribution) ===
 
 --- LICENSE ---
 Copyright 2009 The Go Authors.
@@ -2979,7 +2955,7 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 
 
-=== golang:golang.org/x/exp@v0.0.0-20260410095643-746e56fc9e2f (distribution) ===
+=== golang:golang.org/x/exp@v0.0.0-20260908205506-85c1c2202aba (distribution) ===
 
 --- LICENSE ---
 Copyright 2009 The Go Authors.
@@ -3036,7 +3012,7 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 
 
-=== golang:golang.org/x/net@v0.58.0 (distribution) ===
+=== golang:golang.org/x/net@v0.59.0 (distribution) ===
 
 --- LICENSE ---
 Copyright 2009 The Go Authors.
@@ -3093,7 +3069,7 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 
 
-=== golang:golang.org/x/sync@v0.22.0 (distribution) ===
+=== golang:golang.org/x/sync@v0.23.0 (distribution) ===
 
 --- LICENSE ---
 Copyright 2009 The Go Authors.
@@ -3150,7 +3126,7 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 
 
-=== golang:golang.org/x/sys@v0.47.0 (distribution) ===
+=== golang:golang.org/x/sys@v0.48.0 (distribution) ===
 
 --- LICENSE ---
 Copyright 2009 The Go Authors.
@@ -3207,7 +3183,7 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 
 
-=== golang:golang.org/x/term@v0.45.0 (distribution) ===
+=== golang:golang.org/x/term@v0.46.0 (distribution) ===
 
 --- LICENSE ---
 Copyright 2009 The Go Authors.
@@ -3264,7 +3240,7 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 
 
-=== golang:golang.org/x/text@v0.41.0 (distribution) ===
+=== golang:golang.org/x/text@v0.42.0 (distribution) ===
 
 --- LICENSE ---
 Copyright 2009 The Go Authors.
@@ -3321,7 +3297,7 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 
 
-=== golang:golang.org/x/time@v0.15.0 (distribution) ===
+=== golang:golang.org/x/time@v0.16.0 (distribution) ===
 
 --- LICENSE ---
 Copyright 2009 The Go Authors.
@@ -3400,10 +3376,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-=== golang:golang.zx2c4.com/wireguard/windows@v0.5.3 (distribution) ===
+=== golang:golang.zx2c4.com/wireguard/windows@v1.0.1 (distribution) ===
 
 --- COPYING ---
-Copyright (C) 2018-2021 WireGuard LLC. All Rights Reserved.
+Copyright (C) 2018-2026 WireGuard LLC. All Rights Reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -3424,7 +3400,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 
-=== golang:gvisor.dev/gvisor@v0.0.0-20260224225140-573d5e7127a8 (distribution) ===
+=== golang:gvisor.dev/gvisor@v0.0.0-20260915211658-a6f909f08a72 (distribution) ===
 
 --- AUTHORS ---
 # This is the list of gVisor authors for copyright purposes.
@@ -3693,7 +3669,7 @@ Some files carry the "BSD" license, noted at the top of each file:
    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
    POSSIBILITY OF SUCH DAMAGE.
 
-=== golang:stdlib@go1.27.1 (distribution) ===
+=== golang:stdlib@go1.27.2 (distribution) ===
 
 --- LICENSE ---
 Copyright 2009 The Go Authors.
@@ -5052,7 +5028,7 @@ rights granted to you under this License for this implementation of Go
 shall terminate as of the date such litigation is filed.
 
 
-=== golang:tailscale.com@v1.103.0-pre.0.20260904030409-31d8badb3bfb (distribution) ===
+=== golang:tailscale.com@v1.103.0-pre.0.20260929142145-a0e471a35b8f (distribution) ===
 
 --- derp/xdp/headers/LICENSE.BSD-2-Clause ---
 Valid-License-Identifier: BSD-2-Clause

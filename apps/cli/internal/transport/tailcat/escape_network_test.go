@@ -26,9 +26,9 @@ import (
 func TestEscapeNetworkMatrix(t *testing.T) {
 	for index, profile := range []impairmentProfile{
 		{RTTMS: 20, JitterMS: 0, Loss: 0, Kbit: 1024},
-		{RTTMS: 150, JitterMS: 30, Loss: 1, Kbit: 256},
-		{RTTMS: 300, JitterMS: 60, Loss: 5, Kbit: 256},
-		{RTTMS: 80, JitterMS: 20, Loss: 1, Kbit: 64},
+		{RTTMS: 80, JitterMS: 20, Loss: 1, Kbit: 256},
+		{RTTMS: 300, JitterMS: 20, Loss: 0, Kbit: 64},
+		{RTTMS: 300, JitterMS: 60, Loss: 5, Kbit: 64},
 	} {
 		name := fmt.Sprintf("rtt%d-jitter%d-loss%d-kbit%d", profile.RTTMS, profile.JitterMS, profile.Loss, profile.Kbit)
 		t.Run(name, func(t *testing.T) { testEscapeNetwork(t, profile, escape.MapNames()[index%5], "matrix") })
