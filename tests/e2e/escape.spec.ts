@@ -238,10 +238,11 @@ test('all authoritative result summaries survive immediate host close without re
     await expect(
       page.getByRole('heading', { name: heading, exact: true }),
     ).toBeVisible();
-    await expect(page.getByText('1.2 s', { exact: true })).toBeVisible();
-    await expect(page.getByText('63 ms', { exact: true })).toBeVisible();
+    const result = page.getByRole('region', { name: heading, exact: true });
+    await expect(result.getByText('1.2 s', { exact: true })).toBeVisible();
+    await expect(result.getByText('63 ms', { exact: true })).toBeVisible();
     await expect(
-      page.getByText('relay.example.com', { exact: true }),
+      result.getByText('relay.example.com', { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Retry connection' }),
