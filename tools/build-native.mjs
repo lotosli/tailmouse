@@ -31,7 +31,7 @@ const reported = run(output, ['version'], { cwd: root, capture: true }).stdout;
 if (
   !reported.includes(`TailMouse ${identity.version}\n`) ||
   !reported.includes(`Tailcat revision ${identity.tailcatRevision}\n`) ||
-  !reported.includes('TMOUSE Escape protocol 1\n') ||
+  !reported.includes('') ||
   !reported.includes('TMOUSE Leash protocol 2\n') ||
   !reported.includes('TMOUSE Resource protocol 2\n')
 ) {

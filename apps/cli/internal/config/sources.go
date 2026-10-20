@@ -31,7 +31,6 @@ type fileConfig struct {
 		RegionName string   `toml:"region_name"`
 	} `toml:"derp"`
 	Session struct {
-		EscapeTTL      string `toml:"escape_ttl"`
 		LeashTTL       string `toml:"leash_ttl"`
 		ReconnectGrace string `toml:"reconnect_grace"`
 	} `toml:"session"`
@@ -74,7 +73,6 @@ func applyFile(options *Options, path string, required bool) error {
 	input.DERP.Mode = "official"
 	input.DERP.DERPPort, input.DERP.STUNPort = options.Relay.DERPPort, options.Relay.STUNPort
 	input.DERP.RegionID, input.DERP.RegionCode, input.DERP.RegionName = options.Relay.RegionID, options.Relay.RegionCode, options.Relay.RegionName
-	input.Session.EscapeTTL, input.Session.LeashTTL = "10m", "0"
 	input.Leash.ScrollbackBytes, input.Leash.PostExitTTL = 1<<20, "host"
 	input.Leash.StartOn, input.Leash.LocalInput = "connect-or-enter", true
 	metadata, err := toml.Decode(string(contents), &input)
@@ -122,7 +120,6 @@ func applyFile(options *Options, path string, required bool) error {
 		field, value string
 		target       *time.Duration
 	}{
-		{"session.escape_ttl", input.Session.EscapeTTL, nil},
 		{"session.leash_ttl", input.Session.LeashTTL, nil},
 	}
 	for _, duration := range durations {
@@ -168,15 +165,7 @@ func applyFile(options *Options, path string, required bool) error {
 	if err := validate(*options); err != nil {
 		return err
 	}
-	// Validate mode-independent file settings even when launching Escape.
-	otherMode := *options
-	otherMode.Command = "leash"
-	otherMode.Sources = make(map[string]Source, len(options.Sources))
-	for field, source := range options.Sources {
-		otherMode.Sources[field] = source
-	}
-	delete(otherMode.Sources, "reconnect-grace")
-	return validate(otherMode)
+	return nil
 }
 
 func applyEnvironment(options *Options, lookup func(string) (string, bool)) error {

@@ -8,18 +8,17 @@ func WriteHelp(output io.Writer, command string) error {
 	const common = `tailmouse — tiny browser sessions over Tailcat
 
 Usage:
-  tailmouse escape [flags]
   tailmouse leash [flags] -- <command> [args...]
   tailmouse version
   tailmouse config path
 
-Global flags (before the command or after escape/leash):
+Global flags (before the command or after leash):
   --config <path>               Version 1 TOML; default: OS user config directory
   --web-base-url <https-url>    Static Web base URL (default: https://link.tailmouse.com/)
   --derp-host <host[,host...]>   Custom DERP hostnames
   --derp-map-url <https-url>    Custom DERP map; mutually exclusive with hosts
-  --ttl <duration>              Escape: 10m; leash: 0 (until Host exit)
-  --once                       Close after mode completion (escape: true)
+  --ttl <duration>              0 (until Host exit)
+  --once                       Close after mode completion (default: false)
   --no-qr                      Hide the terminal QR code, retain the Open: line
   --json                       JSON events on stderr
   --quiet                      Essential diagnostics only; conflicts with JSON/verbose
@@ -30,26 +29,14 @@ Global flags (before the command or after escape/leash):
 Precedence: flags > environment > config.toml > defaults.
 Environment: TAILMOUSE_CONFIG, TAILMOUSE_WEB_BASE_URL, TAILMOUSE_DERP_HOST,
   TAILMOUSE_DERP_MAP_URL, TAILMOUSE_TTL, TAILMOUSE_NO_QR, TAILMOUSE_LOG.
-TAILMOUSE_RECONNECT_GRACE remains available only for Escape migration.
 TAILMOUSE_LOG: info, quiet, verbose, debug (verbose alias), or json.
 Set a boolean explicitly with --flag=false. Plain HTTP Web is loopback-only.
 
 Treat invitations and access codes as separate passwords. With --no-password,
 the complete invitation alone grants the configured Leash permissions.
 Browser transport is DERP-only. TailMouse is an unofficial Tailcat application.
-TMOUSE Escape uses identifier 1; Leash uses identifier 2. Older Leash peers
+TMOUSE Leash uses identifier 2. Older Leash peers
 fail closed before terminal disclosure or child startup; there is no downgrade.
-`
-	const escape = `
-Escape flags:
-  --control touch|tilt          Default: touch
-  --seed <int64>                Deterministic round seed
-  --map <name|random>           Default: random
-    Maps: courtyard, pantry, corridors, switchbacks, crossroads
-  --round <duration>            30s to 45s (default: 45s)
-  --phone-render=true           Render the phone map
-  --terminal-render=true        Render the terminal spectator map
-  --show-net=true               Show network HUD
 `
 	const leash = `
 Leash flags:
@@ -81,9 +68,7 @@ Browser input has the selected process's authority; use --readonly to view only.
 Leash streams terminal applications and TUIs, not native GUI windows or desktops.
 `
 	text := common
-	if command == "escape" || command == "" {
-		text += escape
-	}
+
 	if command == "leash" || command == "" {
 		text += leash
 	}

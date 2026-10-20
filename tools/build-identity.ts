@@ -6,7 +6,6 @@ export interface BuildIdentity {
   readonly version: string;
   readonly tailcatRevision: string;
   readonly protocols: Readonly<{
-    readonly escape: 1;
     readonly leash: 2;
     readonly resource: 2;
   }>;
@@ -60,6 +59,6 @@ export function buildIdentity(
   return Object.freeze({
     version,
     tailcatRevision,
-    protocols: Object.freeze({ escape: 1, leash: 2, resource: 2 }),
+    protocols: Object.freeze({ leash: 2, resource: 2 }),
   });
 }

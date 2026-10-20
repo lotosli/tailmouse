@@ -6,13 +6,6 @@ import {
   decodeProcessState,
   decodeOutputDropped,
 } from './terminal.ts';
-import {
-  decodeGameInit,
-  decodeGameInput,
-  decodeGameSnapshot,
-  decodeGameEvent,
-  decodeGameResult,
-} from './game.ts';
 
 export const MAX_FRAME_LENGTH = 1_048_576;
 export const MAX_TERMINAL_PAYLOAD = 32_766;
@@ -34,11 +27,6 @@ export const Message = {
   PROCESS_CONTROL: 0x14,
   PROCESS_STATE: 0x15,
   OUTPUT_DROPPED: 0x16,
-  GAME_INIT: 0x20,
-  GAME_INPUT: 0x21,
-  GAME_SNAPSHOT: 0x22,
-  GAME_EVENT: 0x23,
-  GAME_RESULT: 0x24,
 } as const;
 
 export type MessageType = (typeof Message)[keyof typeof Message];
@@ -47,7 +35,6 @@ export type ProtocolState =
   | 'await-client-hello'
   | 'await-server-welcome'
   | 'await-auth-proof'
-  | 'active-escape'
   | 'active-leash'
   | 'closing';
 import {
@@ -93,11 +80,6 @@ const rules = new Map<MessageType, MessageRule>([
   [Message.PROCESS_CONTROL, rule('PROCESS_CONTROL', 2, 512)],
   [Message.PROCESS_STATE, rule('PROCESS_STATE', 2, 1024)],
   [Message.OUTPUT_DROPPED, rule('OUTPUT_DROPPED', 2, 512)],
-  [Message.GAME_INIT, rule('GAME_INIT', 2, 16_384)],
-  [Message.GAME_INPUT, rule('GAME_INPUT', 24, 24, 24)],
-  [Message.GAME_SNAPSHOT, rule('GAME_SNAPSHOT', 44, 44, 44)],
-  [Message.GAME_EVENT, rule('GAME_EVENT', 2, 1024)],
-  [Message.GAME_RESULT, rule('GAME_RESULT', 2, 2048)],
 ]);
 
 function rule(
@@ -339,8 +321,6 @@ function validateRoute(
         (sender === 'host' && type === Message.ERROR))) ||
     (state === 'closing' &&
       (type === Message.CLOSE || type === Message.ERROR)) ||
-    (state === 'active-escape' &&
-      (isCommon(type) || isEscapeForSender(type, sender))) ||
     (state === 'active-leash' &&
       (isCommon(type) || isTerminalForSender(type, sender)))
   ) {
@@ -349,15 +329,9 @@ function validateRoute(
   if (
     state === 'await-auth-proof' &&
     sender === 'browser' &&
-    (isTerminal(type) || isEscape(type))
+    isTerminal(type)
   ) {
     throw new ProtocolError('AUTH_REQUIRED');
-  }
-  if (
-    (state === 'active-escape' && isTerminal(type)) ||
-    (state === 'active-leash' && isEscape(type))
-  ) {
-    throw new ProtocolError('MODE_MISMATCH');
   }
   throw new ProtocolError('BAD_FRAME');
 }
@@ -376,9 +350,7 @@ function isTerminal(type: MessageType): boolean {
   return type >= Message.TERM_RESET && type <= Message.OUTPUT_DROPPED;
 }
 
-function isEscape(type: MessageType): boolean {
-  return type >= Message.GAME_INIT && type <= Message.GAME_RESULT;
-}
+
 
 function isTerminalForSender(type: MessageType, sender: Peer): boolean {
   const fromHost: readonly MessageType[] = [
@@ -401,23 +373,12 @@ function isTerminalForSender(type: MessageType, sender: Peer): boolean {
   return false;
 }
 
-function isEscapeForSender(type: MessageType, sender: Peer): boolean {
-  const fromHost: readonly MessageType[] = [
-    Message.GAME_INIT,
-    Message.GAME_SNAPSHOT,
-    Message.GAME_RESULT,
-  ];
-  if (fromHost.includes(type)) {
-    return sender === 'host';
-  }
-  if (type === Message.GAME_INPUT) return sender === 'browser';
-  return type === Message.GAME_EVENT;
-}
+
 
 function validatePayload(
   type: MessageType,
   payload: Uint8Array,
-  sender: Peer,
+  _sender: Peer,
 ): number | undefined {
   if (type === Message.CLIENT_HELLO) return validateClientHello(payload);
   if (type === Message.SERVER_WELCOME) return validateServerWelcome(payload);
@@ -452,16 +413,6 @@ function validatePayload(
     if (columns < 20 || columns > 500 || rows < 5 || rows > 200) {
       throw new ProtocolError('BAD_FRAME');
     }
-  } else if (type === Message.GAME_INPUT) {
-    decodeGameInput(payload);
-  } else if (type === Message.GAME_SNAPSHOT) {
-    decodeGameSnapshot(payload);
-  } else if (type === Message.GAME_INIT) {
-    decodeGameInit(payload);
-  } else if (type === Message.GAME_EVENT) {
-    decodeGameEvent(payload, sender);
-  } else if (type === Message.GAME_RESULT) {
-    decodeGameResult(payload);
   }
   return undefined;
 }
@@ -484,7 +435,7 @@ function validateClientHello(payload: Uint8Array): number {
     !integerBetween(value.protocol_min, 1, 65_535) ||
     !integerBetween(value.protocol_max, 1, 65_535) ||
     value.protocol_min > value.protocol_max ||
-    (value.mode !== 'escape' && value.mode !== 'leash') ||
+    value.mode !== 'leash' ||
     typeof value.session_id !== 'string' ||
     !/^[0-9a-f]{32}$/u.test(value.session_id) ||
     !isRecord(value.client) ||
@@ -505,7 +456,7 @@ function validateClientHello(payload: Uint8Array): number {
   ) {
     throw new ProtocolError('BAD_FRAME');
   }
-  const expectedProtocol = value.mode === 'escape' ? 1 : 2;
+  const expectedProtocol = 2;
   if (
     value.protocol_min !== expectedProtocol ||
     value.protocol_max !== expectedProtocol
@@ -526,7 +477,7 @@ function validateServerWelcome(payload: Uint8Array): number {
     'session_state',
   ];
   if (
-    (value.mode !== 'escape' && value.mode !== 'leash') ||
+    value.mode !== 'leash' ||
     value.session_state !== 'active' ||
     !integerBetween(value.expires_at, 0, Number.MAX_SAFE_INTEGER) ||
     !isRecord(value.relay) ||
@@ -543,9 +494,7 @@ function validateServerWelcome(payload: Uint8Array): number {
     throw new ProtocolError('BAD_FRAME');
   }
   if (
-    value.mode === 'escape'
-      ? !exactKeys(value, commonKeys) || value.protocol !== 1
-      : !exactKeys(value, ['access_mode', ...commonKeys]) ||
+    !exactKeys(value, ['access_mode', ...commonKeys]) ||
         value.protocol !== 2 ||
         (value.access_mode !== 'code' && value.access_mode !== 'link')
   ) {
@@ -555,13 +504,11 @@ function validateServerWelcome(payload: Uint8Array): number {
 }
 
 function validCapabilities(
-  mode: 'escape' | 'leash',
+  mode: 'leash',
   value: unknown[],
 ): boolean {
   const allowed =
-    mode === 'escape'
-      ? ['dash', 'game_input', 'game_view']
-      : [
+    [
           'interrupt',
           'resize',
           'restart',
@@ -570,7 +517,7 @@ function validCapabilities(
           'terminate',
         ];
   return (
-    value.length > 0 &&
+    mode === 'leash' && value.length > 0 &&
     value.every(
       (capability, index) =>
         typeof capability === 'string' &&
@@ -581,7 +528,7 @@ function validCapabilities(
 }
 
 export interface Welcome {
-  readonly mode: 'escape' | 'leash';
+  readonly mode: 'leash';
   readonly expiresAt: number;
   readonly relay: {
     readonly mode: 'official' | 'custom-host' | 'custom-map';
@@ -594,7 +541,7 @@ export interface Welcome {
 
 export function decodeWelcome(
   frame: Frame,
-  expectedMode: 'escape' | 'leash',
+  expectedMode: 'leash',
 ): Welcome {
   if (
     frame.type !== Message.SERVER_WELCOME ||
@@ -624,15 +571,15 @@ export function decodeWelcome(
 
 export function helloFrame(
   sessionID: Uint8Array,
-  mode: 'escape' | 'leash',
+  mode: 'leash',
 ): Frame {
   if (sessionID.byteLength !== 16 || sessionID.every((value) => value === 0)) {
     throw new ProtocolError('BAD_MOUSE_CARD');
   }
   const payload = new TextEncoder().encode(
     JSON.stringify({
-      protocol_min: mode === 'escape' ? 1 : 2,
-      protocol_max: mode === 'escape' ? 1 : 2,
+      protocol_min: 2,
+      protocol_max: 2,
       session_id: Array.from(sessionID, (value) =>
         value.toString(16).padStart(2, '0'),
       ).join(''),

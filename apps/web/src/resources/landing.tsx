@@ -43,12 +43,15 @@ const workflow = [
 
 export function ResourceLanding() {
   const [step, setStep] = useState(0);
+  const [platform, setPlatform] = useState<'unix' | 'windows'>(() =>
+    /Windows/u.test(navigator.userAgent) ? 'windows' : 'unix',
+  );
   const selected = workflow[step]!;
   return (
     <main class="resource-shell landing">
       <header class="landing-nav">
         <a class="workspace-brand" href="/" aria-label="TailMouse home">
-          TailMouse <span class="alpha-badge">Alpha preview</span>
+          TailMouse <span class="alpha-badge">1.0</span>
         </a>
         <nav aria-label="Main navigation">
           <a href="#guide">Guide</a>
@@ -68,35 +71,187 @@ export function ResourceLanding() {
           Let them test your work. <span>Skip the setup.</span>
         </h1>
         <p class="hero-description">
-          One link to preview your app, send reproduction files, and use a
-          terminal when you allow it.
+          Share files, text, a local app or a terminal through one private
+          browser link.
         </p>
         <div class="landing-actions">
-          <a class="button-link" href="#get-started">
-            Get TailMouse
-          </a>
-          <a class="button-link secondary" href="#workflow">
-            See a complete workflow <span aria-hidden="true">↓</span>
-          </a>
-          <a class="button-link secondary" href="/#share">
+          <a class="button-link" href="/#share">
             Send files or text in browser
+          </a>
+          <a class="button-link secondary" href="#get-started">
+            Share an app or terminal
           </a>
         </div>
         <p class="hero-footnote">
-          The host runs TailMouse. Guests only need a browser. No account.
+          Files and text: neither device installs anything. Apps and terminals:
+          only the sharing machine needs TailMouse. No account.
         </p>
       </section>
-
+      <section id="guide" class="landing-section" aria-labelledby="guide-title">
+        <p class="eyebrow">Your first successful share</p>
+        <h2 id="guide-title">One file. Two browsers. Three steps.</h2>
+        <ol class="getting-started">
+          <li>
+            <h3>Choose a file or enter text.</h3>
+            <p>
+              <a href="/#share">Open browser sharing</a> on the sending device.
+              Selection errors appear before you start.
+            </p>
+          </li>
+          <li>
+            <h3>Connect the other device.</h3>
+            <p>
+              Start sharing, then privately copy the link, scan its QR code or
+              use your device’s sharing sheet.
+            </p>
+          </li>
+          <li>
+            <h3>Confirm the result, then end sharing.</h3>
+            <p>
+              Keep both pages open. The receiving device verifies the download.
+              End sharing when finished; files already downloaded stay on that
+              device.
+            </p>
+          </li>
+        </ol>
+        <a class="button-link" href="/#share">
+          Share from your browser ↗
+        </a>
+      </section>
+      <section
+        id="get-started"
+        class="landing-section"
+        aria-labelledby="get-title"
+      >
+        <p class="eyebrow">For local apps and terminals</p>
+        <h2 id="get-title">Install once on the sharing machine.</h2>
+        <p>
+          TailMouse v1.0.0 includes hosted defaults. No configuration file or
+          account is needed. Guests always join in a browser.
+        </p>
+        <div
+          class="workflow-steps"
+          role="group"
+          aria-label="Installation platform"
+        >
+          <button
+            class="secondary"
+            aria-pressed={platform === 'unix'}
+            onClick={() => setPlatform('unix')}
+          >
+            macOS / Linux
+          </button>
+          <button
+            class="secondary"
+            aria-pressed={platform === 'windows'}
+            onClick={() => setPlatform('windows')}
+          >
+            Windows
+          </button>
+        </div>
+        {platform === 'unix' ? (
+          <CopyCommand
+            command="curl -fsSL https://tailmouse.com/install.sh | sh"
+            label="Copy macOS/Linux install"
+          />
+        ) : (
+          <CopyCommand
+            command="irm https://tailmouse.com/install.ps1 | iex"
+            label="Copy Windows install"
+          />
+        )}
+        <p>
+          Run <code>tailmouse</code> for guided startup. On macOS/Linux, open a
+          new terminal if the installer added TailMouse to PATH. Already
+          installed? Run <code>tailmouse update</code>; package-manager
+          installations use their manager.
+        </p>
+        <CopyCommand command="tailmouse web 8080" label="Copy Web example" />
+        <p>
+          Start your app locally first. Port 8080 means{' '}
+          <code>127.0.0.1:8080</code> on the sharing machine. A server bound to{' '}
+          <code>0.0.0.0:8080</code> usually accepts it; a LAN-only address
+          requires an explicit target and remote opt-in.
+        </p>
+        <p>
+          <a
+            href="https://github.com/lotosli/tailmouse/releases/tag/v1.0.0"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Download v1.0.0 ↗
+          </a>{' '}
+          · <a href="/install.sh">Read the shell installer</a> ·{' '}
+          <a href="/install.ps1">Read the PowerShell installer</a>
+        </p>
+        <details>
+          <summary>Terminal, folders and receiving files</summary>
+          <div class="landing-cards">
+            <article>
+              <h3>Watch a terminal</h3>
+              <CopyCommand
+                command="tailmouse cli --read-only -- sh"
+                label="Copy readonly command"
+              />
+            </article>
+            <article>
+              <h3>Allow terminal input</h3>
+              <CopyCommand
+                command="tailmouse cli -- sh"
+                label="Copy terminal command"
+              />
+            </article>
+            <article>
+              <h3>Offer a read-only folder</h3>
+              <CopyCommand
+                command="tailmouse files ./dist"
+                label="Copy folder command"
+              />
+            </article>
+            <article>
+              <h3>Receive into a local folder (Linux/macOS)</h3>
+              <CopyCommand
+                command={
+                  'mkdir -p ./tailmouse-uploads\ntailmouse receive ./tailmouse-uploads'
+                }
+                label="Copy first-share command"
+              />
+            </article>
+          </div>
+          <p>
+            Unix examples use sh; on Windows choose powershell.exe. Terminal
+            access uses your user permissions and is not a sandbox. Windows
+            Receive is unsupported; macOS Receive needs APFS.
+          </p>
+        </details>
+        <details>
+          <summary>Manual installation, uninstall and recovery</summary>
+          <p>
+            Manual archives support macOS/Linux/Windows on x64 and ARM64.
+            Packages are unsigned. Extract an archive and use ./tailmouse or
+            .\\tailmouse.exe, or add it to PATH. For package-manager commands,
+            removal, PATH repair and failed-update recovery, see the{' '}
+            <a
+              href="https://github.com/lotosli/tailmouse#install-or-upgrade"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              installation guide
+            </a>
+            .
+          </p>
+        </details>
+      </section>
       <section
         id="workflow"
         class="landing-section"
         aria-labelledby="workflow-title"
       >
-        <p class="eyebrow">One task, one shared workspace</p>
-        <h2 id="workflow-title">From “can you reproduce this?” to “fixed.”</h2>
+        <p class="eyebrow">When a task needs more than one tool</p>
+        <h2 id="workflow-title">Preview, reproduce, fix together.</h2>
         <p>
-          Dev brings two or more resources together. This walkthrough
-          illustrates the flow; it does not start a live session.
+          Dev combines resources in one workspace. This walkthrough illustrates
+          the flow; it does not start a live session.
         </p>
         <div
           class="workflow-steps"
@@ -118,300 +273,78 @@ export function ResourceLanding() {
           <div class="workflow-visual">
             <span class="eyebrow">{selected.visual}</span>
             <strong>{selected.detail}</strong>
-            <span class="workflow-dots" aria-hidden="true">
-              ● ● ●
-            </span>
           </div>
           <div>
             <h3>{selected.heading}</h3>
             <p>{selected.text}</p>
           </div>
         </article>
-        <p>
-          Already running an app on port 5173? Create a dedicated upload folder,
-          then share it with an interactive shell:
-        </p>
-        <CopyCommand
-          command={
-            'mkdir -p ./tailmouse-uploads\ntailmouse dev --web 5173 --receive ./tailmouse-uploads -- sh'
-          }
-          label="Copy Dev example"
-        />
-        <p class="guide-note">
-          Requires a running development server and a Unix shell. Terminal
-          guests can run commands with your user permissions; the shell is not a
-          sandbox.
-        </p>
-      </section>
-
-      <section
-        id="get-started"
-        class="landing-section"
-        aria-labelledby="get-title"
-      >
-        <p class="eyebrow">Start on the sharing machine</p>
-        <h2 id="get-title">Install once, then share.</h2>
-        <div class="availability-note">
-          <strong>TailMouse v0.1.0-alpha.3 is available.</strong>
-          <p>
-            Download the sharing app for Linux, macOS or Windows on x64 or
-            ARM64. Guests do not install anything.
-          </p>
-          <a
-            href="https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.3"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Download v0.1.0-alpha.3 ↗
-          </a>{' '}
-          <a
-            href="https://github.com/lotosli/tailmouse#build-from-source"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Build from source ↗
-          </a>
-          <p>
-            These preview builds are unsigned. Windows support is experimental
-            and does not include Receive. On macOS, Receive requires an APFS
-            folder.
-          </p>
-        </div>
-        <p>
-          Use v0.1.0-alpha.3 or newer for built-in tailmouse.com defaults. No
-          configuration file or account is needed. Extract the archive and add
-          TailMouse to your PATH, or run ./tailmouse on Linux/macOS and
-          .\tailmouse.exe on Windows from the extracted folder.
-        </p>
         <details>
-          <summary>Install or upgrade in one command</summary>
-          <p>macOS / Linux (user-local installation):</p>
+          <summary>Start a combined workspace (Linux/macOS)</summary>
           <CopyCommand
-            command="curl -fsSL https://tailmouse.com/install.sh | sh"
-            label="Copy macOS/Linux install"
-          />
-          <p>Windows PowerShell:</p>
-          <CopyCommand
-            command="irm https://tailmouse.com/install.ps1 | iex"
-            label="Copy Windows install"
+            command={
+              'mkdir -p ./tailmouse-uploads\ntailmouse dev --web 5173 --receive ./tailmouse-uploads -- sh'
+            }
+            label="Copy Dev example"
           />
           <p>
-            Already installed? Run <code>tailmouse update</code>. Homebrew and
-            Scoop installations use their package manager’s upgrade command.
-          </p>
-          <p>
-            <a href="/install.sh">Read the shell installer</a> ·{' '}
-            <a href="/install.ps1">Read the PowerShell installer</a>
-          </p>
-        </details>
-        <CopyCommand command="tailmouse version" label="Copy version check" />
-        <p>
-          Keep the version supplied with your invitation. If the workspace
-          reports an incompatible host, ask the host for a matching build and a
-          new link.
-        </p>
-      </section>
-
-      <section id="guide" class="landing-section" aria-labelledby="guide-title">
-        <p class="eyebrow">Your first successful share</p>
-        <h2 id="guide-title">Send one small file from another device.</h2>
-        <p>
-          Start with Receive. You need the matching CLI, a writable folder, and
-          a second device with a current browser. No AI tool or running app is
-          required.
-        </p>
-        <ol class="getting-started">
-          <li>
-            <h3>Create a dedicated folder and start sharing.</h3>
-            <CopyCommand
-              command={
-                'mkdir -p ./tailmouse-uploads\ntailmouse receive ./tailmouse-uploads'
-              }
-              label="Copy first-share command"
-            />
-            <p>
-              TailMouse uses its built-in tailmouse.com settings. Keep the host
-              terminal open; TailMouse prints a sharing link and the session
-              settings.
-            </p>
-          </li>
-          <li>
-            <h3>Open the link on the second device.</h3>
-            <p>
-              Send the link privately or scan its QR code. If approval is
-              enabled, the host must approve the visitor. Do not post the link
-              in a public issue.
-            </p>
-          </li>
-          <li>
-            <h3>Send a small, non-sensitive file.</h3>
-            <p>
-              Choose a file in “Send files to host”. Wait for “Received by
-              host”, then check the saved name in the receipt and the file in
-              your host folder. Reaching 100% alone is not success.
-            </p>
-          </li>
-          <li>
-            <h3>End sharing on the host.</h3>
-            <p>
-              Use the host's end-session action. Confirm that visitor access
-              ends and the received file remains in your folder. “Leave
-              workspace” only disconnects that visitor.
-            </p>
-          </li>
-        </ol>
-        <details class="guide-details">
-          <summary>Already have a local development server?</summary>
-          <CopyCommand command="tailmouse web 8080" label="Copy Web example" />
-          <p>
-            8080 means <code>127.0.0.1:8080</code> on the machine running
-            TailMouse. A server listening on <code>0.0.0.0:8080</code> usually
-            accepts this loopback connection. A server bound only to a LAN or
-            public address does not: use an explicit target and the required
-            remote-target opt-in.
-          </p>
-          <p>
-            Open the service locally first. The whole configured origin is
-            shared; an initial path does not restrict which paths a guest can
-            reach.
+            Requires a running server and Unix shell. Ctrl+] opens local
+            management; q in that menu ends sharing.
           </p>
         </details>
       </section>
-
-      <section
-        id="permissions"
-        class="landing-section"
-        aria-labelledby="permissions-title"
-      >
-        <p class="eyebrow">Choose what a visitor can do</p>
-        <h2 id="permissions-title">Share only the tools the task needs.</h2>
-        <div class="landing-cards">
-          <article>
-            <h3>Only view the app</h3>
-            <p>Share the browser preview without terminal access.</p>
-            <CopyCommand
-              command="tailmouse web 8080"
-              label="Copy preview command"
-            />
-          </article>
-          <article>
-            <h3>Watch a terminal</h3>
-            <p>Guests see output; terminal input stays with the host.</p>
-            <CopyCommand
-              command="tailmouse cli --read-only -- sh"
-              label="Copy readonly command"
-            />
-          </article>
-          <article>
-            <h3>Allow terminal input</h3>
-            <p>
-              Share an interactive process. One controller types at a time; the
-              host retains priority.
-            </p>
-            <CopyCommand
-              command="tailmouse cli -- sh"
-              label="Copy terminal command"
-            />
-          </article>
-          <article>
-            <h3>Receive files</h3>
-            <p>
-              Guests can send files into one chosen folder. They cannot browse
-              existing files.
-            </p>
-            <CopyCommand
-              command="tailmouse receive ./tailmouse-uploads"
-              label="Copy Receive command"
-            />
-          </article>
-        </div>
-        <p class="guide-note">
-          A specified terminal program is not a sandbox. Give input access only
-          when you intend to let the visitor operate it with your permissions.
-        </p>
-        <details class="guide-details">
-          <summary>Session duration, visitor slots and ending access</summary>
-          <p>
-            Sessions expire after one hour by default. Reconnecting does not
-            extend that deadline. Use the host's explicit lifetime setting if
-            the task needs a different duration.
-          </p>
-          <p>
-            When the host ends sharing or the session expires, the managed
-            terminal process ends. An existing web server keeps running.
-            Confirmed files stay in the receiving folder.
-          </p>
-          <p>
-            The default is one visitor. <code>--open</code> opens an ordinary
-            visitor link and can occupy that slot. For the host's browser and
-            another visitor together, use <code>--max-clients 2</code>.
-          </p>
-          <CopyCommand
-            command="tailmouse web 8080 --max-clients 2 --open"
-            label="Copy two-visitor example"
-          />
-        </details>
-      </section>
-
       <section
         id="compatibility"
         class="landing-section"
         aria-labelledby="compatibility-title"
       >
-        <p class="eyebrow">Know what to expect</p>
-        <h2 id="compatibility-title">A browser development preview.</h2>
-        <p>
-          Use it for an interactive visit to your running app. Webhooks, OAuth
-          callback endpoints, curl access and general public HTTP tunnels are
-          outside this preview flow.
-        </p>
+        <h2 id="compatibility-title">Choose the right sharing mode.</h2>
         <div class="compatibility-grid">
           <article>
-            <h3>Current test setup</h3>
+            <h3>Files and temporary text</h3>
             <p>
-              The interface and preview share tailmouse.com in this test setup.
-              Open only apps you trust. This setup does not provide isolation
-              from untrusted preview pages.
+              Current browsers with WebAssembly and Workers. Up to 256 MiB per
+              file; browsers without streaming save support have a 64 MiB
+              download limit. Keep the hosting page open.
             </p>
           </article>
           <article>
-            <h3>Compatibility evidence</h3>
+            <h3>Local apps and terminals</h3>
             <p>
-              On 17 October 2026, automated entry-page and guide checks passed
-              in Chromium 151, Firefox 153 and WebKit 26.5 at desktop and phone
-              widths. This is not a native mobile-device or framework
-              compatibility certification.
-            </p>
-            <p>
-              Native platform packages and named framework combinations will be
-              listed when a matching release is verified. Native Windows is not
-              part of this alpha's platform promise.
+              Native archives: Linux, macOS and Windows, x64/ARM64. Windows
+              Receive is unsupported; macOS Receive requires APFS. Packages are
+              unsigned. Native execution evidence varies by platform.
             </p>
           </article>
         </div>
-      </section>
-      <section id="escape" class="landing-section escape-section">
-        <h2>The mouse is still here.</h2>
-        <p>
-          Escape remains available as a secondary demo. Run it on the host, then
-          open its invitation in a browser.
-        </p>
-        <CopyCommand command="tailmouse escape" label="Copy Escape command" />
-      </section>
-      <section class="landing-section" id="browser-sharing">
-        <h2>Just moving a file or some text?</h2>
-        <p>
-          Open TailMouse on both devices. Share selected files and temporary
-          text without installing anything.
-        </p>
-        <a class="button primary" href="/#share">
-          Share from your browser ↗
-        </a>
-        <p>
-          Hosts can also use <code>tailmouse send report.zip</code>,{' '}
-          <code>tailmouse files ./dist</code> or{' '}
-          <code>tailmouse text "hello"</code>.
-        </p>
+        <details>
+          <summary>Preview, session and validation details</summary>
+          <p>
+            The browser preview shares the whole configured origin. It is not an
+            endpoint for webhooks, curl or OAuth callbacks. The current
+            tailmouse.com interface and previews share an origin; open only
+            applications you trust.
+          </p>
+          <p>
+            Sessions default to one hour and one visitor. --open occupies a
+            visitor slot; use --max-clients 2 when needed. Ending a session
+            stops its managed terminal; an existing web server and confirmed
+            files remain.
+          </p>
+          <p>
+            Linux automated acceptance and public browser transfers are
+            verified. Cross-built archives are not evidence of execution on
+            every native OS or physical phone. See{' '}
+            <a
+              href="https://github.com/lotosli/tailmouse/blob/main/docs/releases/v1.0.0.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              release notes and limits
+            </a>
+            .
+          </p>
+        </details>
       </section>
       <footer class="landing-footer">
         <Feedback phase="onboarding" />
@@ -424,7 +357,13 @@ export function ResourceLanding() {
           >
             Source
           </a>
-          <a href="#escape">Escape minigame</a>
+          <a
+            href="https://github.com/lotosli/tailmouse#build-from-source"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Build from source ↗
+          </a>
           <a href="#get-started">Get TailMouse</a>
         </nav>
       </footer>

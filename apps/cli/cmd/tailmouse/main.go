@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -69,7 +67,7 @@ func runWithSignals(ctx context.Context, stdin *os.File, args, environ []string,
 	stopStartup := startupSignals(ctx, cancel, interrupts)
 	defer stopStartup()
 	if len(args) == 0 {
-		console, interactive, err := openEscapeConsole(stdin, stdout)
+		console, interactive, err := openStartupConsole(stdin, stdout)
 		if err != nil {
 			return exitInternal
 		}
@@ -125,7 +123,7 @@ func runWithSignals(ctx context.Context, stdin *os.File, args, environ []string,
 	}
 	switch options.Command {
 	case "version":
-		if _, err := fmt.Fprintf(stdout, "TailMouse %s\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTMOUSE Resource protocol 2\nTailcat revision %s\n", buildVersion, tailcatRevision); err != nil {
+		if _, err := fmt.Fprintf(stdout, "TailMouse %s\nTMOUSE Leash protocol 2\nTMOUSE Resource protocol 2\nTailcat revision %s\n", buildVersion, tailcatRevision); err != nil {
 			return exitInternal
 		}
 		return exitOK
@@ -333,22 +331,7 @@ func runSessionWithShortClient(ctx context.Context, stdin *os.File, options conf
 			return exitConfig
 		}
 	}
-	if options.Command == "escape" {
-		seed := options.Escape.Seed
-		if !options.Escape.SeedSet {
-			var entropy [8]byte
-			if _, err := rand.Read(entropy[:]); err != nil {
-				reason = "game_seed"
-				return exitInternal
-			}
-			seed = int64(binary.LittleEndian.Uint64(entropy[:]))
-		}
-		if err := host.ConfigureEscape(session.EscapeConfig{Map: options.Escape.Map, Seed: seed, Round: options.Escape.Round, Once: options.Once,
-			Control: options.Escape.Control, PhoneRender: options.Escape.PhoneRender, ShowNet: options.Escape.ShowNet}); err != nil {
-			reason = "game_configuration"
-			return exitConfig
-		}
-	}
+
 	snapshot := host.Authority.Inspect(time.Now())
 	if err := log.begin(options, identifier, snapshot.ExpiresAt); err != nil {
 		return exitInternal
@@ -425,7 +408,7 @@ func runSessionWithShortClient(ctx context.Context, stdin *os.File, options conf
 	if !snapshot.ExpiresAt.IsZero() {
 		expires = snapshot.ExpiresAt.Unix()
 	}
-	protocolIdentifier := invitation.EscapeProtocol
+	protocolIdentifier := invitation.LeashProtocol
 	if options.Command == "leash" {
 		protocolIdentifier = invitation.LeashProtocol
 	}
@@ -481,41 +464,11 @@ func runSessionWithShortClient(ctx context.Context, stdin *os.File, options conf
 	if err := log.invitationPresented(); err != nil {
 		return exitInternal
 	}
-	var outcome session.Outcome
-	if options.Command == "escape" {
-		console, interactive, err := openEscapeConsole(stdin, stdout)
-		if err != nil {
-			reason = "terminal_initialization"
-			return exitInternal
-		}
-		outcome, err = watchEscape(ctx, host, options, stdout, log, console, interactive, shutdown)
-		if err != nil {
-			_ = log.cleanupFailure("terminal_presentation")
-		}
-	} else {
-		stopStartup()
-		code, outcome = watchLeash(ctx, host, options, command, stdin, stdout, log, interrupts, shutdown)
-		childResult = childOutcome(outcome)
-		reason = string(outcome)
-		return code
-	}
+	stopStartup()
+	code, outcome := watchLeash(ctx, host, options, command, stdin, stdout, log, interrupts, shutdown)
+	childResult = childOutcome(outcome)
 	reason = string(outcome)
-	switch outcome {
-	case session.ModeComplete:
-		return exitOK
-	case session.TTLExpired, session.GraceExpired:
-		return exitExpired
-	case session.LocalRevoke:
-		return exitExpired
-	case session.ProtocolFailure:
-		return exitProtocol
-	case session.TransportFailure:
-		return exitTransport
-	case session.InternalFailure:
-		return exitInternal
-	default:
-		return exitInternal
-	}
+	return code
 }
 
 // A nonzero child status is not an earlier TailMouse root failure. Required

@@ -13,6 +13,7 @@ import type { Recovery } from './invitation.ts';
 import { bindPreview, allowedPreviewPath } from './preview.ts';
 import { CHUNK, ResourceError, type ResourceWire } from './wire.ts';
 import { endConsequences, Feedback } from './help.tsx';
+import { formatBytes } from './transfer-ui.ts';
 import { FilesPanel, TextPanel } from './transfer-panels.tsx';
 import './workspace.css';
 import './landing.css';
@@ -97,6 +98,17 @@ export function ResourceApp({
           Leave workspace
         </button>
       </header>
+      {view.runtimeProgress && (
+        <label class="runtime-progress">
+          Preparing secure connection ·{' '}
+          {formatBytes(view.runtimeProgress.received)} /{' '}
+          {formatBytes(view.runtimeProgress.total)}
+          <progress
+            max={view.runtimeProgress.total}
+            value={view.runtimeProgress.received}
+          />
+        </label>
+      )}
       {view.manifest?.testSingleOrigin === true &&
         resources.some((r) => r.id === 'web') && (
           <p class="workspace-notice" role="status">
@@ -976,10 +988,4 @@ function ReceivePanel({
       </ol>
     </>
   );
-}
-function formatBytes(bytes: number): string {
-  if (bytes >= 1 << 30) return `${(bytes / (1 << 30)).toFixed(1)} GiB`;
-  if (bytes >= 1 << 20) return `${(bytes / (1 << 20)).toFixed(1)} MiB`;
-  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
-  return `${bytes} B`;
 }

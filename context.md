@@ -2,7 +2,9 @@
 
 ## Finish first share and publish 1.0 — 2026-10-20
 
-- **Owner-directed/in progress:** Implement the accepted product/UX review and publish/deploy v1.0.0. `finish-first-share-v1` records the design. Baseline main a6800d1 is clean and agrees with the published alpha.3 memory. Preserve immutable prior tags, current Tailcat pin, Escape/protected Leash, four network profiles and direct main `[skip ci]` publication. Signing identities and independent participant outcomes remain unavailable; record actual limits without inventing evidence.
+- **Owner-directed/in progress:** Implement the accepted product/UX review and publish/deploy v1.0.0. `finish-first-share-v1` records the design. Baseline main a6800d1 is clean and agrees with the published alpha.3 memory. Preserve immutable prior tags, current Tailcat pin, protected Leash, four representative Leash network profiles and direct main `[skip ci]` publication. The owner subsequently explicitly directs complete minigame removal, superseding prior preservation requests. Signing identities and independent participant outcomes remain unavailable; record actual limits without inventing evidence.
+
+- **Observed/WIP checkpoint:** Task entry pages, editable file selection, capability-aware download cards, shared-text draft handling, runtime progress/local QR bridge and wizard changes are underway. Owner-directed game removal has deleted the engine/UI and is reconciling shared legacy protocol, tests and build identity. This checkpoint is not a passing build or release; alpha.3 stays live until complete acceptance.
 
 ## Complete simple sharing — 2026-10-20
 

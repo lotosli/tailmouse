@@ -51,7 +51,7 @@ await test('deployment staging verifies every byte and both Wasm representations
   }
   const manifest = {
     schemaVersion: 2,
-    protocols: { escape: 1, leash: 2, resource: 2 },
+    protocols: { leash: 2, resource: 2 },
     resourceProtocol: {
       frontendMajor: 1,
       protocolMajor: 2,

@@ -81,7 +81,7 @@ type Session struct {
 }
 
 func New(config Config, now time.Time) (*Session, error) {
-	if (config.Mode != "escape" && config.Mode != "leash") || config.SessionID == [16]byte{} || config.TTL < 0 || config.ReconnectGrace < 0 || (config.Mode != "leash" && config.NoPassword) {
+	if config.Mode != "leash" || config.SessionID == [16]byte{} || config.TTL < 0 || config.ReconnectGrace < 0 {
 		return nil, ErrInvalidConfig
 	}
 	grace := config.ReconnectGrace
@@ -96,9 +96,7 @@ func New(config Config, now time.Time) (*Session, error) {
 	if config.TTL > 0 {
 		session.snapshot.ExpiresAt = now.Add(config.TTL)
 	}
-	if config.Mode == "escape" {
-		session.capabilities = []string{"dash", "game_input", "game_view"}
-	} else {
+	{
 		session.capabilities = []string{"terminal_output"}
 		if !config.Readonly {
 			session.capabilities = append(session.capabilities, "interrupt", "resize", "terminal_input")

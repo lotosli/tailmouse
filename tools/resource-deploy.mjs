@@ -16,7 +16,7 @@ export function prepareResourceDeployment(source, destination) {
   );
   const manifest = JSON.parse(manifestBytes);
   assert.equal(manifest.schemaVersion, 2);
-  assert.deepEqual(manifest.protocols, { escape: 1, leash: 2, resource: 2 });
+  assert.deepEqual(manifest.protocols, { leash: 2, resource: 2 });
   assert.equal(manifest.resourceProtocol?.frontendMajor, 1);
   assert.equal(manifest.resourceProtocol?.protocolMajor, 2);
   const paths = Object.keys(manifest.files).sort((a, b) =>

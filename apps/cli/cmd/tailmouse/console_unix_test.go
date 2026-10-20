@@ -56,7 +56,7 @@ func assertTerminalRestored(t *testing.T, fd int, state *term.State, flags int) 
 
 func TestNativeConsoleKeysOutputSizeAndRestore(t *testing.T) {
 	master, slave, fd, state, flags := terminalPair(t)
-	console, interactive, err := openEscapeConsole(slave, slave)
+	console, interactive, err := openStartupConsole(slave, slave)
 	if err != nil || !interactive || console == nil {
 		t.Fatalf("terminal open failed: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestNativeConsoleCancellationAndBackpressure(t *testing.T) {
 	for _, operation := range []string{"read", "write"} {
 		t.Run(operation, func(t *testing.T) {
 			_, slave, fd, state, flags := terminalPair(t)
-			console, _, err := openEscapeConsole(slave, slave)
+			console, _, err := openStartupConsole(slave, slave)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -146,7 +146,7 @@ func TestNativeConsolePreservesExistingNonblockingDescriptor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	console, _, err := openEscapeConsole(slave, slave)
+	console, _, err := openStartupConsole(slave, slave)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,16 +162,16 @@ func TestNativeConsoleRedirectedAndPartialTerminals(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer file.Close()
-	console, interactive, err := openEscapeConsole(file, file)
+	console, interactive, err := openStartupConsole(file, file)
 	if err != nil || console != nil || interactive {
 		t.Fatal("redirected files were treated as a terminal")
 	}
 	for _, inputOnly := range []bool{true, false} {
 		_, slave, fd, state, flags := terminalPair(t)
 		if inputOnly {
-			console, interactive, err = openEscapeConsole(slave, io.Discard)
+			console, interactive, err = openStartupConsole(slave, io.Discard)
 		} else {
-			console, interactive, err = openEscapeConsole(nil, slave)
+			console, interactive, err = openStartupConsole(nil, slave)
 		}
 		if err != nil || interactive != inputOnly || console == nil {
 			t.Fatalf("partial terminal open failed: %v", err)
@@ -223,10 +223,10 @@ func TestNativeConsoleClosedDescriptorFailsAndRestoresOtherFlags(t *testing.T) {
 	if err := console.Close(); err == nil {
 		t.Fatal("failed flag restoration was swallowed")
 	}
-	if _, _, err := openEscapeConsole(slave, io.Discard); err == nil {
+	if _, _, err := openStartupConsole(slave, io.Discard); err == nil {
 		t.Fatal("closed input handle was accepted")
 	}
-	if _, _, err := openEscapeConsole(nil, slave); err == nil {
+	if _, _, err := openStartupConsole(nil, slave); err == nil {
 		t.Fatal("closed output handle was accepted")
 	}
 }

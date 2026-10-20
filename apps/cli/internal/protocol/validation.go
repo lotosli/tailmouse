@@ -27,20 +27,12 @@ func ruleFor(message MessageType) (messageRule, bool) {
 		return messageRule{minimum: 16, maximum: 16, exact: 16}, true
 	case TypeClose, TypeAuthChallenge, TypeAuthProof, TypeProcessControl, TypeOutputDropped:
 		return messageRule{minimum: 2, maximum: 512, exact: -1}, true
-	case TypeTermReset, TypeProcessState, TypeGameEvent:
+	case TypeTermReset, TypeProcessState:
 		return messageRule{minimum: 2, maximum: 1024, exact: -1}, true
 	case TypeTermOutput, TypeTermInput:
 		return messageRule{minimum: 1, maximum: MaxTerminalPayload, exact: -1}, true
 	case TypeTermResize:
 		return messageRule{minimum: 4, maximum: 4, exact: 4}, true
-	case TypeGameInit:
-		return messageRule{minimum: 2, maximum: MaxControlPayload, exact: -1}, true
-	case TypeGameInput:
-		return messageRule{minimum: 24, maximum: 24, exact: 24}, true
-	case TypeGameSnapshot:
-		return messageRule{minimum: 44, maximum: 44, exact: 44}, true
-	case TypeGameResult:
-		return messageRule{minimum: 2, maximum: 2048, exact: -1}, true
 	default:
 		return messageRule{}, false
 	}
@@ -63,23 +55,14 @@ func validateRoute(message MessageType, sender Peer, state State) ErrorCode {
 		if sender == PeerBrowser && message == TypeAuthProof || sender == PeerHost && message == TypeError {
 			return ""
 		}
-		if sender == PeerBrowser && (isTerminalMessage(message) || isEscapeMessageType(message)) {
+		if sender == PeerBrowser && (isTerminalMessage(message)) {
 			return CodeAuthRequired
-		}
-	case StateActiveEscape:
-		if isCommonActive(message) || isEscapeMessage(message, sender) {
-			return ""
-		}
-		if isTerminalMessage(message) {
-			return CodeModeMismatch
 		}
 	case StateActiveLeash:
 		if isCommonActive(message) || isTerminalMessageForSender(message, sender) {
 			return ""
 		}
-		if isEscapeMessageType(message) {
-			return CodeModeMismatch
-		}
+
 	case StateClosing:
 		if message == TypeClose || message == TypeError {
 			return ""
@@ -102,23 +85,6 @@ func isTerminalMessageForSender(message MessageType, sender Peer) bool {
 		return sender == PeerHost
 	case TypeTermInput, TypeTermResize, TypeProcessControl:
 		return sender == PeerBrowser
-	default:
-		return false
-	}
-}
-
-func isEscapeMessageType(message MessageType) bool {
-	return message >= TypeGameInit && message <= TypeGameResult
-}
-
-func isEscapeMessage(message MessageType, sender Peer) bool {
-	switch message {
-	case TypeGameInit, TypeGameSnapshot, TypeGameResult:
-		return sender == PeerHost
-	case TypeGameInput:
-		return sender == PeerBrowser
-	case TypeGameEvent:
-		return true
 	default:
 		return false
 	}
@@ -152,27 +118,12 @@ func validatePayload(message MessageType, payload []byte, sender Peer) (uint16, 
 	case TypeOutputDropped:
 		_, err := DecodeOutputDropped(Frame{Type: message, Payload: payload})
 		return 0, err
-	case TypeGameInit:
-		_, err := DecodeGameInit(Frame{Type: message, Payload: payload})
-		return 0, err
-	case TypeGameEvent:
-		_, err := DecodeGameEvent(Frame{Type: message, Payload: payload}, sender)
-		return 0, err
-	case TypeGameResult:
-		_, err := DecodeGameResult(Frame{Type: message, Payload: payload})
-		return 0, err
 	case TypeTermResize:
 		columns := binary.BigEndian.Uint16(payload[0:2])
 		rows := binary.BigEndian.Uint16(payload[2:4])
 		if columns < 20 || columns > 500 || rows < 5 || rows > 200 {
 			return 0, &ProtocolError{Code: CodeBadFrame}
 		}
-	case TypeGameInput:
-		_, err := DecodeGameInput(Frame{Type: message, Payload: payload})
-		return 0, err
-	case TypeGameSnapshot:
-		_, err := DecodeGameSnapshot(Frame{Type: message, Payload: payload})
-		return 0, err
 	}
 	return 0, nil
 }
@@ -211,7 +162,7 @@ func validateClientHello(payload []byte) (uint16, error) {
 	var value clientHello
 	if strictUnmarshal(payload, &value) != nil || !integerBetween(value.ProtocolMin, 1, 65_535) ||
 		!integerBetween(value.ProtocolMax, 1, 65_535) || value.ProtocolMin > value.ProtocolMax ||
-		(value.Mode != "escape" && value.Mode != "leash") || !validSessionID(value.SessionID) ||
+		value.Mode != "leash" || !validSessionID(value.SessionID) ||
 		!boundedText(value.Client.Name, 1, 64) || !boundedText(value.Client.Version, 1, 32) ||
 		!boundedText(value.Client.Platform, 1, 32) || value.Client.UserAgent == nil ||
 		!boundedText(*value.Client.UserAgent, 0, 512) {
@@ -232,10 +183,7 @@ func validateClientHello(payload []byte) (uint16, error) {
 			return 0, &ProtocolError{Code: CodeBadFrame}
 		}
 	}
-	expectedProtocol := float64(1)
-	if value.Mode == "leash" {
-		expectedProtocol = 2
-	}
+	expectedProtocol := float64(2)
 	if value.ProtocolMin != expectedProtocol || value.ProtocolMax != expectedProtocol {
 		return 0, &ProtocolError{Code: CodeProtocolMismatch}
 	}
@@ -266,16 +214,11 @@ func validateServerWelcome(payload []byte) (uint16, error) {
 	var value serverWelcome
 	if strictUnmarshal(payload, &value) != nil || value.SessionState != "active" ||
 		value.ExpiresAt == nil || !integerBetween(*value.ExpiresAt, 0, 9_007_199_254_740_991) ||
-		(value.Mode != "escape" && value.Mode != "leash") || !validRelay(value.Relay) ||
+		value.Mode != "leash" || !validRelay(value.Relay) ||
 		!validCapabilities(value.Mode, value.Capabilities) {
 		return 0, &ProtocolError{Code: CodeBadFrame}
 	}
-	if value.Mode == "escape" {
-		if !exactKeys(object, "capabilities", "expires_at", "mode", "protocol", "relay", "session_state") ||
-			value.Protocol != 1 || value.AccessMode != nil {
-			return 0, &ProtocolError{Code: CodeBadFrame}
-		}
-	} else if !exactKeys(object, "access_mode", "capabilities", "expires_at", "mode", "protocol", "relay", "session_state") ||
+	if !exactKeys(object, "access_mode", "capabilities", "expires_at", "mode", "protocol", "relay", "session_state") ||
 		value.Protocol != 2 || value.AccessMode == nil || (*value.AccessMode != "code" && *value.AccessMode != "link") {
 		return 0, &ProtocolError{Code: CodeBadFrame}
 	}
@@ -454,9 +397,9 @@ func validDiagnosticHost(host string) bool {
 }
 
 func validCapabilities(mode string, capabilities []string) bool {
-	allowed := []string{"dash", "game_input", "game_view"}
-	if mode == "leash" {
-		allowed = []string{"interrupt", "resize", "restart", "terminal_input", "terminal_output", "terminate"}
+	allowed := []string{"interrupt", "resize", "restart", "terminal_input", "terminal_output", "terminate"}
+	if mode != "leash" {
+		return false
 	}
 	if len(capabilities) == 0 || !slices.IsSorted(capabilities) {
 		return false

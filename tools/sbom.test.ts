@@ -14,7 +14,7 @@ import {
 
 const identity = {
   version: '1.0.0',
-  protocols: { escape: 1, leash: 2, resource: 2 },
+  protocols: { leash: 2, resource: 2 },
   tailcatRevision: '1'.repeat(40),
 } as const;
 const revision = '2'.repeat(40);

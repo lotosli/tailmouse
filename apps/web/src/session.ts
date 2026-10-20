@@ -1,5 +1,4 @@
 import type { MouseCard } from './invitation.ts';
-import { EscapeClient } from './escape.ts';
 import { LeashClient } from './leash.ts';
 import { Latency, type LatencySnapshot } from './latency.ts';
 import {
@@ -307,7 +306,6 @@ export async function negotiateSession(
 // A retry creates a new session; no queued input survives a disconnect.
 export class BrowserSession {
   readonly welcome: Welcome;
-  readonly game: EscapeClient | undefined;
   readonly terminal: LeashClient | undefined;
   readonly done: Promise<CloseReason>;
   readonly #stream: ByteStream;
@@ -339,17 +337,8 @@ export class BrowserSession {
     this.#counters = counters;
     this.welcome = welcome;
     this.#signal = AbortSignal.any([signal, this.#controller.signal]);
-    this.#state = welcome.mode === 'escape' ? 'active-escape' : 'active-leash';
-    if (welcome.mode === 'escape') {
-      this.game = new EscapeClient(
-        welcome,
-        (frame) => this.#send(frame),
-        (error) => {
-          this.#writeFailure ??= error;
-          this.#controller.abort();
-        },
-      );
-    } else {
+    this.#state = 'active-leash';
+     {
       this.terminal = new LeashClient(
         welcome,
         (frame) => this.#send(frame),
@@ -379,7 +368,6 @@ export class BrowserSession {
   close(): Promise<CloseReason> {
     if (!this.#closing && !this.#closed) {
       this.#closing = true;
-      this.game?.dispose();
       this.terminal?.dispose();
       clearInterval(this.#pingTimer);
       this.#closeTimer = setTimeout(() => this.#controller.abort(), 2000);
@@ -456,7 +444,6 @@ export class BrowserSession {
             result = decodeClose(frame);
             if (!this.#closing) {
               this.#closing = true;
-              this.game?.dispose();
               this.terminal?.dispose();
               clearInterval(this.#pingTimer);
               await this.#send(closeFrame(result));
@@ -483,7 +470,6 @@ export class BrowserSession {
           } else if (frame.type === Message.PONG) {
             this.#latency.pong(frame.payload, performance.now());
           } else if (
-            !this.game?.receive(frame) &&
             !(await this.terminal?.receive(frame))
           ) {
             throw new ProtocolError('BAD_FRAME');
@@ -507,7 +493,6 @@ export class BrowserSession {
         failure.code === 'FRAME_TOO_LARGE'
       ) {
         this.#closing = true;
-        this.game?.dispose();
         this.terminal?.dispose();
         this.#decoder.discard();
         clearInterval(this.#pingTimer);
@@ -524,7 +509,6 @@ export class BrowserSession {
       }
     } finally {
       this.#closed = true;
-      this.game?.dispose();
       this.terminal?.dispose();
       this.#signal.removeEventListener('abort', this.#abortTerminal);
       clearInterval(this.#pingTimer);

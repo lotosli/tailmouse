@@ -12,7 +12,7 @@ import (
 // The spectator owns this terminal boundary, not stdin or stdout themselves.
 // Tests provide a deterministic console; platform implementations restore every
 // mode/flag they change and keep reads cancellable without closing user handles.
-type escapeConsole interface {
+type startupConsole interface {
 	ReadKey(context.Context) (byte, error)
 	Write(context.Context, string) error
 	Size() (int, int, error)
@@ -26,7 +26,7 @@ type nativeConsole struct {
 	platform          consolePlatform
 }
 
-func openEscapeConsole(input *os.File, output io.Writer) (escapeConsole, bool, error) {
+func openStartupConsole(input *os.File, output io.Writer) (startupConsole, bool, error) {
 	console := &nativeConsole{}
 	if input != nil {
 		fd, err := consoleDescriptor(input)

@@ -39,6 +39,7 @@ export interface SessionView {
   manifest: ResourceManifest | null;
   controller: boolean;
   expiring: boolean;
+  runtimeProgress?: { received: number; total: number } | undefined;
 }
 export interface UploadReceipt {
   type: 'upload.completed';
@@ -155,7 +156,14 @@ export class ResourceSession {
                 this.recovery.key,
                 () => {
                   if (!this.#closed && generation === this.#generation)
-                    this.#update({ message: 'Connecting to the host…' });
+                    this.#update({
+                      message: 'Connecting to the host…',
+                      runtimeProgress: undefined,
+                    });
+                },
+                (runtimeProgress) => {
+                  if (!this.#closed && generation === this.#generation)
+                    this.#update({ runtimeProgress });
                 },
               );
             } catch (error) {

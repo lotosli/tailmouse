@@ -9,12 +9,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"tailmouse/apps/cli/internal/escape"
 	"tailmouse/apps/cli/internal/protocol"
 )
 
 const (
-	MaxConnections           = 8 // Escape retains the original bounded handshake capacity.
+	MaxConnections           = 8
 	MaxPendingAuthentication = 4
 	handshakeLimit           = 10 * time.Second
 	authenticationLimit      = 30 * time.Second
@@ -49,7 +48,6 @@ type Host struct {
 	closeErr                                             error
 	latency                                              Latency
 	observe                                              func(Event) error
-	game                                                 *escapeGame
 	terminal                                             *leashTerminal
 	entropy                                              io.Reader
 	accessMode                                           string
@@ -82,7 +80,6 @@ type hostConnection struct {
 	ctx               context.Context
 	cancel            context.CancelFunc
 	writeSlot         chan struct{}
-	gameWake          chan struct{}
 	leashWake         chan struct{}
 	lease             Lease     // Protected by Host.mu.
 	closing           bool      // Protected by Host.mu.
@@ -95,18 +92,16 @@ type hostConnection struct {
 
 type Metrics struct {
 	LatencySnapshot
-	BytesTX            uint64  `json:"bytes_tx"`
-	BytesRX            uint64  `json:"bytes_rx"`
-	FramesTX           uint64  `json:"frames_tx"`
-	FramesRX           uint64  `json:"frames_rx"`
-	ProtocolErrors     uint64  `json:"protocol_errors"`
-	ActiveConnection   bool    `json:"active_conn"`
-	ReconnectCount     uint64  `json:"reconnect_count"`
-	OutputRingUsed     int     `json:"output_ring_used"`
-	OutputDroppedBytes uint64  `json:"output_dropped_bytes"`
-	ProcessGeneration  uint32  `json:"process_generation"`
-	EscapeInputRate    float64 `json:"escape_input_rate"`
-	EscapeSnapshotRate float64 `json:"escape_snapshot_rate"`
+	BytesTX            uint64 `json:"bytes_tx"`
+	BytesRX            uint64 `json:"bytes_rx"`
+	FramesTX           uint64 `json:"frames_tx"`
+	FramesRX           uint64 `json:"frames_rx"`
+	ProtocolErrors     uint64 `json:"protocol_errors"`
+	ActiveConnection   bool   `json:"active_conn"`
+	ReconnectCount     uint64 `json:"reconnect_count"`
+	OutputRingUsed     int    `json:"output_ring_used"`
+	OutputDroppedBytes uint64 `json:"output_dropped_bytes"`
+	ProcessGeneration  uint32 `json:"process_generation"`
 }
 
 func (host *Host) InspectMetrics() Metrics {
@@ -115,7 +110,7 @@ func (host *Host) InspectMetrics() Metrics {
 		BytesTX: host.bytesTX.Load(), BytesRX: host.bytesRX.Load(), FramesTX: host.framesTX.Load(), FramesRX: host.framesRX.Load(),
 		ProtocolErrors: host.protocolErrors.Load(), ActiveConnection: snapshot.State == Active, ReconnectCount: snapshot.Reconnects}
 	host.mu.Lock()
-	game, terminal := host.game, host.terminal
+	terminal := host.terminal
 	host.mu.Unlock()
 	if terminal != nil {
 		terminal.mu.Lock()
@@ -127,17 +122,7 @@ func (host *Host) InspectMetrics() Metrics {
 		}
 		terminal.mu.Unlock()
 	}
-	if game != nil {
-		game.mu.Lock()
-		now := time.Now()
-		if elapsed := now.Sub(game.rateAt); elapsed >= time.Second {
-			game.inputRate = float64(game.inputs-game.rateInputs) / elapsed.Seconds()
-			game.snapshotRate = float64(game.snapshots-game.rateSnapshots) / elapsed.Seconds()
-			game.rateAt, game.rateInputs, game.rateSnapshots = now, game.inputs, game.snapshots
-		}
-		metrics.EscapeInputRate, metrics.EscapeSnapshotRate = game.inputRate, game.snapshotRate
-		game.mu.Unlock()
-	}
+
 	return metrics
 }
 
@@ -247,9 +232,7 @@ func (host *Host) Listen(relayMode, relayHost string, now time.Time) error {
 		return err
 	}
 	host.welcome, host.listening = welcome, true
-	if host.game != nil {
-		host.game.relay = relayHost
-	}
+
 	close(host.ready)
 	return nil
 }
@@ -269,9 +252,7 @@ func (host *Host) Accept(stream io.ReadWriteCloser) bool {
 	}
 	ctx, cancel := context.WithCancel(host.ctx)
 	connection := &hostConnection{host: host, stream: stream, ctx: ctx, cancel: cancel, writeSlot: make(chan struct{}, 1)}
-	if host.game != nil {
-		connection.gameWake = make(chan struct{}, 1)
-	}
+
 	if host.terminal != nil {
 		connection.leashWake = make(chan struct{}, 1)
 	}
@@ -293,9 +274,7 @@ func (host *Host) serve(connection *hostConnection) {
 		lease := connection.lease
 		host.mu.Unlock()
 		if lease != 0 {
-			if host.game != nil {
-				host.game.detach(connection)
-			}
+
 			if host.terminal != nil {
 				host.terminal.detach(connection)
 			}
@@ -449,18 +428,8 @@ func (host *Host) serve(connection *hostConnection) {
 		return
 	}
 	host.notify()
-	state := protocol.StateActiveEscape
-	if host.mode == "leash" {
-		state = protocol.StateActiveLeash
-	}
-	if host.game != nil {
-		if err := host.game.attach(connection); err != nil {
-			host.reject(connection, err, state)
-			host.finish(InternalFailure)
-			return
-		}
-		host.notify()
-	}
+	state := protocol.StateActiveLeash
+
 	if host.terminal != nil {
 		host.terminal.attach(connection)
 	}
@@ -483,18 +452,6 @@ func (host *Host) serve(connection *hostConnection) {
 					connection.cancel()
 					return
 				}
-			case <-connection.gameWake:
-				frame, ok := host.game.next(connection)
-				if !ok {
-					continue
-				}
-				err := connection.send(connection.ctx, state, frame)
-				host.game.sent(connection, frame, err)
-				clear(frame.Payload)
-				if err != nil {
-					connection.cancel()
-					return
-				}
 			case <-ticker.C:
 				if connection.expirePeer(time.Now()) {
 					connection.cancel()
@@ -507,9 +464,7 @@ func (host *Host) serve(connection *hostConnection) {
 					return
 				}
 				frame := host.latency.Ping(time.Now())
-				if host.game != nil {
-					host.game.ping(connection, frame)
-				}
+
 				if host.terminal != nil {
 					host.terminal.ping(connection, frame)
 				}
@@ -574,10 +529,8 @@ func (host *Host) handle(connection *hostConnection, state protocol.State, frame
 			host.finish(ProtocolFailure)
 			return true
 		}
-		// A browser exit ends Escape; it does not revoke a Leash process.
-		if host.mode == "escape" && !alreadyClosing {
-			host.finish(ModeComplete)
-		}
+		// A browser exit does not revoke the terminal process.
+
 		return true
 	}
 	if connection.expirePeer(time.Now()) {
@@ -605,12 +558,7 @@ func (host *Host) handle(connection *hostConnection, state protocol.State, frame
 		}
 		host.mu.Unlock()
 		if valid {
-			if host.game != nil {
-				if err := host.game.pong(connection, frame.Payload); err != nil {
-					host.finish(InternalFailure)
-					return true
-				}
-			}
+
 			if host.terminal != nil {
 				host.terminal.pong(connection, frame.Payload)
 			}
@@ -621,14 +569,6 @@ func (host *Host) handle(connection *hostConnection, state protocol.State, frame
 		host.protocolErrors.Add(1)
 		host.finish(ProtocolFailure)
 		return true
-	case protocol.TypeGameInput, protocol.TypeGameEvent:
-		if host.game != nil {
-			if err := host.game.input(connection, frame); err != nil {
-				return connection.send(host.ctx, state, protocol.ErrorFrame(err)) != nil
-			}
-			return false
-		}
-		return connection.send(host.ctx, state, protocol.ErrorFrame(&protocol.ProtocolError{Code: protocol.CodeUnauthorized})) != nil
 	case protocol.TypeTermInput, protocol.TypeTermResize, protocol.TypeProcessControl:
 		if host.terminal != nil {
 			if err := host.terminal.input(connection, frame); err != nil {
@@ -642,7 +582,7 @@ func (host *Host) handle(connection *hostConnection, state protocol.State, frame
 		}
 		return connection.send(host.ctx, state, protocol.ErrorFrame(err)) != nil
 	default:
-		// Mode handlers are connected by their accepted Escape/Leash tasks.
+		// Terminal handlers retain authority checks.
 		// Until then, no syntactically valid input can cause a side effect.
 		err := host.Authority.Authorize(connection.lease, capabilityFor(frame.Type), time.Now())
 		if err == nil {
@@ -654,10 +594,6 @@ func (host *Host) handle(connection *hostConnection, state protocol.State, frame
 
 func capabilityFor(message protocol.MessageType) string {
 	switch message {
-	case protocol.TypeGameInput:
-		return "game_input"
-	case protocol.TypeGameEvent:
-		return "game_view"
 	case protocol.TypeTermInput:
 		return "terminal_input"
 	case protocol.TypeTermResize:
@@ -743,30 +679,13 @@ func (host *Host) notify() {
 func (host *Host) Wait(ctx context.Context) Outcome {
 	host.mu.Lock()
 	host.waiting = true // Configuration is immutable once its owner loop starts.
-	game := host.game
 	host.mu.Unlock()
-	var gameTicker *time.Ticker
-	var gameTicks <-chan time.Time
-	defer func() {
-		if gameTicker != nil {
-			gameTicker.Stop()
-		}
-	}()
 	for {
 		snapshot := host.Authority.Inspect(time.Now())
 		if snapshot.State == Closed || snapshot.State == Expired {
 			return snapshot.Outcome
 		}
-		if game != nil {
-			state, started := host.InspectEscape()
-			if started && state.Phase != escape.Finished && gameTicker == nil {
-				gameTicker = time.NewTicker(time.Second / escape.SimulationHz)
-				gameTicks = gameTicker.C
-			} else if state.Phase == escape.Finished && gameTicker != nil {
-				gameTicker.Stop()
-				gameTicker, gameTicks = nil, nil
-			}
-		}
+
 		deadline := snapshot.ExpiresAt
 		if !snapshot.GraceDeadline.IsZero() && (deadline.IsZero() || snapshot.GraceDeadline.Before(deadline)) {
 			deadline = snapshot.GraceDeadline
@@ -782,10 +701,6 @@ func (host *Host) Wait(ctx context.Context) Outcome {
 			host.finish(LocalRevoke)
 		case <-host.changed:
 		case <-tick:
-		case <-gameTicks:
-			if err := game.tick(); err != nil {
-				host.finish(InternalFailure)
-			}
 		}
 		if timer != nil {
 			timer.Stop()

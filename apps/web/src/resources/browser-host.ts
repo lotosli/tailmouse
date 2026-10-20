@@ -8,6 +8,10 @@ export interface BrowserHostView {
   bytes: number;
   visitors: number;
   message: string;
+  expiresAt?: number;
+  runtimeProgress?: { received: number; total: number } | undefined;
+  activeDownloads?: number;
+  sentFiles?: number;
 }
 type HostTransport = Pick<
   ResourceTransport,
@@ -100,7 +104,12 @@ export class BrowserHost {
   }
   async start(mapURL = 'https://tailcat.dev/derpmap.json'): Promise<void> {
     try {
-      this.#address = await this.#transport.listen(mapURL);
+      this.#address = await this.#transport.listen(
+        mapURL,
+        (runtimeProgress) => {
+          if (!this.#closed) this.#update({ runtimeProgress });
+        },
+      );
       if (this.#closed) return;
       this.#expires = Date.now() + 3_600_000;
       this.#expiry = setTimeout(
@@ -109,6 +118,8 @@ export class BrowserHost {
       );
       this.#update({
         status: 'sharing',
+        expiresAt: this.#expires,
+        runtimeProgress: undefined,
         message:
           'Keep this page open while the other device connects and downloads.',
       });
@@ -149,6 +160,23 @@ export class BrowserHost {
         .replaceAll('/', '_')
         .replace(/=+$/u, '');
     return base.href;
+  }
+  async qr(origin: string): Promise<string> {
+    const value = await this.#transport.call('qr', 0, this.invitation(origin));
+    if (
+      typeof value !== 'string' ||
+      value.length > 35000 ||
+      !/^[01]+(?:\n[01]+)*\n$/u.test(value)
+    )
+      throw new Error('QR unavailable.');
+    const rows = value.trim().split('\n');
+    if (
+      rows.length < 21 ||
+      rows.length > 185 ||
+      rows.some((row) => row.length !== rows.length)
+    )
+      throw new Error('QR unavailable.');
+    return value;
   }
   setText(text: string): void {
     if (this.#closed || !validText(text))
@@ -422,6 +450,7 @@ export class BrowserHost {
     if (this.#active >= 2 || this.#attempts <= 0 || file.size > this.#remaining)
       throw new Error('TRANSFER_LIMIT');
     this.#active++;
+    this.#update({ activeDownloads: this.#active });
     this.#attempts--;
     this.#remaining -= file.size;
     let hash: number | undefined;
@@ -453,8 +482,10 @@ export class BrowserHost {
         size: file.size,
         sha256: digest,
       });
+      this.#update({ sentFiles: (this.#view.sentFiles ?? 0) + 1 });
     } finally {
       this.#active--;
+      if (!this.#closed) this.#update({ activeDownloads: this.#active });
       if (hash !== undefined)
         await this.#transport
           .call('hash.cancel', hash, null)

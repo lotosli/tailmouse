@@ -10,10 +10,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/skip2/go-qrcode"
 	"hash"
 	"io"
 	"net"
 	"net/url"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall/js"
@@ -60,6 +62,26 @@ func call(_ js.Value, args []js.Value) any {
 	op, id, value := args[0].String(), args[1].Int(), args[2]
 	return promise(func() (any, error) {
 		switch op {
+		case "qr":
+			if value.Type() != js.TypeString || len(value.String()) > 24000 {
+				return nil, errors.New("QR_INPUT")
+			}
+			code, err := qrcode.New(value.String(), qrcode.Medium)
+			if err != nil {
+				return nil, errors.New("QR_UNAVAILABLE")
+			}
+			var matrix strings.Builder
+			for _, row := range code.Bitmap() {
+				for _, black := range row {
+					if black {
+						matrix.WriteByte('1')
+					} else {
+						matrix.WriteByte('0')
+					}
+				}
+				matrix.WriteByte('\n')
+			}
+			return matrix.String(), nil
 		case "listen":
 			source := value.Get("mapURL")
 			if source.Type() != js.TypeString {

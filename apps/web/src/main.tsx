@@ -51,7 +51,6 @@ function mountRoute(): void {
       '#guide',
       '#permissions',
       '#compatibility',
-      '#escape',
     ].includes(location.hash)
   ) {
     if (landing) return;

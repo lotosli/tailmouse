@@ -20,9 +20,8 @@ import (
 
 const (
 	CardVersion          uint8  = 1
-	EscapeProtocol       uint16 = 1
 	LeashProtocol        uint16 = 2
-	ProtocolVersion             = EscapeProtocol
+	ProtocolVersion             = LeashProtocol
 	VirtualPort          uint16 = 44321
 	MaxInvitationBytes          = 1400
 	MaxCardBytes                = 1050
@@ -46,8 +45,7 @@ var (
 type Mode string
 
 const (
-	ModeEscape Mode = "escape"
-	ModeLeash  Mode = "leash"
+	ModeLeash Mode = "leash"
 )
 
 // MouseCard is the complete v1 invitation payload. Its mode is only an initial
@@ -141,8 +139,7 @@ func (invitation *Invitation) Render(
 		return ErrErased
 	}
 	if output == nil || !validRelayLabel(options.Relay) ||
-		(invitation.mode == ModeLeash && options.AccessMode != "code" && options.AccessMode != "link") ||
-		(invitation.mode == ModeEscape && options.AccessMode != "") {
+		(invitation.mode == ModeLeash && options.AccessMode != "code" && options.AccessMode != "link") {
 		return ErrDisplay
 	}
 
@@ -168,7 +165,7 @@ func (invitation *Invitation) Render(
 	); err != nil {
 		return ErrDisplay
 	}
-	if invitation.mode == ModeEscape || options.AccessMode == "link" {
+	if options.AccessMode == "link" {
 		rendered.WriteString("Anyone with this link can access this session until it expires.\nTreat it like a password.\n")
 	} else {
 		rendered.WriteString("Keep this invitation private.\nThe separate access code is also required.\n")
@@ -213,13 +210,13 @@ func (*Invitation) Format(state fmt.State, _ rune) {
 
 func validCard(card MouseCard) bool {
 	if card.Version != CardVersion ||
-		(card.Mode != ModeEscape && card.Mode != ModeLeash) ||
+		card.Mode != ModeLeash ||
 		card.TailcatAddr == "" ||
 		card.Port != VirtualPort ||
 		card.ExpiresAt < 0 || card.ExpiresAt > MaxExpiryUnixSeconds {
 		return false
 	}
-	expectedProtocol := EscapeProtocol
+	expectedProtocol := LeashProtocol
 	if card.Mode == ModeLeash {
 		expectedProtocol = LeashProtocol
 	}

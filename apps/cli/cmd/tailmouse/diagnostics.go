@@ -42,8 +42,7 @@ type diagnosticRecord struct {
 	Signal              *string                  `json:"signal,omitempty"`
 	DroppedBytes        *uint64                  `json:"bytes,omitempty"`
 	*session.LatencySnapshot
-	Metrics *session.Metrics     `json:"metrics,omitempty"`
-	Result  *protocol.GameResult `json:"result,omitempty"`
+	Metrics *session.Metrics `json:"metrics,omitempty"`
 }
 
 type diagnostics struct {
@@ -61,16 +60,6 @@ func (log *diagnostics) terminal(raw, spectator bool) {
 	log.mu.Lock()
 	defer log.mu.Unlock()
 	log.rawTerminal, log.spectator = raw, spectator
-}
-
-func (log *diagnostics) gameResult(result protocol.GameResult) error {
-	if _, err := protocol.GameResultFrame(result); err != nil {
-		return err
-	}
-	if !log.json {
-		return nil
-	} // The human result is printed once on stdout.
-	return log.write(diagnosticRecord{Event: "mode_result", Result: &result}, true, false)
 }
 
 func newDiagnostics(options config.Options, writer io.Writer) *diagnostics {
@@ -225,8 +214,8 @@ func (log *diagnostics) write(record diagnosticRecord, essential, debug bool) er
 			metrics := record.Metrics
 			output = append(output, fmt.Sprintf("\nnetwork    bytes tx/rx %d/%d; frames tx/rx %d/%d; reconnects %d; protocol errors %d",
 				metrics.BytesTX, metrics.BytesRX, metrics.FramesTX, metrics.FramesRX, metrics.ReconnectCount, metrics.ProtocolErrors)...)
-			output = append(output, fmt.Sprintf("\nmode       ring %d bytes; dropped %d bytes; generation %d; Escape input/snapshots %.1f/%.1f per second",
-				metrics.OutputRingUsed, metrics.OutputDroppedBytes, metrics.ProcessGeneration, metrics.EscapeInputRate, metrics.EscapeSnapshotRate)...)
+			output = append(output, fmt.Sprintf("\nmode       ring %d bytes; dropped %d bytes; generation %d",
+				metrics.OutputRingUsed, metrics.OutputDroppedBytes, metrics.ProcessGeneration)...)
 		}
 	}
 	output = append(output, '\n')

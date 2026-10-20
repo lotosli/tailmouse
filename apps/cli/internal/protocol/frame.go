@@ -85,12 +85,6 @@ const (
 	TypeProcessControl MessageType = 0x14
 	TypeProcessState   MessageType = 0x15
 	TypeOutputDropped  MessageType = 0x16
-
-	TypeGameInit     MessageType = 0x20
-	TypeGameInput    MessageType = 0x21
-	TypeGameSnapshot MessageType = 0x22
-	TypeGameEvent    MessageType = 0x23
-	TypeGameResult   MessageType = 0x24
 )
 
 func (message MessageType) String() string {
@@ -125,16 +119,6 @@ func (message MessageType) String() string {
 		return "PROCESS_STATE"
 	case TypeOutputDropped:
 		return "OUTPUT_DROPPED"
-	case TypeGameInit:
-		return "GAME_INIT"
-	case TypeGameInput:
-		return "GAME_INPUT"
-	case TypeGameSnapshot:
-		return "GAME_SNAPSHOT"
-	case TypeGameEvent:
-		return "GAME_EVENT"
-	case TypeGameResult:
-		return "GAME_RESULT"
 	default:
 		return "UNKNOWN"
 	}
@@ -163,7 +147,6 @@ const (
 	StateAwaitClientHello State = iota + 1
 	StateAwaitServerWelcome
 	StateAwaitAuthProof
-	StateActiveEscape
 	StateActiveLeash
 	StateClosing
 )

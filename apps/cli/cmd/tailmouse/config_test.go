@@ -162,7 +162,7 @@ func TestCLIProcessConfigurationBoundary(t *testing.T) {
 		{"leash help after delimiter-shaped title", []string{"leash", "--title", "--", "--help"}, 0, "Leash flags", ""},
 		{"leash help after delimiter-shaped config path", []string{"leash", "--config", "--", "--help"}, 0, "Leash flags", ""},
 		{"title value does not replace child separator", []string{"leash", "--title", "--", "must-not-run"}, 2, "", "leash command after --"},
-		{"version bypasses invalid config", []string{"version"}, 0, "TMOUSE Escape protocol 1\nTMOUSE Leash protocol 2", ""},
+		{"version bypasses invalid config", []string{"version"}, 0, "TMOUSE Leash protocol 2", ""},
 		{"path environment", []string{"config", "path"}, 0, path, ""},
 		{"path flag precedence", []string{"config", "path", "--config", missing}, 0, missing, ""},
 		{"invalid file before transport", []string{"escape"}, 2, "", "version (expected 1)"},

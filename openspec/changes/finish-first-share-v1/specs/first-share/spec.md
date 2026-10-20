@@ -39,3 +39,13 @@ The project MUST publish v1.0.0 from preserved accepted source, verify all six a
 - **WHEN** a user follows the documented installer or package-manager path
 - **THEN** the recipe matches published version/checksums and hosted commands need no configuration file
 - **AND** unavailable signing identities or native-platform evidence are not represented as completed validation.
+
+### Requirement: Remove the minigame from the current product
+
+The current source, CLI, browser, build and tests MUST no longer include the Escape game. Historical immutable releases and provenance records MAY remain.
+
+#### Scenario: Use the 1.0 application
+
+- **WHEN** a user opens the homepage or lists CLI commands
+- **THEN** only supported sharing journeys and protected legacy terminal access are offered
+- **AND** no game runtime, assets or game-specific tests ship in the current build.

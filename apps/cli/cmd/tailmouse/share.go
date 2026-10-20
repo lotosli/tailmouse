@@ -195,6 +195,11 @@ func runShare(ctx context.Context, stdin *os.File, args, environ []string, confi
 				_, _ = fmt.Fprintln(stderr, "Could not open a local browser; use the displayed link.")
 			}
 		}
+		if file, ok := stdout.(*os.File); ok && term.IsTerminal(int(file.Fd())) {
+			if _, err := io.WriteString(output, "Local management: Ctrl+] opens the menu; then q ends sharing. Keep this terminal open.\n"); err != nil {
+				return err
+			}
+		}
 		if options.TextEnabled && !options.JSON {
 			if _, err := io.WriteString(output, "Type a line and press Enter to update shared text. Ctrl+C ends sharing.\n"); err != nil {
 				return err

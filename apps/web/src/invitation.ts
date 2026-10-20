@@ -4,7 +4,7 @@ const MAX_INVITATION_BYTES = 1400;
 const MAX_CARD_BYTES = 1050;
 const CARD_KEYS = ['a', 'e', 'm', 'p', 's', 't', 'v', 'z'] as const;
 
-export type InvitationMode = 'escape' | 'leash';
+export type InvitationMode = 'leash';
 
 export interface MouseCard {
   readonly version: 1;
@@ -164,7 +164,7 @@ function isMouseCard(value: unknown): value is CardRecord & {
     keys.length === CARD_KEYS.length &&
     keys.every((key, index) => key === CARD_KEYS[index]) &&
     card.v === 1 &&
-    (card.m === 'escape' || card.m === 'leash') &&
+    card.m === 'leash' &&
     typeof card.t === 'string' &&
     card.t.length > 0 &&
     card.p === 44321 &&
@@ -174,7 +174,6 @@ function isMouseCard(value: unknown): value is CardRecord & {
     typeof card.e === 'number' &&
     Number.isSafeInteger(card.e) &&
     card.e >= 0 &&
-    ((card.m === 'escape' && card.a === 1 && card.z === 1) ||
-      (card.m === 'leash' && card.a === 2 && card.z === 2))
+    (card.m === 'leash' && card.a === 2 && card.z === 2)
   );
 }

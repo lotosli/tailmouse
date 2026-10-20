@@ -5,6 +5,10 @@ declare const __TAILMOUSE_RESOURCE_ASSETS__: {
   wasm: string;
   bytes: number;
 };
+export interface RuntimeProgress {
+  received: number;
+  total: number;
+}
 export class ResourceTransport {
   readonly #worker: Worker;
   readonly #pending = new Map<
@@ -13,6 +17,7 @@ export class ResourceTransport {
       resolve: (value: unknown) => void;
       reject: (error: Error) => void;
       timer: ReturnType<typeof setTimeout>;
+      progress?: ((value: RuntimeProgress) => void) | undefined;
     }
   >();
   #next = 0;
@@ -35,6 +40,7 @@ export class ResourceTransport {
         ok?: boolean;
         value?: unknown;
         fatal?: boolean;
+        progress?: RuntimeProgress;
       }>,
     ) => {
       if (event.data.fatal === true) {
@@ -43,6 +49,18 @@ export class ResourceTransport {
       }
       const entry = this.#pending.get(event.data.id ?? -1);
       if (entry === undefined) return;
+      if (event.data.progress !== undefined) {
+        const { received, total } = event.data.progress;
+        if (
+          Number.isSafeInteger(received) &&
+          Number.isSafeInteger(total) &&
+          received >= 0 &&
+          total > 0 &&
+          received <= total
+        )
+          entry.progress?.({ received, total });
+        return;
+      }
       this.#pending.delete(event.data.id!);
       clearTimeout(entry.timer);
       if (event.data.ok === true) entry.resolve(event.data.value);
@@ -54,16 +72,20 @@ export class ResourceTransport {
     address: string,
     key: string,
     loaded?: () => void,
+    progress?: (value: RuntimeProgress) => void,
   ): Promise<string> {
-    await this.call('load', 0, null, 60_000);
+    await this.call('load', 0, null, 60_000, progress);
     loaded?.();
     const value = await this.call('open', 0, { address, key }, 65_000);
     if (typeof value !== 'string' || value.length > 512)
       throw new Error('Invalid transport identity.');
     return value;
   }
-  async listen(mapURL: string): Promise<string> {
-    await this.call('load', 0, null, 60_000);
+  async listen(
+    mapURL: string,
+    progress?: (value: RuntimeProgress) => void,
+  ): Promise<string> {
+    await this.call('load', 0, null, 60_000, progress);
     const value = await this.call('listen', 0, { mapURL }, 35_000);
     if (typeof value !== 'string' || value.length === 0 || value.length > 24000)
       throw new Error('Listener unavailable.');
@@ -88,6 +110,7 @@ export class ResourceTransport {
     stream: number,
     value: unknown,
     timeout = 35_000,
+    progress?: (value: RuntimeProgress) => void,
   ): Promise<unknown> {
     if (this.#closed || this.#pending.size >= 160)
       return Promise.reject(new Error('Transport unavailable.'));
@@ -97,7 +120,7 @@ export class ResourceTransport {
         this.#pending.delete(id);
         reject(new Error('Transport operation timed out.'));
       }, timeout);
-      this.#pending.set(id, { resolve, reject, timer });
+      this.#pending.set(id, { resolve, reject, timer, progress });
       this.#worker.postMessage({
         id,
         op,

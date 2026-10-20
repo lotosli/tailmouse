@@ -30,7 +30,7 @@ const credentialPatterns = [
 
 describe('shared TMOUSE/1 frame fixtures', () => {
   it('reports mode-specific protocol identifiers without a continuous range', () => {
-    expect(BUILD.protocols).toEqual({ escape: 1, leash: 2, resource: 2 });
+    expect(BUILD.protocols).toEqual({ leash: 2, resource: 2 });
     expect(BUILD).not.toHaveProperty('protocolMin');
     expect(BUILD).not.toHaveProperty('protocolMax');
   });

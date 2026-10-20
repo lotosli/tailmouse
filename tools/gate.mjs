@@ -177,19 +177,6 @@ const phases = [
       ]);
     },
   ],
-  [
-    'Escape impairment smoke',
-    () =>
-      run('go', [
-        'test',
-        '-tags=tailcatintegration',
-        '-count=1',
-        '-failfast',
-        '-timeout=2m',
-        '-run=TestImpairment|TestEscapeNetworkRelayDisconnect|TestEscapeNetworkMatrix/rtt80-jitter20-loss1-kbit256$',
-        './apps/cli/internal/transport/tailcat',
-      ]),
-  ],
   ['browser end-to-end tests', () => runPnpm(['run', 'e2e'])],
   ...(!quick
     ? [
@@ -209,10 +196,6 @@ const phases = [
         [
           'Go race and vulnerability checks',
           () => run(process.execPath, ['tools/go-gate.mjs', 'release']),
-        ],
-        [
-          'Escape representative network profiles and outages',
-          () => runPnpm(['run', 'test:escape-network']),
         ],
         [
           'Unix Leash representative network profiles',

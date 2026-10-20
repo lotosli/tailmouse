@@ -56,14 +56,6 @@ func parseFlags(args []string, options *Options) (bool, []string, error) {
 	options.Command = remaining[0]
 	remaining = remaining[1:]
 	switch options.Command {
-	case "escape":
-		flags.StringVar(&options.Escape.Control, "control", options.Escape.Control, "touch or tilt")
-		flags.Int64Var(&options.Escape.Seed, "seed", options.Escape.Seed, "deterministic seed")
-		flags.StringVar(&options.Escape.Map, "map", options.Escape.Map, "map name or random")
-		flags.DurationVar(&options.Escape.Round, "round", options.Escape.Round, "round duration (30s to 45s)")
-		flags.BoolVar(&options.Escape.PhoneRender, "phone-render", options.Escape.PhoneRender, "render phone map")
-		flags.BoolVar(&options.Escape.TerminalRender, "terminal-render", options.Escape.TerminalRender, "render terminal map")
-		flags.BoolVar(&options.Escape.ShowNet, "show-net", options.Escape.ShowNet, "show network HUD")
 	case "leash":
 		flags.StringVar(&options.Leash.Title, "title", options.Leash.Title, "session title")
 		flags.BoolVar(&options.Leash.Readonly, "readonly", options.Leash.Readonly, "view-only browser")
@@ -144,9 +136,7 @@ func parseFlags(args []string, options *Options) (bool, []string, error) {
 	var supplied []string
 	flags.Visit(func(current *flag.Flag) { supplied = append(supplied, current.Name) })
 	for _, name := range supplied {
-		if name == "seed" {
-			options.Escape.SeedSet = true
-		}
+
 		if name == "config" && options.ConfigPath == "" {
 			return false, nil, &Error{"config", Flag}
 		}

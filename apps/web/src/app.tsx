@@ -15,8 +15,6 @@ import {
   type SessionStage,
 } from './session.ts';
 import { TailcatTransportError } from './transport/tailcat/adapter.ts';
-import { EscapeView, EscapeResult } from './escape-view.tsx';
-import type { GameResult } from './protocol/game.ts';
 import { LeashView } from './leash-view.tsx';
 import { TerminalDisplayError, type LeashState } from './leash.ts';
 import type { ProcessState } from './protocol/terminal.ts';
@@ -213,7 +211,7 @@ export function initialView(
 export function titleFor(invitation: MouseCard | InvitationError): string {
   return invitation instanceof InvitationError
     ? 'TailMouse'
-    : `TailMouse ${invitation.mode === 'escape' ? 'Escape' : 'Leash'}`;
+    : `TailMouse Leash`;
 }
 
 export function retryAllowed(
@@ -279,7 +277,6 @@ export function App() {
   const [session, setSession] = useState<BrowserSession>();
   const [welcome, setWelcome] = useState<Welcome>();
   const [metrics, setMetrics] = useState<ConnectionMetrics>();
-  const [result, setResult] = useState<GameResult>();
   const [task, setTask] = useState<LeashState>();
   const [showNet, setShowNet] = useState(true);
   const [accessMode, setAccessMode] = useState<'unknown' | 'code' | 'link'>(
@@ -342,7 +339,6 @@ export function App() {
       setSession(undefined);
       setWelcome(undefined);
       setTask(undefined);
-      setResult(undefined);
       setView({ detail: new InvitationError().message, stage: 'error' });
     };
     const rejectRestoredPage = (event: PageTransitionEvent): void => {
@@ -420,7 +416,7 @@ export function App() {
     setMetrics(session.inspectMetrics());
     const timer = setInterval(() => {
       setMetrics(session.inspectMetrics());
-      setShowNet(session.game?.inspect().init?.presentation.show_net ?? true);
+      setShowNet(true);
     }, 1000);
     return () => clearInterval(timer);
   }, [session]);
@@ -447,7 +443,6 @@ export function App() {
     let active = true;
     setSession(undefined);
     setWelcome(undefined);
-    setResult(undefined);
     setShowNet(true);
     const forget = (): void => {
       accessCode.current = undefined;
@@ -489,7 +484,6 @@ export function App() {
           reason = await connected.done;
         } finally {
           if (active) {
-            setResult(connected.game?.inspect().result);
             if (connected.terminal !== undefined)
               setTask(connected.terminal.inspect());
           }
@@ -574,26 +568,10 @@ export function App() {
 
   return (
     <main
-      class={`shell${session?.game !== undefined || result !== undefined ? ' shell-game' : ''}${session?.terminal !== undefined ? ' shell-terminal' : ''}`}
+      class={`shell${session?.terminal !== undefined ? ' shell-terminal' : ''}`}
     >
       <p class="eyebrow">Encrypted by Tailcat</p>
       <h1>{title}</h1>
-      {session?.game !== undefined ? (
-        <div class="game-session-bar">
-          <span>{view.detail}</span>
-          {exitControl}
-        </div>
-      ) : null}
-      {session?.game !== undefined && welcome !== undefined ? (
-        <EscapeView
-          game={session.game}
-          metrics={metrics}
-          canInput={welcome.capabilities.includes('game_input')}
-          canDash={welcome.capabilities.includes('dash')}
-        />
-      ) : result !== undefined ? (
-        <EscapeResult result={result} />
-      ) : null}
       {session?.terminal !== undefined && welcome !== undefined ? (
         <LeashView
           terminal={session.terminal}
@@ -648,8 +626,7 @@ export function App() {
             <dd>DERP relay</dd>
             <dt>Access</dt>
             <dd>
-              {welcome.capabilities.includes('terminal_input') ||
-              welcome.capabilities.includes('game_input')
+              {welcome.capabilities.includes('terminal_input')
                 ? 'Control'
                 : 'Read only'}
             </dd>
@@ -681,7 +658,7 @@ export function App() {
             ) : null}
           </dl>
         ) : null}
-        {session?.game === undefined ? exitControl : null}
+        {exitControl}
         {accessMode === 'code' &&
         rememberedAccessCode.current === undefined &&
         session === undefined &&
@@ -756,7 +733,6 @@ export function App() {
         ) : null}
         <p>{cacheStatus}</p>
         <p>Build {BUILD.version}</p>
-        <p>TMOUSE Escape protocol {BUILD.protocols.escape}</p>
         <p>TMOUSE Leash protocol {BUILD.protocols.leash}</p>
         <p>Tailcat revision {BUILD.tailcatRevision}</p>
         <dl aria-label="Startup timing">

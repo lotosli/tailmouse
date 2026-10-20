@@ -14,8 +14,6 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
-
-	"tailmouse/apps/cli/internal/escape"
 )
 
 const DefaultWebBaseURL = "https://link.tailmouse.com/"
@@ -68,17 +66,6 @@ type Relay struct {
 	RegionName string
 }
 
-type Escape struct {
-	Control        string
-	Seed           int64
-	SeedSet        bool
-	Map            string
-	Round          time.Duration
-	PhoneRender    bool
-	TerminalRender bool
-	ShowNet        bool
-}
-
 type Leash struct {
 	Argv             []string
 	Title            string
@@ -109,7 +96,6 @@ type Options struct {
 	JSON       bool
 	Quiet      bool
 	Verbose    bool
-	Escape     Escape
 	Leash      Leash
 	Sources    map[string]Source
 }
@@ -120,9 +106,8 @@ func defaults(command string) Options {
 		ttl = 0
 	}
 	return Options{
-		Command: command, WebBaseURL: DefaultWebBaseURL, TTL: ttl, Once: command == "escape",
+		Command: command, WebBaseURL: DefaultWebBaseURL, TTL: ttl, Once: false,
 		Relay:   Relay{DERPPort: 443, STUNPort: 3478, RegionID: 900, RegionCode: "mouse", RegionName: "TailMouse Custom DERP"},
-		Escape:  Escape{Control: "touch", Map: "random", Round: escape.DefaultRound, PhoneRender: true, TerminalRender: true, ShowNet: true},
 		Leash:   Leash{PostExitHost: true, ReconnectGrace: 30 * time.Second, ScrollbackBytes: 1 << 20, StartOn: "connect-or-enter", LocalInput: true},
 		Sources: make(map[string]Source),
 	}
@@ -267,18 +252,7 @@ func validate(options Options) error {
 	if !safeText(options.Relay.RegionCode, 32) || !safeText(options.Relay.RegionName, 128) {
 		return bad("derp region labels")
 	}
-	if options.Command == "escape" {
-		if options.Escape.Control != "touch" && options.Escape.Control != "tilt" {
-			return bad("control")
-		}
-		maps := escape.MapNames()
-		if options.Escape.Map != "random" && !slices.Contains(maps[:], options.Escape.Map) {
-			return bad("map")
-		}
-		if options.Escape.Round < escape.MinRound || options.Escape.Round > escape.MaxRound {
-			return bad("round")
-		}
-	}
+
 	if options.Command == "leash" {
 		if options.SourceOf("reconnect-grace") != Default {
 			return bad("reconnect-grace")
