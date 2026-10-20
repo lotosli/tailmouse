@@ -1,0 +1,33 @@
+all modules verified
+fuzz: elapsed: 0s, gathering baseline coverage: 0/169 completed
+fuzz: elapsed: 1s, gathering baseline coverage: 169/169 completed, now fuzzing with 4 workers
+fuzz: elapsed: 3s, execs: 46878 (15604/sec), new interesting: 4 (total: 173)
+fuzz: elapsed: 6s, execs: 105684 (19609/sec), new interesting: 8 (total: 177)
+fuzz: elapsed: 9s, execs: 175139 (23172/sec), new interesting: 10 (total: 179)
+fuzz: elapsed: 10s, execs: 196293 (19673/sec), new interesting: 12 (total: 181)
+PASS
+ok  	tailmouse/apps/cli/internal/invitation	10.097s
+fuzz: elapsed: 0s, gathering baseline coverage: 0/32 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 32/32 completed, now fuzzing with 4 workers
+fuzz: elapsed: 3s, execs: 71301 (23765/sec), new interesting: 0 (total: 32)
+fuzz: elapsed: 6s, execs: 135177 (21287/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 9s, execs: 179512 (14780/sec), new interesting: 2 (total: 34)
+fuzz: elapsed: 10s, execs: 202745 (20914/sec), new interesting: 2 (total: 34)
+PASS
+ok  	tailmouse/apps/cli/internal/invitation	10.121s
+fuzz: elapsed: 0s, gathering baseline coverage: 0/205 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 205/205 completed, now fuzzing with 4 workers
+fuzz: elapsed: 3s, execs: 99602 (33196/sec), new interesting: 8 (total: 213)
+fuzz: elapsed: 6s, execs: 99602 (0/sec), new interesting: 8 (total: 213)
+fuzz: elapsed: 9s, execs: 241952 (47474/sec), new interesting: 10 (total: 215)
+fuzz: elapsed: 11s, execs: 241952 (0/sec), new interesting: 10 (total: 215)
+PASS
+ok  	tailmouse/apps/cli/internal/protocol	11.033s
+fuzz: elapsed: 0s, gathering baseline coverage: 0/10 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 10/10 completed, now fuzzing with 4 workers
+fuzz: elapsed: 3s, execs: 51541 (17178/sec), new interesting: 0 (total: 10)
+fuzz: elapsed: 6s, execs: 95710 (14723/sec), new interesting: 1 (total: 11)
+fuzz: elapsed: 9s, execs: 144816 (16366/sec), new interesting: 1 (total: 11)
+fuzz: elapsed: 10s, execs: 161227 (14813/sec), new interesting: 1 (total: 11)
+PASS
+ok  	tailmouse/apps/cli/internal/share	10.117s

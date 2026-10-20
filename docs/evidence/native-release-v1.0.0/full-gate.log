@@ -1,0 +1,1278 @@
+$ node tools/run-gate.mjs
+
+==> architecture
+Architecture checks passed.
+
+==> OpenSpec
+✓ change/add-protected-short-invitations
+✓ spec/browser-client
+✓ spec/cli-configuration
+✓ change/complete-simple-sharing
+✓ change/default-hosted-resource-config
+✓ spec/engineering-system
+✓ change/finish-first-share-v1
+✓ change/improve-resource-onboarding
+✓ change/integrate-resource-release
+✓ spec/invitation-card
+✓ spec/leash-mode
+✓ spec/observability
+✓ spec/relay-configuration
+✓ spec/release-delivery
+✓ spec/session-foundation
+✓ spec/tmouse-protocol
+✓ spec/transport-boundary
+✓ change/update-tailcat-v0-6
+Totals: 18 passed, 0 failed (18 items)
+Note: Schema commands are experimental and may change.
+✓ Schema 'tailmouse-sdd' is valid
+
+==> format
+Checking formatting...
+All matched files use Prettier code style!
+
+==> build identity, release and static asset tests
+✔ static Worker binds workspace routes and keeps business traffic out of the edge (11.922003ms)
+✔ Wasm negotiation respects refusal, quality, raw decoding and HEAD (25.158702ms)
+✔ static objects retain their manifest MIME and encoding despite provider defaults (2.293666ms)
+✔ build identity verifies the gitlink and distinguishes development from clean release builds (205.544174ms)
+✔ build identity rejects missing metadata and unrecorded dependency advancement (83.298087ms)
+✔ the host builder preserves portable release flags and fails before claiming an invalid build (368.081904ms)
+✔ the checked-in edge config exactly matches its reviewed deployment boundary (3.980754ms)
+✔ every missing or changed edge config field fails closed without echoing input (3.395578ms)
+✔ extra deployments, storage, logging and binding overrides are rejected (0.974894ms)
+✔ duplicate or missing rate-limit bindings cannot preserve a partial configuration (1.06058ms)
+✔ cross-version acceptance fixes the phase-one baseline and both mismatch directions (1.278603ms)
+✔ cross-version acceptance proves rejection before transport, disclosure and startup (0.231102ms)
+✔ cross-version acceptance keeps invitation-bearing process output bounded and private (0.326384ms)
+✔ release gate runs race checks for every supported release target (457.558896ms)
+✔ only Windows ARM64 reports its unsupported race detector and still checks vulnerabilities (182.061864ms)
+✔ race failures and invalid target output stop before vulnerability checks (516.057066ms)
+✔ CI keeps the complete fail-fast matrix ahead of packaging and fuzzing (0.6486ms)
+✔ CI checks current Tailcat main without updating the recorded gitlink (0.489154ms)
+✔ root build prepares Tailcat and Web artifacts before the edge build (0.285303ms)
+✔ quick and full delivery gates build the exact static prerequisite before edge checks (221.353206ms)
+✔ static prerequisite failures stop before all dependent edge work (197.745202ms)
+✔ package-manager recipes pin all six published target digests (3.624507ms)
+✔ POSIX installer selects the platform, verifies bytes and preserves existing files on failure (69.083575ms)
+✔ Leash acceptance preserves exact smoke, matrix, AI CLI, official and Chrome selection (489.98999ms)
+✔ Leash acceptance rejects unknown or duplicate selectors before any build (281.916972ms)
+✔ Leash acceptance accepts the pnpm argument separator (86.23799ms)
+✔ Leash acceptance never proceeds after a prerequisite failure (99.168201ms)
+✔ edge compiler inventory binds exact source bytes, current cborg, platform import and SQLite export (11.419138ms)
+✔ edge compiler inventory rejects changed sources, unknown input/imports, and incomplete maps or exports (7.56408ms)
+✔ edge release generation and distribution verification bind identity, config, compiler and every file (370.727966ms)
+✔ edge release rejects source/config/compiler/Web drift and does not reflect diagnostics (494.456267ms)
+✔ release notice coverage requires every actual dependency and the recorded source revision (16.902538ms)
+✔ distribution notice bytes must match the checked-in source inventory (7.150107ms)
+✔ third-party notices preserve nested bytes, provenance and stable ordering (1.143163ms)
+✔ third-party notice rendering rejects missing grants, ambiguous identities and unsafe source data (2.81638ms)
+✔ project notices preserve the complete license and accepted project attribution (0.789289ms)
+✔ project notices reject missing, changed, excessive and linked source material (3.107902ms)
+✔ notice command explicitly updates sources and fails closed on drift or a missing grant (1140.876986ms)
+✔ native inspection admits exactly the requested six targets with source, Go and dependency identity (1.328036ms)
+✔ native inspection rejects wrong executable, toolchain, target, source, dynamic build or dependency (2.293336ms)
+✔ trimmed metadata alone cannot pass without both embedded version stamps (0.559679ms)
+✔ archive matrix requires all six unique single-executable archives with platform-specific names (2.668371ms)
+✔ deployment staging verifies every byte and both Wasm representations before replacement (19.294729ms)
+✔ edge SBOM binds the complete bundle and current compiler/runtime identities separately (16.960433ms)
+✔ native SBOM binds archive, contained bytes, resolved Tailcat and actual module inventory (0.632436ms)
+✔ Web SBOM separates npm and Wasm libraries and includes every supplied static file (0.700998ms)
+✔ SBOM generation rejects missing, duplicate, malformed and unresolved identities (3.087001ms)
+✔ checksum manifest binds actual bytes and rejects unsafe, duplicate or self paths (1.275969ms)
+✔ release content rejects recognizable invitations, ConnBlobs and private keys without echoing them (1.183653ms)
+✔ SBOM verification permits generation metadata but rejects inventory and identity tampering (6.700921ms)
+✔ transport build bytes do not depend on tags in the source checkout (423.98314ms)
+✔ Tailcat asset paths and checksums derive only from verified bytes (4.796482ms)
+✔ gzip and Brotli artifacts are deterministic and preserve original bytes (3.457118ms)
+✔ static object metadata and hosting policy are exact and backend-free (0.737883ms)
+✔ the non-root read-only Nginx image keeps every temporary path on tmpfs (0.619277ms)
+✔ static inspection rejects external and inline executable resources (1.231954ms)
+✔ Wasm inventory uses embedded compiled modules and exact clean revision (14.369336ms)
+✔ Wasm inventory requires trimmed source paths in the compiled artifact (0.793635ms)
+✔ Wasm inventory fails closed on missing, altered and unknown metadata (1.479731ms)
+✔ npm inventory resolves shipped modules only, deduplicates and strips paths (3.060792ms)
+✔ Owned resource Wasm binds source revision and only the pinned workspace dependency (1.127029ms)
+ℹ tests 61
+ℹ suites 0
+ℹ pass 61
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3211.252982
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------
+ℹ file                 | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------
+ℹ deploy               |        |          |         | 
+ℹ  resource            |        |          |         | 
+ℹ   worker.ts          | 100.00 |    98.92 |  100.00 | 
+ℹ tools                |        |          |         | 
+ℹ  tailcat-source.mjs  | 100.00 |   100.00 |  100.00 | 
+ℹ ---------------------------------------------------------------------
+ℹ all files            | 100.00 |    98.96 |  100.00 | 
+ℹ ---------------------------------------------------------------------
+ℹ end of coverage report
+
+==> Go static checks
+all modules verified
+
+==> Tailcat static checks
+all modules verified
+[tailcat:check] passed at 52fbad323e9d with an unchanged submodule.
+
+==> Tailcat native and WebAssembly builds
+2026/10/20 07:18:51 built dist in /tmp/tailmouse-tailcat-wasm-bjuWkG/dist in 1.456s
+[tailcat:build] passed at 52fbad323e9d with an unchanged submodule.
+
+==> Web static artifact prerequisite
+$ node ../../tools/web-task.mjs build
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 58 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/NOTICE                                                                                             0.19 kB
+dist/.tailmouse/bridge.html                                                                             0.54 kB │ gzip:     0.34 kB
+dist/assets/resource-worker-DwucB-rz.js.br                                                              0.89 kB
+dist/assets/resource-worker-DwucB-rz.js.gz                                                              0.97 kB
+dist/index.html                                                                                         1.23 kB │ gzip:     0.56 kB
+dist/assets/resource-worker-DwucB-rz.js                                                                 2.01 kB
+dist/service-worker.js                                                                                  2.90 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.br           4.13 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz           4.34 kB
+dist/assets/index-CP0MTyoa.css.br                                                                       4.48 kB
+dist/assets/index-CP0MTyoa.css.gz                                                                       4.81 kB
+dist/.tailmouse/bridge.js                                                                               5.70 kB
+dist/.tailmouse/shim.js                                                                                 6.47 kB
+dist/.tailmouse/sw.js                                                                                   6.55 kB
+dist/LICENSE                                                                                           11.35 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js             16.99 kB
+dist/web-manifest.json                                                                                 20.47 kB │ gzip:     4.75 kB
+dist/assets/index-BETp3mTp.js.br                                                                      127.36 kB
+dist/assets/index-BETp3mTp.js.gz                                                                      138.70 kB
+dist/THIRD_PARTY_NOTICES.txt                                                                          396.81 kB │ gzip:    37.64 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.br   5,039.80 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm.br      5,107.91 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.gz   6,260.34 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm.gz      6,335.50 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm     26,955.58 kB │ gzip: 6,340.11 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm        27,277.76 kB │ gzip: 6,417.77 kB
+dist/.tailmouse/content.css                                                                             0.21 kB │ gzip:     0.16 kB
+dist/assets/index-CP0MTyoa.css                                                                         18.90 kB │ gzip:     4.85 kB
+dist/assets/index-BETp3mTp.js                                                                         510.44 kB │ gzip:   140.19 kB │ map: 1,297.29 kB
+
+✓ built in 10.00s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[33m[PLUGIN_TIMINGS] [0mYour build spent 94% of 10.0s inside plugin hooks (9.4s).
+Measured inside the callback, so queue time is excluded and time the callback itself awaited is not:
+  - tailmouse-tailcat-artifacts generateBundle (92%, 9.2s, 1 call)
+Those rows are 92% of the build; the rest of the 94% is below.
+Not measurable — 1 hook whose calls overlap, so elapsed time covers work other calls were doing. Profile with `node --cpu-prof`:
+  - vite:css transform (4 calls)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+
+
+==> typecheck
+Scope: 2 of 3 workspace projects
+apps/link-edge typecheck$ node build.mjs --prepare && wrangler types .artifacts/worker.d.ts --config wrangler.jsonc && tsc --noEmit --pretty false -p tsconfig.json && tsc --noEmit --pretty false -p tsconfig.test.json
+apps/web typecheck$ tsc --noEmit --pretty false -p tsconfig.json && tsc --noEmit --pretty false -p tsconfig.worker.json
+apps/link-edge typecheck: Verified 35 static edge objects.
+apps/link-edge typecheck: [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProxy environment variables detected. We'll use your proxy for fetch requests.[0m
+apps/link-edge typecheck:  ⛅️ wrangler 4.129.0 (update available 4.151.2)
+apps/link-edge typecheck: ───────────────────────────────────────────────
+apps/link-edge typecheck: Generating project types...
+apps/link-edge typecheck: interface __BaseEnv_Env {
+apps/link-edge typecheck: 	STATIC_ASSETS: R2Bucket;
+apps/link-edge typecheck: 	CREATE_IP: RateLimit;
+apps/link-edge typecheck: 	CREATE_EDGE: RateLimit;
+apps/link-edge typecheck: 	READ_IP: RateLimit;
+apps/link-edge typecheck: 	READ_EDGE: RateLimit;
+apps/link-edge typecheck: 	SHORT_INVITATIONS: DurableObjectNamespace<import("../src/index").ShortInvitation>;
+apps/link-edge typecheck: }
+apps/link-edge typecheck: declare namespace Cloudflare {
+apps/link-edge typecheck: 	interface GlobalProps {
+apps/link-edge typecheck: 		mainModule: typeof import("../src/index");
+apps/link-edge typecheck: 		durableNamespaces: "ShortInvitation";
+apps/link-edge typecheck: 	}
+apps/link-edge typecheck: 	interface Env extends __BaseEnv_Env {}
+apps/link-edge typecheck: }
+apps/link-edge typecheck: interface Env extends __BaseEnv_Env {}
+apps/link-edge typecheck: Generating runtime types...
+apps/link-edge typecheck: Runtime types generated.
+apps/link-edge typecheck: ✨ Types written to .artifacts/worker.d.ts
+apps/link-edge typecheck: 📖 Read about runtime types
+apps/link-edge typecheck: https://developers.cloudflare.com/workers/languages/typescript/#generate-types
+apps/link-edge typecheck: 📣 Remember to rerun 'wrangler types' after you change your wrangler.jsonc file.
+apps/link-edge typecheck: Done
+apps/web typecheck: Done
+
+==> lint
+$ oxlint --type-aware --deny-warnings --ignore-pattern third_party/tailcat .
+
+==> unit tests
+Scope: 2 of 3 workspace projects
+apps/link-edge test$ node build.mjs --prepare && vitest run
+apps/web test$ vitest run --passWithNoTests
+apps/link-edge test: Verified 35 static edge objects.
+apps/web test:  RUN  v4.1.11 /workspace/tailmouse/apps/web
+apps/web test: 7:19:12 AM [vite] (client) Re-optimizing dependencies because vite config has changed
+apps/link-edge test:  RUN  v4.1.11 /workspace/tailmouse/apps/link-edge
+apps/link-edge test:  Test Files  4 passed (4)
+apps/link-edge test:       Tests  68 passed (68)
+apps/link-edge test:    Start at  07:19:13
+apps/link-edge test:    Duration  956ms (transform 321ms, setup 0ms, import 587ms, tests 414ms, environment 0ms)
+apps/link-edge test: Done
+apps/web test:  Test Files  28 passed (28)
+apps/web test:       Tests  290 passed (290)
+apps/web test:    Start at  07:19:12
+apps/web test:    Duration  7.23s (transform 2.41s, setup 0ms, import 4.44s, tests 18.81s, environment 3ms)
+apps/web test: Done
+
+==> Tailcat tests
+ok  	github.com/tailscale/tailcat	4.211s
+?   	github.com/tailscale/tailcat/cmd/libtailcat	[no test files]
+ok  	github.com/tailscale/tailcat/cmd/tailcat	18.804s
+?   	github.com/tailscale/tailcat/cmd/tailcat-web	[no test files]
+?   	github.com/tailscale/tailcat/cmd/tailcat-webdist	[no test files]
+ok  	github.com/tailscale/tailcat/internal/buildtags	0.002s
+?   	github.com/tailscale/tailcat/internal/buildtags/printtags	[no test files]
+ok  	github.com/tailscale/tailcat/internal/capi	5.324s
+?   	github.com/tailscale/tailcat/internal/capitest	[no test files]
+ok  	github.com/tailscale/tailcat/internal/localhostdns	0.005s
+ok  	github.com/tailscale/tailcat/internal/perf	2.591s
+?   	github.com/tailscale/tailcat/internal/wasmbuild	[no test files]
+?   	github.com/tailscale/tailcat/tool/directtest	[no test files]
+?   	github.com/tailscale/tailcat/tool/updateflakes	[no test files]
+ok  	github.com/tailscale/tailcat/web	0.008s
+ok  	github.com/tailscale/tailcat/webdemo	0.008s
+[tailcat:test] passed at 52fbad323e9d with an unchanged submodule.
+
+==> TypeScript coverage
+Scope: 2 of 3 workspace projects
+apps/link-edge coverage$ node build.mjs --prepare && vitest run --coverage
+apps/web coverage$ node ../../tools/web-task.mjs coverage
+apps/link-edge coverage: Verified 35 static edge objects.
+apps/link-edge coverage:  RUN  v4.1.11 /workspace/tailmouse/apps/link-edge
+apps/link-edge coverage:       Coverage enabled with v8
+apps/web coverage:  RUN  v4.1.11 /workspace/tailmouse/apps/web
+apps/web coverage:       Coverage enabled with v8
+apps/web coverage: 7:19:43 AM [vite] (client) Re-optimizing dependencies because vite config has changed
+apps/link-edge coverage:  Test Files  4 passed (4)
+apps/link-edge coverage:       Tests  68 passed (68)
+apps/link-edge coverage:    Start at  07:19:42
+apps/link-edge coverage:    Duration  775ms (transform 259ms, setup 0ms, import 457ms, tests 286ms, environment 0ms)
+apps/link-edge coverage:  % Coverage report from v8
+apps/link-edge coverage: -------------------|---------|----------|---------|---------|-------------------
+apps/link-edge coverage: File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+apps/link-edge coverage: -------------------|---------|----------|---------|---------|-------------------
+apps/link-edge coverage: All files          |   99.37 |    98.98 |   97.36 |   99.64 |                   
+apps/link-edge coverage:  api.ts            |     100 |    98.86 |   94.44 |     100 | 61                
+apps/link-edge coverage:  index.ts          |   98.55 |    98.11 |     100 |   98.33 | 105               
+apps/link-edge coverage:  ...-invitation.ts |   98.43 |    97.72 |     100 |     100 | 73                
+apps/link-edge coverage: -------------------|---------|----------|---------|---------|-------------------
+apps/link-edge coverage: =============================== Coverage summary ===============================
+apps/link-edge coverage: Statements   : 99.37% ( 317/319 )
+apps/link-edge coverage: Branches     : 98.98% ( 292/295 )
+apps/link-edge coverage: Functions    : 97.36% ( 37/38 )
+apps/link-edge coverage: Lines        : 99.64% ( 284/285 )
+apps/link-edge coverage: ================================================================================
+apps/link-edge coverage: Done
+apps/web coverage:  Test Files  28 passed (28)
+apps/web coverage:       Tests  290 passed (290)
+apps/web coverage:    Start at  07:19:43
+apps/web coverage:    Duration  8.22s (transform 1.98s, setup 0ms, import 4.13s, tests 20.67s, environment 3ms)
+apps/web coverage:  % Coverage report from v8
+apps/web coverage: -------------------|---------|----------|---------|---------|-------------------
+apps/web coverage: File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+apps/web coverage: -------------------|---------|----------|---------|---------|-------------------
+apps/web coverage: All files          |   82.94 |    80.42 |   80.34 |   85.08 |                   
+apps/web coverage:  web/content       |   52.81 |    48.16 |   45.61 |   54.54 |                   
+apps/web coverage:   bridge.ts        |       0 |        0 |       0 |       0 | 1-206             
+apps/web coverage:   shim.ts          |   84.07 |    66.36 |   61.53 |   85.32 | ...58,176-178,245 
+apps/web coverage:   sw.ts            |   71.32 |    77.33 |      72 |      75 | ...64,236-245,251 
+apps/web coverage:  web/src           |   96.27 |    94.29 |   94.47 |   96.63 |                   
+apps/web coverage:   app.tsx          |   95.17 |    90.31 |      95 |    95.6 | ...33,552-555,665 
+apps/web coverage:   invitation.ts    |   98.33 |    98.57 |     100 |   98.18 | 159               
+apps/web coverage:   latency.ts       |   93.02 |       95 |     100 |    92.5 | 24-26             
+apps/web coverage:   leash-view.tsx   |   93.92 |     91.9 |   94.73 |   94.27 | ...71,375,396,633 
+apps/web coverage:   main.tsx         |   96.42 |    94.73 |     100 |   96.15 | 12                
+apps/web coverage:   session.ts       |   96.83 |    96.74 |   88.88 |   97.42 | ...45,373,392,471 
+apps/web coverage:   ...invitation.ts |   96.61 |    96.15 |   85.71 |   98.18 | 121               
+apps/web coverage:  web/src/protocol  |   95.15 |    95.22 |   96.96 |   97.07 |                   
+apps/web coverage:   frame.ts         |   96.21 |    95.08 |   95.65 |    97.5 | ...97,605,612-613 
+apps/web coverage:   values.ts        |   90.74 |    92.06 |     100 |   94.84 | 70,77,98,139,158  
+apps/web coverage:  web/src/resources |    75.2 |    72.65 |   71.71 |   79.05 |                   
+apps/web coverage:   browser-host.ts  |   87.65 |    87.57 |   72.97 |   91.44 | ...06,473,491-493 
+apps/web coverage:   ...ser-share.tsx |   96.21 |       86 |   97.22 |     100 | ...64,336-340,378 
+apps/web coverage:   deployment.ts    |   92.59 |    94.28 |     100 |      96 | 64                
+apps/web coverage:   help.tsx         |   96.87 |    94.73 |   94.44 |   96.29 | 141               
+apps/web coverage:   invitation.ts    |   97.29 |    97.67 |     100 |     100 | 30                
+apps/web coverage:   landing.tsx      |     100 |       75 |     100 |     100 | 47                
+apps/web coverage:   preview.ts       |   49.55 |    41.21 |   53.57 |   52.88 | ...42-378,386-413 
+apps/web coverage:   session.ts       |   62.29 |    65.92 |   54.23 |   68.82 | ...53-680,689-694 
+apps/web coverage:   ...er-fixture.ts |   96.15 |     87.5 |     100 |     100 | 11                
+apps/web coverage:   ...er-panels.tsx |   96.96 |    80.64 |   96.55 |     100 | ...97,235-250,323 
+apps/web coverage:   transfers.ts     |   88.23 |    89.62 |   76.47 |   93.54 | ...47,165,173,190 
+apps/web coverage:   wire.ts          |   98.11 |    94.59 |     100 |   98.11 | 37                
+apps/web coverage:   workspace.tsx    |    66.2 |    59.49 |   54.83 |    69.3 | ...86-889,958-960 
+apps/web coverage:  ...nsport/tailcat |   90.86 |    88.31 |   94.02 |   92.28 |                   
+apps/web coverage:   adapter.ts       |   89.12 |    85.93 |   93.33 |   89.08 | ...67,481,485,510 
+apps/web coverage:   ...rce-worker.ts |   88.33 |    84.44 |   85.71 |   96.29 | 48,106            
+apps/web coverage:   resource.ts      |   98.63 |    96.55 |     100 |     100 | 50-51             
+apps/web coverage: -------------------|---------|----------|---------|---------|-------------------
+apps/web coverage: =============================== Coverage summary ===============================
+apps/web coverage: Statements   : 82.94% ( 3428/4133 )
+apps/web coverage: Branches     : 80.42% ( 2453/3050 )
+apps/web coverage: Functions    : 80.34% ( 601/748 )
+apps/web coverage: Lines        : 85.08% ( 3212/3775 )
+apps/web coverage: ================================================================================
+apps/web coverage: Done
+
+==> Go coverage
+all modules verified
+ok  	tailmouse/apps/cli/cmd/tailmouse	(cached)	coverage: 77.9% of statements
+ok  	tailmouse/apps/cli/internal/config	(cached)	coverage: 95.0% of statements
+ok  	tailmouse/apps/cli/internal/flow	(cached)	coverage: 90.6% of statements
+ok  	tailmouse/apps/cli/internal/invitation	(cached)	coverage: 93.5% of statements
+ok  	tailmouse/apps/cli/internal/leash	(cached)	coverage: 94.6% of statements
+ok  	tailmouse/apps/cli/internal/platform/pty	(cached)	coverage: 84.8% of statements
+ok  	tailmouse/apps/cli/internal/protocol	(cached)	coverage: 92.4% of statements
+ok  	tailmouse/apps/cli/internal/session	(cached)	coverage: 90.5% of statements
+ok  	tailmouse/apps/cli/internal/share	(cached)	coverage: 81.0% of statements
+ok  	tailmouse/apps/cli/internal/transport/tailcat	(cached)	coverage: 79.6% of statements
+ok  	tailmouse/tools/archiveinfo	(cached)	coverage: 88.7% of statements
+tailmouse/apps/cli/cmd/tailmouse/console.go:29:			openStartupConsole		91.3%
+tailmouse/apps/cli/cmd/tailmouse/console.go:65:			consoleDescriptor		85.7%
+tailmouse/apps/cli/cmd/tailmouse/console.go:77:			Size				100.0%
+tailmouse/apps/cli/cmd/tailmouse/console.go:84:			Close				100.0%
+tailmouse/apps/cli/cmd/tailmouse/console_unix.go:16:		prepare				92.3%
+tailmouse/apps/cli/cmd/tailmouse/console_unix.go:37:		restore				100.0%
+tailmouse/apps/cli/cmd/tailmouse/console_unix.go:48:		pollConsole			94.1%
+tailmouse/apps/cli/cmd/tailmouse/console_unix.go:76:		ReadKey				100.0%
+tailmouse/apps/cli/cmd/tailmouse/console_unix.go:84:		ReadInput			87.5%
+tailmouse/apps/cli/cmd/tailmouse/console_unix.go:110:		Write				81.2%
+tailmouse/apps/cli/cmd/tailmouse/credential.go:17:		Present				85.0%
+tailmouse/apps/cli/cmd/tailmouse/credential.go:46:		Close				28.6%
+tailmouse/apps/cli/cmd/tailmouse/credential_unix.go:12:		openCredentialTerminal		57.1%
+tailmouse/apps/cli/cmd/tailmouse/credential_unix.go:25:		terminalFileWritable		100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:59:		terminal			100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:65:		newDiagnostics			100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:69:		processState			100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:81:		begin				91.7%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:99:		accessState			77.8%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:116:		invitationPresented		100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:121:		listening			71.4%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:135:		observe				100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:161:		configurationFailure		100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:171:		closed				100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:179:		cleanupFailure			100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:183:		drainTimeout			100.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:188:		write				96.0%
+tailmouse/apps/cli/cmd/tailmouse/diagnostics.go:227:		humanDiagnostic			100.0%
+tailmouse/apps/cli/cmd/tailmouse/leash.go:18:			watchLeash			74.3%
+tailmouse/apps/cli/cmd/tailmouse/leash.go:597:			leashRetentionTimer		100.0%
+tailmouse/apps/cli/cmd/tailmouse/leash.go:605:			outcomeCode			50.0%
+tailmouse/apps/cli/cmd/tailmouse/leash_console_unix.go:20:	openLeashConsole		90.9%
+tailmouse/apps/cli/cmd/tailmouse/leash_console_unix.go:54:	Size				100.0%
+tailmouse/apps/cli/cmd/tailmouse/leash_console_unix.go:61:	DiscardPendingInput		0.0%
+tailmouse/apps/cli/cmd/tailmouse/leash_input.go:23:		readLeashInput			100.0%
+tailmouse/apps/cli/cmd/tailmouse/leash_input.go:49:		Close				100.0%
+tailmouse/apps/cli/cmd/tailmouse/leash_platform_unix.go:13:	leashResizeEvents		100.0%
+tailmouse/apps/cli/cmd/tailmouse/leash_platform_unix.go:15:	leashResizeSignal		100.0%
+tailmouse/apps/cli/cmd/tailmouse/leash_platform_unix.go:17:	leashSignalName			75.0%
+tailmouse/apps/cli/cmd/tailmouse/main.go:44:			main				0.0%
+tailmouse/apps/cli/cmd/tailmouse/main.go:53:			startTailcat			0.0%
+tailmouse/apps/cli/cmd/tailmouse/main.go:57:			run				100.0%
+tailmouse/apps/cli/cmd/tailmouse/main.go:61:			runWithSignals			70.0%
+tailmouse/apps/cli/cmd/tailmouse/main.go:165:			startupSignals			70.6%
+tailmouse/apps/cli/cmd/tailmouse/main.go:190:			runSession			100.0%
+tailmouse/apps/cli/cmd/tailmouse/main.go:194:			runSessionWithShortClient	84.7%
+tailmouse/apps/cli/cmd/tailmouse/main.go:476:			childOutcome			100.0%
+tailmouse/apps/cli/cmd/tailmouse/main.go:485:			relayConfig			100.0%
+tailmouse/apps/cli/cmd/tailmouse/share.go:27:			Write				100.0%
+tailmouse/apps/cli/cmd/tailmouse/share.go:32:			runShare			57.6%
+tailmouse/apps/cli/cmd/tailmouse/share.go:312:			manageShare			77.8%
+tailmouse/apps/cli/cmd/tailmouse/share.go:428:			Write				66.7%
+tailmouse/apps/cli/cmd/tailmouse/share_open_linux.go:9:		openShareBrowser		0.0%
+tailmouse/apps/cli/cmd/tailmouse/share_text.go:16:		Feed				91.4%
+tailmouse/apps/cli/cmd/tailmouse/signals_unix.go:10:		processSignals			0.0%
+tailmouse/apps/cli/cmd/tailmouse/signals_unix.go:16:		shutdownSignal			100.0%
+tailmouse/apps/cli/cmd/tailmouse/update.go:26:			runUpdate			50.0%
+tailmouse/apps/cli/cmd/tailmouse/update.go:80:			updateGet			100.0%
+tailmouse/apps/cli/cmd/tailmouse/update.go:97:			updateExecutable		87.7%
+tailmouse/apps/cli/cmd/tailmouse/update.go:197:			extractUpdate			81.6%
+tailmouse/apps/cli/cmd/tailmouse/update_unix.go:7:		replaceExecutable		100.0%
+tailmouse/apps/cli/cmd/tailmouse/wizard.go:14:			wizardArgs			100.0%
+tailmouse/apps/cli/cmd/tailmouse/wizard.go:17:			wizardArgsForPlatform		86.9%
+tailmouse/apps/cli/internal/config/config.go:49:		Error				80.0%
+tailmouse/apps/cli/internal/config/config.go:103:		defaults			100.0%
+tailmouse/apps/cli/internal/config/config.go:119:		Resolve				97.7%
+tailmouse/apps/cli/internal/config/config.go:181:		SourceOf			80.0%
+tailmouse/apps/cli/internal/config/config.go:191:		selectPath			100.0%
+tailmouse/apps/cli/internal/config/config.go:210:		envLookup			100.0%
+tailmouse/apps/cli/internal/config/config.go:221:		validate			94.3%
+tailmouse/apps/cli/internal/config/config.go:276:		parsePostExitTTL		100.0%
+tailmouse/apps/cli/internal/config/config.go:290:		validateCommand			94.4%
+tailmouse/apps/cli/internal/config/config.go:318:		validURL			100.0%
+tailmouse/apps/cli/internal/config/config.go:338:		validHostname			100.0%
+tailmouse/apps/cli/internal/config/config.go:359:		safeText			100.0%
+tailmouse/apps/cli/internal/config/config.go:364:		ExitCode			100.0%
+tailmouse/apps/cli/internal/config/flags.go:10:			parseFlags			100.0%
+tailmouse/apps/cli/internal/config/help.go:7:			WriteHelp			100.0%
+tailmouse/apps/cli/internal/config/sources.go:45:		applyFile			92.6%
+tailmouse/apps/cli/internal/config/sources.go:172:		applyEnvironment		88.9%
+tailmouse/apps/cli/internal/config/sources.go:237:		applyLoggingEnvironment		60.0%
+tailmouse/apps/cli/internal/flow/scheduler.go:21:		New				100.0%
+tailmouse/apps/cli/internal/flow/scheduler.go:27:		Write				75.0%
+tailmouse/apps/cli/internal/flow/scheduler.go:76:		Close				100.0%
+tailmouse/apps/cli/internal/flow/scheduler.go:77:		run				97.4%
+tailmouse/apps/cli/internal/invitation/decode.go:24:		Decode				90.9%
+tailmouse/apps/cli/internal/invitation/decode.go:59:		ParseFragment			100.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:66:	NewSessionID			75.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:75:	Encode				83.3%
+tailmouse/apps/cli/internal/invitation/invitation.go:97:	New				100.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:133:	Render				88.2%
+tailmouse/apps/cli/internal/invitation/invitation.go:197:	Erase				100.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:207:	Format				100.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:211:	validCard			100.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:229:	normalizedBaseURL		100.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:242:	qrBitmap			85.7%
+tailmouse/apps/cli/internal/invitation/invitation.go:254:	addQuietZone			100.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:266:	writeTerminalQR			100.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:286:	expiryLabel			83.3%
+tailmouse/apps/cli/internal/invitation/invitation.go:297:	validRelayLabel			100.0%
+tailmouse/apps/cli/internal/invitation/invitation.go:305:	erase				100.0%
+tailmouse/apps/cli/internal/invitation/short.go:41:		NewShortClient			85.7%
+tailmouse/apps/cli/internal/invitation/short.go:61:		UsesShortInvitation		100.0%
+tailmouse/apps/cli/internal/invitation/short.go:75:		Format				100.0%
+tailmouse/apps/cli/internal/invitation/short.go:83:		Publish				95.5%
+tailmouse/apps/cli/internal/invitation/short.go:118:		Resolve				93.3%
+tailmouse/apps/cli/internal/invitation/short.go:141:		Renew				90.9%
+tailmouse/apps/cli/internal/invitation/short.go:160:		Maintain			87.5%
+tailmouse/apps/cli/internal/invitation/short.go:199:		Delete				100.0%
+tailmouse/apps/cli/internal/invitation/short.go:208:		request				97.3%
+tailmouse/apps/cli/internal/invitation/short.go:260:		strictFields			93.5%
+tailmouse/apps/cli/internal/invitation/short.go:302:		eraseFields			100.0%
+tailmouse/apps/cli/internal/invitation/short.go:308:		expiry				100.0%
+tailmouse/apps/cli/internal/invitation/short.go:321:		validShortCode			83.3%
+tailmouse/apps/cli/internal/invitation/short.go:333:		validManagementToken		80.0%
+tailmouse/apps/cli/internal/invitation/short.go:342:		validOfficialInvitation		100.0%
+tailmouse/apps/cli/internal/invitation/short.go:350:		noStore				100.0%
+tailmouse/apps/cli/internal/leash/command.go:27:		NewCommand			88.9%
+tailmouse/apps/cli/internal/leash/command.go:72:		Argv				100.0%
+tailmouse/apps/cli/internal/leash/command.go:73:		Environment			100.0%
+tailmouse/apps/cli/internal/leash/command.go:74:		Cwd				100.0%
+tailmouse/apps/cli/internal/leash/command.go:75:		Title				100.0%
+tailmouse/apps/cli/internal/leash/command.go:76:		String				100.0%
+tailmouse/apps/cli/internal/leash/command.go:77:		GoString			100.0%
+tailmouse/apps/cli/internal/leash/pump.go:51:			NewPump				88.9%
+tailmouse/apps/cli/internal/leash/pump.go:68:			RestartMarker			80.0%
+tailmouse/apps/cli/internal/leash/pump.go:86:			Input				100.0%
+tailmouse/apps/cli/internal/leash/pump.go:118:			PendingInput			100.0%
+tailmouse/apps/cli/internal/leash/pump.go:125:			RetainedOutputBytes		0.0%
+tailmouse/apps/cli/internal/leash/pump.go:134:			FinalSnapshot			100.0%
+tailmouse/apps/cli/internal/leash/pump.go:143:			write				100.0%
+tailmouse/apps/cli/internal/leash/pump.go:179:			Run				96.7%
+tailmouse/apps/cli/internal/leash/pump.go:267:			wakeOutput			100.0%
+tailmouse/apps/cli/internal/leash/pump.go:289:			Subscribe			100.0%
+tailmouse/apps/cli/internal/leash/pump.go:301:			Read				88.9%
+tailmouse/apps/cli/internal/leash/pump.go:322:			Changed				0.0%
+tailmouse/apps/cli/internal/leash/pump.go:324:			ReadAvailable			100.0%
+tailmouse/apps/cli/internal/leash/pump.go:344:			closeLocked			100.0%
+tailmouse/apps/cli/internal/leash/pump.go:351:			Close				100.0%
+tailmouse/apps/cli/internal/leash/ring.go:33:			NewRing				100.0%
+tailmouse/apps/cli/internal/leash/ring.go:40:			Append				100.0%
+tailmouse/apps/cli/internal/leash/ring.go:59:			Snapshot			100.0%
+tailmouse/apps/cli/internal/leash/ring.go:65:			ReadFrom			100.0%
+tailmouse/apps/cli/internal/leash/ring.go:74:			read				100.0%
+tailmouse/apps/cli/internal/platform/pty/process.go:10:		Error				100.0%
+tailmouse/apps/cli/internal/platform/pty/process.go:11:		GoString			100.0%
+tailmouse/apps/cli/internal/platform/pty/process.go:12:		Unwrap				100.0%
+tailmouse/apps/cli/internal/platform/pty/process.go:13:		ExitCode			100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:45:	Preflight			0.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:63:	Start				82.5%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:149:	launchError			100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:162:	executable			89.3%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:204:	PID				100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:208:	Done				100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:210:	Wait				100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:219:	ready				84.2%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:251:	Read				80.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:277:	Write				78.6%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:299:	Resize				100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:314:	Interrupt			100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:335:	processGroupExists		81.8%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:355:	signalProcessGroup		85.7%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:371:	rememberForegroundGroup		90.5%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:405:	ownedGroups			100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:413:	signalProcessGroups		100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:421:	processGroupsExited		85.7%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:434:	waitForProcessGroups		100.0%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:452:	Terminate			86.4%
+tailmouse/apps/cli/internal/platform/pty/process_unix.go:485:	Close				100.0%
+tailmouse/apps/cli/internal/protocol/control.go:20:		DecodeHello			100.0%
+tailmouse/apps/cli/internal/protocol/control.go:46:		WelcomeFrame			100.0%
+tailmouse/apps/cli/internal/protocol/control.go:67:		authenticationFrame		88.9%
+tailmouse/apps/cli/internal/protocol/control.go:82:		AuthChallengeFrame		100.0%
+tailmouse/apps/cli/internal/protocol/control.go:86:		DecodeAuthChallenge		100.0%
+tailmouse/apps/cli/internal/protocol/control.go:93:		AuthProofFrame			100.0%
+tailmouse/apps/cli/internal/protocol/control.go:97:		DecodeAuthProof			100.0%
+tailmouse/apps/cli/internal/protocol/control.go:116:		failureFor			100.0%
+tailmouse/apps/cli/internal/protocol/control.go:159:		ErrorFrame			81.2%
+tailmouse/apps/cli/internal/protocol/control.go:182:		validateError			100.0%
+tailmouse/apps/cli/internal/protocol/control.go:205:		DecodeError			100.0%
+tailmouse/apps/cli/internal/protocol/control.go:226:		validCloseReason		100.0%
+tailmouse/apps/cli/internal/protocol/control.go:230:		CloseFrame			100.0%
+tailmouse/apps/cli/internal/protocol/control.go:238:		validateClose			100.0%
+tailmouse/apps/cli/internal/protocol/control.go:248:		DecodeClose			100.0%
+tailmouse/apps/cli/internal/protocol/frame.go:49:		Error				100.0%
+tailmouse/apps/cli/internal/protocol/frame.go:53:		ErrorCodeOf			100.0%
+tailmouse/apps/cli/internal/protocol/frame.go:63:		IsTruncatedFrame		100.0%
+tailmouse/apps/cli/internal/protocol/frame.go:89:		String				100.0%
+tailmouse/apps/cli/internal/protocol/frame.go:133:		other				100.0%
+tailmouse/apps/cli/internal/protocol/frame.go:161:		ReadFrame			88.0%
+tailmouse/apps/cli/internal/protocol/frame.go:236:		WriteFrame			74.2%
+tailmouse/apps/cli/internal/protocol/frame.go:282:		writeAll			100.0%
+tailmouse/apps/cli/internal/protocol/frame.go:296:		erase				100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:37:		terminalObject			100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:52:		DecodeTermReset			100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:65:		DecodeProcessControl		100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:77:		DecodeProcessState		100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:116:		safeSignal			100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:128:		validTerminalTitle		100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:132:		DecodeOutputDropped		100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:144:		terminalFrame			100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:160:		TermResetFrame			100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:164:		ProcessControlFrame		100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:168:		ProcessStateFrame		100.0%
+tailmouse/apps/cli/internal/protocol/terminal.go:175:		OutputDroppedFrame		100.0%
+tailmouse/apps/cli/internal/protocol/validation.go:20:		ruleFor				100.0%
+tailmouse/apps/cli/internal/protocol/validation.go:41:		validateRoute			93.8%
+tailmouse/apps/cli/internal/protocol/validation.go:74:		isCommonActive			100.0%
+tailmouse/apps/cli/internal/protocol/validation.go:78:		isTerminalMessage		100.0%
+tailmouse/apps/cli/internal/protocol/validation.go:82:		isTerminalMessageForSender	100.0%
+tailmouse/apps/cli/internal/protocol/validation.go:93:		validatePayload			100.0%
+tailmouse/apps/cli/internal/protocol/validation.go:152:		validateClientHello		94.7%
+tailmouse/apps/cli/internal/protocol/validation.go:205:		validateServerWelcome		83.3%
+tailmouse/apps/cli/internal/protocol/validation.go:234:		decodeAuthenticationPayload	94.7%
+tailmouse/apps/cli/internal/protocol/validation.go:261:		strictJSONObject		81.8%
+tailmouse/apps/cli/internal/protocol/validation.go:279:		rejectDuplicateJSONValue	80.6%
+tailmouse/apps/cli/internal/protocol/validation.go:329:		strictUnmarshal			85.7%
+tailmouse/apps/cli/internal/protocol/validation.go:341:		exactKeys			100.0%
+tailmouse/apps/cli/internal/protocol/validation.go:351:		validSessionID			83.3%
+tailmouse/apps/cli/internal/protocol/validation.go:363:		boundedText			100.0%
+tailmouse/apps/cli/internal/protocol/validation.go:367:		integerBetween			100.0%
+tailmouse/apps/cli/internal/protocol/validation.go:371:		validRelay			66.7%
+tailmouse/apps/cli/internal/protocol/validation.go:378:		validDiagnosticHost		77.8%
+tailmouse/apps/cli/internal/protocol/validation.go:395:		validCapabilities		88.9%
+tailmouse/apps/cli/internal/session/access.go:27:		GenerateAccessCode		100.0%
+tailmouse/apps/cli/internal/session/access.go:31:		newAccessCode			100.0%
+tailmouse/apps/cli/internal/session/access.go:48:		newAccessChallenge		85.7%
+tailmouse/apps/cli/internal/session/access.go:60:		CanonicalAccessCode		100.0%
+tailmouse/apps/cli/internal/session/access.go:85:		Grouped				100.0%
+tailmouse/apps/cli/internal/session/access.go:99:		DeriveAccessKey			100.0%
+tailmouse/apps/cli/internal/session/access.go:108:		AccessProof			100.0%
+tailmouse/apps/cli/internal/session/access.go:120:		VerifyAccessProof		100.0%
+tailmouse/apps/cli/internal/session/access.go:127:		validAccessSymbol		100.0%
+tailmouse/apps/cli/internal/session/access.go:136:		pendingAuthenticationLocked	100.0%
+tailmouse/apps/cli/internal/session/access.go:146:		issueChallenge			87.5%
+tailmouse/apps/cli/internal/session/access.go:158:		consumeChallenge		100.0%
+tailmouse/apps/cli/internal/session/access.go:167:		authenticationThrottle		100.0%
+tailmouse/apps/cli/internal/session/access.go:173:		authenticationThrottleLocked	90.9%
+tailmouse/apps/cli/internal/session/access.go:190:		authenticationFailure		100.0%
+tailmouse/apps/cli/internal/session/access.go:203:		authenticationSucceeded		100.0%
+tailmouse/apps/cli/internal/session/access.go:211:		clearAuthenticationLocked	100.0%
+tailmouse/apps/cli/internal/session/host.go:107:		InspectMetrics			100.0%
+tailmouse/apps/cli/internal/session/host.go:129:		Read				100.0%
+tailmouse/apps/cli/internal/session/host.go:152:		Write				100.0%
+tailmouse/apps/cli/internal/session/host.go:158:		Close				100.0%
+tailmouse/apps/cli/internal/session/host.go:160:		NewHost				80.0%
+tailmouse/apps/cli/internal/session/host.go:195:		AccessCodeForDisplay		100.0%
+tailmouse/apps/cli/internal/session/host.go:205:		FirstHello			100.0%
+tailmouse/apps/cli/internal/session/host.go:206:		Disconnected			0.0%
+tailmouse/apps/cli/internal/session/host.go:209:		Listen				80.0%
+tailmouse/apps/cli/internal/session/host.go:242:		Accept				100.0%
+tailmouse/apps/cli/internal/session/host.go:265:		serve				82.9%
+tailmouse/apps/cli/internal/session/host.go:506:		expirePeer			100.0%
+tailmouse/apps/cli/internal/session/host.go:516:		handle				64.7%
+tailmouse/apps/cli/internal/session/host.go:595:		capabilityFor			100.0%
+tailmouse/apps/cli/internal/session/host.go:606:		send				86.7%
+tailmouse/apps/cli/internal/session/host.go:628:		reject				100.0%
+tailmouse/apps/cli/internal/session/host.go:640:		waitForEOF			100.0%
+tailmouse/apps/cli/internal/session/host.go:650:		finish				100.0%
+tailmouse/apps/cli/internal/session/host.go:660:		report				100.0%
+tailmouse/apps/cli/internal/session/host.go:671:		notify				100.0%
+tailmouse/apps/cli/internal/session/host.go:679:		Wait				94.7%
+tailmouse/apps/cli/internal/session/host.go:713:		Close				97.5%
+tailmouse/apps/cli/internal/session/latency.go:41:		Ping				100.0%
+tailmouse/apps/cli/internal/session/latency.go:60:		Pong				100.0%
+tailmouse/apps/cli/internal/session/latency.go:86:		Inspect				100.0%
+tailmouse/apps/cli/internal/session/latency.go:101:		ResetPending			100.0%
+tailmouse/apps/cli/internal/session/leash.go:52:		ConfigureLeash			100.0%
+tailmouse/apps/cli/internal/session/leash.go:65:		PublishLeash			96.6%
+tailmouse/apps/cli/internal/session/leash.go:109:		RetainLeash			72.4%
+tailmouse/apps/cli/internal/session/leash.go:147:		snapshotLocked			100.0%
+tailmouse/apps/cli/internal/session/leash.go:168:		attach				100.0%
+tailmouse/apps/cli/internal/session/leash.go:176:		detach				100.0%
+tailmouse/apps/cli/internal/session/leash.go:196:		close				92.9%
+tailmouse/apps/cli/internal/session/leash.go:214:		wakeLocked			100.0%
+tailmouse/apps/cli/internal/session/leash.go:223:		leashOutput			100.0%
+tailmouse/apps/cli/internal/session/leash.go:236:		next				77.4%
+tailmouse/apps/cli/internal/session/leash.go:308:		sendLeash			73.3%
+tailmouse/apps/cli/internal/session/leash.go:334:		input				91.4%
+tailmouse/apps/cli/internal/session/leash.go:391:		LeashControls			100.0%
+tailmouse/apps/cli/internal/session/leash.go:395:		TakeLeashControl		100.0%
+tailmouse/apps/cli/internal/session/leash.go:420:		resizeLocked			100.0%
+tailmouse/apps/cli/internal/session/leash.go:430:		ResizeLeash			100.0%
+tailmouse/apps/cli/internal/session/leash.go:441:		LeashSizes			100.0%
+tailmouse/apps/cli/internal/session/leash.go:443:		TakeLeashSize			100.0%
+tailmouse/apps/cli/internal/session/leash.go:456:		AppliedLeashSize		100.0%
+tailmouse/apps/cli/internal/session/leash.go:463:		AcceptLeashSize			100.0%
+tailmouse/apps/cli/internal/session/leash.go:467:		ping				100.0%
+tailmouse/apps/cli/internal/session/leash.go:478:		pong				100.0%
+tailmouse/apps/cli/internal/session/session.go:83:		New				100.0%
+tailmouse/apps/cli/internal/session/session.go:115:		Listen				100.0%
+tailmouse/apps/cli/internal/session/session.go:128:		BeginConnect			100.0%
+tailmouse/apps/cli/internal/session/session.go:146:		ConnectFailed			100.0%
+tailmouse/apps/cli/internal/session/session.go:154:		Acquire				100.0%
+tailmouse/apps/cli/internal/session/session.go:178:		ValidatePeer			100.0%
+tailmouse/apps/cli/internal/session/session.go:185:		validatePeer			100.0%
+tailmouse/apps/cli/internal/session/session.go:199:		Disconnect			84.6%
+tailmouse/apps/cli/internal/session/session.go:220:		Authorize			100.0%
+tailmouse/apps/cli/internal/session/session.go:247:		Capabilities			100.0%
+tailmouse/apps/cli/internal/session/session.go:253:		Inspect				100.0%
+tailmouse/apps/cli/internal/session/session.go:262:		Finish				100.0%
+tailmouse/apps/cli/internal/session/session.go:277:		TakeCleanup			100.0%
+tailmouse/apps/cli/internal/session/session.go:287:		expire				83.3%
+tailmouse/apps/cli/internal/session/session.go:298:		finish				100.0%
+tailmouse/apps/cli/internal/session/session.go:306:		terminal			100.0%
+tailmouse/apps/cli/internal/session/session.go:309:		sessionError			100.0%
+tailmouse/apps/cli/internal/share/commit_linux.go:10:		commitUpload			100.0%
+tailmouse/apps/cli/internal/share/config.go:41:			IsCommand			100.0%
+tailmouse/apps/cli/internal/share/config.go:46:			Parse				88.2%
+tailmouse/apps/cli/internal/share/config.go:295:		ParseSize			100.0%
+tailmouse/apps/cli/internal/share/config.go:312:		ParseTarget			87.5%
+tailmouse/apps/cli/internal/share/config.go:337:		ValidateOrigins			100.0%
+tailmouse/apps/cli/internal/share/config.go:338:		validateOrigins			100.0%
+tailmouse/apps/cli/internal/share/events.go:13:			Events				100.0%
+tailmouse/apps/cli/internal/share/events.go:14:			emit				100.0%
+tailmouse/apps/cli/internal/share/events.go:26:			Members				87.5%
+tailmouse/apps/cli/internal/share/events.go:37:			ApproveMember			100.0%
+tailmouse/apps/cli/internal/share/events.go:53:			GrantMember			100.0%
+tailmouse/apps/cli/internal/share/events.go:69:			RevokeMember			100.0%
+tailmouse/apps/cli/internal/share/host.go:100:			newSecret			75.0%
+tailmouse/apps/cli/internal/share/host.go:107:			validSecret			100.0%
+tailmouse/apps/cli/internal/share/host.go:111:			sameSecret			100.0%
+tailmouse/apps/cli/internal/share/host.go:116:			NewHost				63.4%
+tailmouse/apps/cli/internal/share/host.go:174:			Ready				88.9%
+tailmouse/apps/cli/internal/share/host.go:187:			lifecycle			93.3%
+tailmouse/apps/cli/internal/share/host.go:211:			Context				100.0%
+tailmouse/apps/cli/internal/share/host.go:212:			ID				100.0%
+tailmouse/apps/cli/internal/share/host.go:213:			Invitation			73.3%
+tailmouse/apps/cli/internal/share/host.go:241:			manifestLocked			88.0%
+tailmouse/apps/cli/internal/share/host.go:277:			removeMemberLocked		92.3%
+tailmouse/apps/cli/internal/share/host.go:297:			liveLocked			100.0%
+tailmouse/apps/cli/internal/share/host.go:300:			admit				82.9%
+tailmouse/apps/cli/internal/share/host.go:414:			Serve				85.5%
+tailmouse/apps/cli/internal/share/host.go:480:			control				73.2%
+tailmouse/apps/cli/internal/share/host.go:629:			CanInput			100.0%
+tailmouse/apps/cli/internal/share/host.go:634:			TakeLocal			100.0%
+tailmouse/apps/cli/internal/share/host.go:635:			Pause				100.0%
+tailmouse/apps/cli/internal/share/host.go:636:			Approve				90.0%
+tailmouse/apps/cli/internal/share/host.go:651:			GrantControl			90.0%
+tailmouse/apps/cli/internal/share/host.go:666:			Rotate				100.0%
+tailmouse/apps/cli/internal/share/host.go:677:			Close				100.0%
+tailmouse/apps/cli/internal/share/html.go:17:			injectHTML			95.5%
+tailmouse/apps/cli/internal/share/offer.go:48:			safeOfferPath			100.0%
+tailmouse/apps/cli/internal/share/offer.go:62:			NewFileOffer			94.4%
+tailmouse/apps/cli/internal/share/offer.go:88:			Close				100.0%
+tailmouse/apps/cli/internal/share/offer.go:89:			open				92.3%
+tailmouse/apps/cli/internal/share/offer.go:109:			List				88.2%
+tailmouse/apps/cli/internal/share/offer.go:179:			reserve				100.0%
+tailmouse/apps/cli/internal/share/offer.go:190:			Serve				78.6%
+tailmouse/apps/cli/internal/share/offer_open_unix.go:12:	openOfferedFile			100.0%
+tailmouse/apps/cli/internal/share/partials.go:16:		partialKey			77.8%
+tailmouse/apps/cli/internal/share/partials.go:54:		ownershipTag			100.0%
+tailmouse/apps/cli/internal/share/partials.go:59:		ownershipRecord			100.0%
+tailmouse/apps/cli/internal/share/partials.go:62:		isID				66.7%
+tailmouse/apps/cli/internal/share/partials.go:73:		ownStage			61.5%
+tailmouse/apps/cli/internal/share/partials.go:92:		cleanupPartials			76.9%
+tailmouse/apps/cli/internal/share/partials.go:112:		cleanupStage			73.9%
+tailmouse/apps/cli/internal/share/partials_unix.go:11:		lockPartial			100.0%
+tailmouse/apps/cli/internal/share/receive.go:74:		randomID			80.0%
+tailmouse/apps/cli/internal/share/receive.go:83:		SafeName			100.0%
+tailmouse/apps/cli/internal/share/receive.go:107:		NewReceiver			63.3%
+tailmouse/apps/cli/internal/share/receive.go:185:		Begin				90.5%
+tailmouse/apps/cli/internal/share/receive.go:213:		ID				100.0%
+tailmouse/apps/cli/internal/share/receive.go:214:		Write				87.5%
+tailmouse/apps/cli/internal/share/receive.go:246:		Finish				87.2%
+tailmouse/apps/cli/internal/share/receive.go:299:		Status				100.0%
+tailmouse/apps/cli/internal/share/receive.go:308:		Cancel				92.9%
+tailmouse/apps/cli/internal/share/receive.go:326:		Close				93.8%
+tailmouse/apps/cli/internal/share/schedule.go:16:		Write				87.5%
+tailmouse/apps/cli/internal/share/schedule.go:30:		bulk				0.0%
+tailmouse/apps/cli/internal/share/streams.go:17:		serveUpload			55.1%
+tailmouse/apps/cli/internal/share/streams.go:94:		serveHTTP			62.9%
+tailmouse/apps/cli/internal/share/streams.go:223:		canInject			84.0%
+tailmouse/apps/cli/internal/share/streams.go:261:		withoutTransformedValidators	100.0%
+tailmouse/apps/cli/internal/share/streams.go:287:		serveWebSocket			72.7%
+tailmouse/apps/cli/internal/share/terminal.go:46:		NewTerminal			80.0%
+tailmouse/apps/cli/internal/share/terminal.go:60:		read				67.4%
+tailmouse/apps/cli/internal/share/terminal.go:127:		Err				0.0%
+tailmouse/apps/cli/internal/share/terminal.go:128:		Running				100.0%
+tailmouse/apps/cli/internal/share/terminal.go:129:		SetLocal			0.0%
+tailmouse/apps/cli/internal/share/terminal.go:130:		LocalInput			83.3%
+tailmouse/apps/cli/internal/share/terminal.go:139:		LocalResize			88.9%
+tailmouse/apps/cli/internal/share/terminal.go:151:		restoreLocalLocked		75.0%
+tailmouse/apps/cli/internal/share/terminal.go:163:		RestoreLocal			0.0%
+tailmouse/apps/cli/internal/share/terminal.go:168:		Terminal			100.0%
+tailmouse/apps/cli/internal/share/terminal.go:169:		Serve				84.5%
+tailmouse/apps/cli/internal/share/terminal.go:246:		readInput			48.0%
+tailmouse/apps/cli/internal/share/terminal.go:287:		Close				100.0%
+tailmouse/apps/cli/internal/share/text.go:10:			ValidText			100.0%
+tailmouse/apps/cli/internal/share/text.go:13:			containsTextControl		100.0%
+tailmouse/apps/cli/internal/share/text.go:27:			TextValue			100.0%
+tailmouse/apps/cli/internal/share/text.go:28:			HasText				0.0%
+tailmouse/apps/cli/internal/share/text.go:29:			ReplaceText			0.0%
+tailmouse/apps/cli/internal/share/text.go:41:			serveText			78.9%
+tailmouse/apps/cli/internal/share/web.go:50:			NewWeb				88.5%
+tailmouse/apps/cli/internal/share/web.go:123:			InitialPath			100.0%
+tailmouse/apps/cli/internal/share/web.go:130:			Available			100.0%
+tailmouse/apps/cli/internal/share/web.go:131:			Close				100.0%
+tailmouse/apps/cli/internal/share/web.go:137:			Forget				100.0%
+tailmouse/apps/cli/internal/share/web.go:138:			jar				100.0%
+tailmouse/apps/cli/internal/share/web.go:149:			requestURL			100.0%
+tailmouse/apps/cli/internal/share/web.go:161:			Do				79.3%
+tailmouse/apps/cli/internal/share/web.go:249:			safeHeader			100.0%
+tailmouse/apps/cli/internal/share/web.go:260:			blockedHeader			100.0%
+tailmouse/apps/cli/internal/share/web.go:267:			responseHeaders			85.7%
+tailmouse/apps/cli/internal/share/web.go:279:			Reprobe				81.0%
+tailmouse/apps/cli/internal/share/web.go:309:			OriginSummary			100.0%
+tailmouse/apps/cli/internal/share/web.go:315:			SetCookies			100.0%
+tailmouse/apps/cli/internal/share/wire.go:28:			ReadFrame			93.3%
+tailmouse/apps/cli/internal/share/wire.go:50:			WriteFrame			100.0%
+tailmouse/apps/cli/internal/share/wire.go:62:			writeFull			87.5%
+tailmouse/apps/cli/internal/share/wire.go:75:			WriteJSON			83.3%
+tailmouse/apps/cli/internal/share/wire.go:86:			Decode				100.0%
+tailmouse/apps/cli/internal/share/wire.go:104:			uniqueJSON			79.2%
+tailmouse/apps/cli/internal/share/wire.go:168:			sendError			100.0%
+tailmouse/apps/cli/internal/transport/tailcat/relay_map.go:25:	fetchRelayMap			97.0%
+tailmouse/apps/cli/internal/transport/tailcat/relay_map.go:75:	validMapURL			100.0%
+tailmouse/apps/cli/internal/transport/tailcat/relay_map.go:82:	validRelayMap			100.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:117:	Start				40.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:127:	selectRegion			33.3%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:183:	TailcatAddr			0.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:184:	DrainTCP			0.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:185:	Close				100.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:191:	Start				0.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:195:	start				96.3%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:240:	startBackend			100.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:249:	newBackend			84.2%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:288:	PeerIdentity			0.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:302:	PeerIdentity			0.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:310:	normalizeRelay			98.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:417:	validRegionLabel		100.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:421:	normalizeHostname		100.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:443:	relayFromAddress		100.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:466:	Relay				100.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:471:	CopyAddress			100.0%
+tailmouse/apps/cli/internal/transport/tailcat/server.go:482:	Close				100.0%
+tailmouse/tools/archiveinfo/main.go:30:				inspect				93.5%
+tailmouse/tools/archiveinfo/main.go:120:			run				83.3%
+tailmouse/tools/archiveinfo/main.go:131:			main				0.0%
+total:								(statements)			84.8%
+
+==> Native and edge builds
+Native build verified: 0.0.0-dev.1ea54b254111, Tailcat 52fbad323e9d352f1febb623e0975368e9a8cbdd.
+$ node build.mjs
+Verified 35 static edge objects.
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProxy environment variables detected. We'll use your proxy for fetch requests.[0m
+
+
+
+ ⛅️ wrangler 4.129.0 (update available 4.151.2)
+───────────────────────────────────────────────
+Total Upload: 91.65 KiB / gzip: 20.76 KiB
+Your Worker has access to the following bindings:
+Binding                                                Resource            
+env.SHORT_INVITATIONS (ShortInvitation)                Durable Object      
+env.STATIC_ASSETS (tailmouse-link-production)          R2 Bucket           
+env.CREATE_IP (5 requests/60s)                         Rate Limit          
+env.CREATE_EDGE (100 requests/60s)                     Rate Limit          
+env.READ_IP (60 requests/60s)                          Rate Limit          
+env.READ_EDGE (1000 requests/60s)                      Rate Limit          
+
+--dry-run: exiting now.
+Verified 8 edge release files.
+
+==> local Worker integration
+$ node build.mjs --prepare && node --test --experimental-test-coverage --test-coverage-include=verify-lifecycle.mjs --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 integration.test.mjs verify-lifecycle.test.mjs
+Verified 35 static edge objects.
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProxy environment variables detected. We'll use your proxy for fetch requests.[0m
+
+
+✔ edge preparation rejects stale, malformed, or escaped static objects (18.07517ms)
+✔ the real local Worker preserves every published static byte and response contract (6970.328836ms)
+✔ the local SQLite runtime orders protected allocation, renewal, deletion and alarm expiry (1269.73901ms)
+✔ the lifecycle verifier requires an exact explicit production opt-in (2.688792ms)
+✔ a synthetic lifecycle resolves without renewal, extends, deletes and redacts evidence (8.086536ms)
+✔ the wrong-case probe changes only the first ASCII letter after a numeric prefix (1.811133ms)
+✔ an abandoned probe leaves a metadata-only window and proves only API expiry (2.09953ms)
+✔ lifecycle failure network is bounded, redacted and attempts known cleanup (0.413723ms)
+✔ lifecycle failure oversized is bounded, redacted and attempts known cleanup (0.541101ms)
+✔ lifecycle failure redirect is bounded, redacted and attempts known cleanup (0.248017ms)
+✔ lifecycle failure create-cache is bounded, redacted and attempts known cleanup (0.512058ms)
+✔ lifecycle failure numeric-code is bounded, redacted and attempts known cleanup (0.522194ms)
+✔ lifecycle failure wrong-case-active is bounded, redacted and attempts known cleanup (0.535954ms)
+✔ lifecycle failure wrong-case-cache is bounded, redacted and attempts known cleanup (0.66839ms)
+✔ lifecycle failure wrong-case-body is bounded, redacted and attempts known cleanup (0.676212ms)
+✔ lifecycle failure resolve-security is bounded, redacted and attempts known cleanup (0.859223ms)
+✔ lifecycle failure resolve-renews is bounded, redacted and attempts known cleanup (0.858912ms)
+✔ lifecycle failure renew-noop is bounded, redacted and attempts known cleanup (0.946402ms)
+✔ lifecycle failure delete-unavailable is bounded, redacted and attempts known cleanup (1.354486ms)
+✔ lifecycle failure frozen-clock is bounded, redacted and attempts known cleanup (1.325082ms)
+✔ a stalled response cannot extend the ten-second request deadline (0.932111ms)
+✔ cancellation performs no new allocation and still deletes known mappings (1.336229ms)
+✔ the abandoned observation has a finite poll bound even if the clock stops (1.737433ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9457.458266
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------
+ℹ file                 | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------
+ℹ verify-lifecycle.mjs |  92.20 |    97.09 |   84.21 | 344-372
+ℹ ---------------------------------------------------------------------
+ℹ all files            |  92.20 |    97.09 |   84.21 | 
+ℹ ---------------------------------------------------------------------
+ℹ end of coverage report
+TAP version 13
+# [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProxy environment variables detected. We'll use your proxy for fetch requests.[0m
+# Subtest: real static Worker serves source-built assets, scoped bootstrap and decoded Wasm
+ok 1 - real static Worker serves source-built assets, scoped bootstrap and decoded Wasm
+  ---
+  duration_ms: 3181.290302
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4000.311401
+
+==> local public-origin verification
+✔ public-origin CLI accepts the documented pnpm argument separator (2.180269ms)
+✔ optional short-origin verification is read-only and reports its exact scope (582.006484ms)
+✔ short-origin verification fails fast on wrong bytes, headers, or diagnostic responses (404.217441ms)
+✔ public-origin CLI reports only a bounded safe failure category (0.355296ms)
+✔ public-origin verifier proves the built local static fixture without an invitation (321.679558ms)
+✔ public-origin verifier accepts omitted Content-Length while still checking exact bodies (316.598593ms)
+✔ public-origin verifier rejects credentials, query strings and fragments before a request (79.475125ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1843.815773
+
+==> dependency notices
+Third-party notices verified: 56 component versions, 122 source files.
+
+==> native browser QR decoding
+Native BarcodeDetector acceptance is macOS-only; portable QR format and boundary tests remain required.
+
+==> hermetic transport integration
+$ node tools/tailcat-gate.mjs build && pnpm --filter @tailmouse/web build && go test -tags=tailcatintegration -count=1 -failfast -timeout=5m -run="^TestHermeticTailcat(Transport|ExpiredHost|ClientVerification)$" ./apps/cli/internal/transport/tailcat
+2026/10/20 07:20:20 built dist in /tmp/tailmouse-tailcat-wasm-5x6pcd/dist in 1.239s
+[tailcat:build] passed at 52fbad323e9d with an unchanged submodule.
+$ node ../../tools/web-task.mjs build
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 58 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/NOTICE                                                                                             0.19 kB
+dist/.tailmouse/bridge.html                                                                             0.54 kB │ gzip:     0.34 kB
+dist/assets/resource-worker-DwucB-rz.js.br                                                              0.89 kB
+dist/assets/resource-worker-DwucB-rz.js.gz                                                              0.97 kB
+dist/index.html                                                                                         1.23 kB │ gzip:     0.56 kB
+dist/assets/resource-worker-DwucB-rz.js                                                                 2.01 kB
+dist/service-worker.js                                                                                  2.90 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.br           4.13 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz           4.34 kB
+dist/assets/index-CP0MTyoa.css.br                                                                       4.48 kB
+dist/assets/index-CP0MTyoa.css.gz                                                                       4.81 kB
+dist/.tailmouse/bridge.js                                                                               5.70 kB
+dist/.tailmouse/shim.js                                                                                 6.47 kB
+dist/.tailmouse/sw.js                                                                                   6.55 kB
+dist/LICENSE                                                                                           11.35 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js             16.99 kB
+dist/web-manifest.json                                                                                 20.47 kB │ gzip:     4.75 kB
+dist/assets/index-BETp3mTp.js.br                                                                      127.36 kB
+dist/assets/index-BETp3mTp.js.gz                                                                      138.70 kB
+dist/THIRD_PARTY_NOTICES.txt                                                                          396.81 kB │ gzip:    37.64 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.br   5,039.80 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm.br      5,107.91 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.gz   6,260.34 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm.gz      6,335.50 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm     26,955.58 kB │ gzip: 6,340.11 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm        27,277.76 kB │ gzip: 6,417.77 kB
+dist/.tailmouse/content.css                                                                             0.21 kB │ gzip:     0.16 kB
+dist/assets/index-CP0MTyoa.css                                                                         18.90 kB │ gzip:     4.85 kB
+dist/assets/index-BETp3mTp.js                                                                         510.44 kB │ gzip:   140.19 kB │ map: 1,297.29 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 9.67s
+[33m[PLUGIN_TIMINGS] [0mYour build spent 94% of 9.7s inside plugin hooks (9.1s).
+Measured inside the callback, so queue time is excluded and time the callback itself awaited is not:
+  - tailmouse-tailcat-artifacts generateBundle (92%, 8.9s, 1 call)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+
+ok  	tailmouse/apps/cli/internal/transport/tailcat	192.390s
+
+==> Unix Leash native/browser acceptance
+$ node tools/leash-acceptance.mjs
+2026/10/20 07:23:51 built dist in /tmp/tailmouse-tailcat-wasm-zkt4lZ/dist in 1.307s
+[tailcat:build] passed at 52fbad323e9d with an unchanged submodule.
+$ node ../../tools/web-task.mjs build
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 58 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/NOTICE                                                                                             0.19 kB
+dist/.tailmouse/bridge.html                                                                             0.54 kB │ gzip:     0.34 kB
+dist/assets/resource-worker-DwucB-rz.js.br                                                              0.89 kB
+dist/assets/resource-worker-DwucB-rz.js.gz                                                              0.97 kB
+dist/index.html                                                                                         1.23 kB │ gzip:     0.56 kB
+dist/assets/resource-worker-DwucB-rz.js                                                                 2.01 kB
+dist/service-worker.js                                                                                  2.90 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.br           4.13 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz           4.34 kB
+dist/assets/index-CP0MTyoa.css.br                                                                       4.48 kB
+dist/assets/index-CP0MTyoa.css.gz                                                                       4.81 kB
+dist/.tailmouse/bridge.js                                                                               5.70 kB
+dist/.tailmouse/shim.js                                                                                 6.47 kB
+dist/.tailmouse/sw.js                                                                                   6.55 kB
+dist/LICENSE                                                                                           11.35 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js             16.99 kB
+dist/web-manifest.json                                                                                 20.47 kB │ gzip:     4.75 kB
+dist/assets/index-BETp3mTp.js.br                                                                      127.36 kB
+dist/assets/index-BETp3mTp.js.gz                                                                      138.70 kB
+dist/THIRD_PARTY_NOTICES.txt                                                                          396.81 kB │ gzip:    37.64 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.br   5,039.80 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm.br      5,107.91 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.gz   6,260.34 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm.gz      6,335.50 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm     26,955.58 kB │ gzip: 6,340.11 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm        27,277.76 kB │ gzip: 6,417.77 kB
+dist/.tailmouse/content.css                                                                             0.21 kB │ gzip:     0.16 kB
+dist/assets/index-CP0MTyoa.css                                                                         18.90 kB │ gzip:     4.85 kB
+dist/assets/index-BETp3mTp.js                                                                         510.44 kB │ gzip:   140.19 kB │ map: 1,297.29 kB
+
+✓ built in 10.21s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[33m[PLUGIN_TIMINGS] [0mYour build spent 94% of 10.2s inside plugin hooks (9.6s).
+Measured inside the callback, so queue time is excluded and time the callback itself awaited is not:
+  - tailmouse-tailcat-artifacts generateBundle (93%, 9.4s, 1 call)
+Those rows are 93% of the build; the rest of the 94% is below.
+Not measurable — 1 hook whose calls overlap, so elapsed time covers work other calls were doing. Profile with `node --cpu-prof`:
+  - vite:css transform (4 calls)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+
+ok  	tailmouse/apps/cli/cmd/tailmouse	251.530s
+
+==> Resource native/browser and named TUI acceptance
+ok  	tailmouse/apps/cli/cmd/tailmouse	38.329s
+ok  	tailmouse/apps/cli/internal/share	0.265s
+
+==> browser end-to-end tests
+$ node tools/web-task.mjs e2e
+[WebServer] (node:204514) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:204526) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 150 tests using 2 workers
+
+(node:204568) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:204569) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  -    1 [chromium] › tests/e2e/leash.spec.ts:9:1 › a mobile touch gesture scrolls terminal history without typing or moving the page
+  ✓    2 [chromium] › tests/e2e/leash.spec.ts:68:1 › Unicode text input works by default without corrupting terminal replies under virtual modifiers (894ms)
+  ✓    4 [chromium] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (frame boundary) (939ms)
+  ✓    3 [chromium] › tests/e2e/leash.spec.ts:96:1 › terminal rendering, keyboard, bounded paste and confirmed controls work across browser profiles (2.0s)
+  ✓    6 [chromium] › tests/e2e/leash.spec.ts:237:1 › readonly terminal renders scrollback without input, resize or process controls (651ms)
+  ✓    5 [chromium] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (partial frame) (1.0s)
+  ✓    8 [chromium] › tests/e2e/session-shell.spec.ts:106:1 › Wasm byte progress precedes the combined relay handshake and usable session (642ms)
+  ✓    9 [chromium] › tests/e2e/session-shell.spec.ts:164:1 › partial Wasm failure is safe and explicit retry starts progress again (727ms)
+  ✓    7 [chromium] › tests/e2e/session-shell.spec.ts:18:1 › exact mode-specific MouseCard identifiers negotiate only their protocol and reject other ranges before dialing (1.5s)
+  ✓   11 [chromium] › tests/e2e/session-shell.spec.ts:264:1 › a redacted load failure retries only after user action (681ms)
+  ✓   12 [chromium] › tests/e2e/session-shell.spec.ts:286:1 › malformed invitation is removed and rejected without a connection attempt (194ms)
+  ✓   13 [chromium] › tests/e2e/session-shell.spec.ts:297:1 › invitation is memory-only across reload and stays out of storage, referrers, and logs (553ms)
+  ✓   10 [chromium] › tests/e2e/session-shell.spec.ts:224:1 › fragment stays out of requests, disappears from history, and establishes a session (1.9s)
+  ✓   14 [chromium] › tests/e2e/session-shell.spec.ts:365:1 › protected access stays out of durable state and page-cache restoration (812ms)
+  ✓   15 [chromium] › tests/e2e/session-shell.spec.ts:436:1 › readonly capability comes from the host and is not inferred from the invitation (523ms)
+  ✓   16 [chromium] › tests/e2e/session-shell.spec.ts:457:1 › busy is retryable and peer details stay redacted (444ms)
+  ✓   18 [chromium] › tests/e2e/session-shell.spec.ts:502:1 › protocol mismatch is terminal and peer details stay redacted (411ms)
+  ✓   19 [chromium] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized global frame with one safe notification before closing (415ms)
+  ✓   20 [chromium] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized terminal frame with one safe notification before closing (438ms)
+  ✓   21 [chromium] › tests/e2e/session-shell.spec.ts:550:1 › disconnected sessions reconnect only on explicit retry (582ms)
+  ✓   22 [chromium] › tests/e2e/session-shell.spec.ts:572:1 › expired invitation shows a safe terminal error before loading transport (212ms)
+  ✓   23 [chromium] › tests/e2e/short-invitation.spec.ts:73:1 › short invitations prompt separately before dialing, reconnect explicitly and clear on reload (939ms)
+  ✓   24 [chromium] › tests/e2e/short-invitation.spec.ts:141:1 › wrong-case, deleted and offline locators remain unavailable without a connection action (598ms)
+  ✓   25 [chromium] › tests/e2e/short-invitation.spec.ts:169:1 › short-link authentication reports rejected proofs and honors Host cooldown before a fresh attempt (2.6s)
+  ✓   26 [chromium] › tests/e2e/short-invitation.spec.ts:196:1 › short-path and fragment ambiguity is rejected and page restoration cannot reuse a resolved invitation (829ms)
+  ✓   27 [chromium] › tests/e2e/static-cache.spec.ts:24:1 › production headers, fixed static cache and offline assets exclude invitation material (877ms)
+  ✓   28 [chromium] › tests/e2e/static-cache.spec.ts:190:1 › an update waits for live clients then deletes only its old scoped cache (2.2s)
+  ✓   29 [chromium] › tests/e2e/static-cache.spec.ts:240:1 › unknown routes are not application pages and executable assets stay local (177ms)
+  ✓   30 [chromium] › tests/e2e/static-cache.spec.ts:262:1 › integrity rejects corrupted hashed assets without retaining partial worker caches (232ms)
+  ✓   17 [chromium] › tests/e2e/session-shell.spec.ts:470:1 › a timed-out handshake closes its stream and retries only after explicit input (10.9s)
+(node:205042) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:205048) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  -   31 [firefox] › tests/e2e/leash.spec.ts:9:1 › a mobile touch gesture scrolls terminal history without typing or moving the page
+  ✓   32 [firefox] › tests/e2e/leash.spec.ts:68:1 › Unicode text input works by default without corrupting terminal replies under virtual modifiers (2.1s)
+  ✓   34 [firefox] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (frame boundary) (1.6s)
+  ✓   33 [firefox] › tests/e2e/leash.spec.ts:96:1 › terminal rendering, keyboard, bounded paste and confirmed controls work across browser profiles (3.1s)
+  ✓   35 [firefox] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (partial frame) (1.4s)
+  ✓   36 [firefox] › tests/e2e/leash.spec.ts:237:1 › readonly terminal renders scrollback without input, resize or process controls (1.0s)
+  ✓   38 [firefox] › tests/e2e/session-shell.spec.ts:106:1 › Wasm byte progress precedes the combined relay handshake and usable session (967ms)
+  ✓   37 [firefox] › tests/e2e/session-shell.spec.ts:18:1 › exact mode-specific MouseCard identifiers negotiate only their protocol and reject other ranges before dialing (2.3s)
+  ✓   39 [firefox] › tests/e2e/session-shell.spec.ts:164:1 › partial Wasm failure is safe and explicit retry starts progress again (1.4s)
+  ✓   41 [firefox] › tests/e2e/session-shell.spec.ts:264:1 › a redacted load failure retries only after user action (998ms)
+  ✓   42 [firefox] › tests/e2e/session-shell.spec.ts:286:1 › malformed invitation is removed and rejected without a connection attempt (429ms)
+  ✓   40 [firefox] › tests/e2e/session-shell.spec.ts:224:1 › fragment stays out of requests, disappears from history, and establishes a session (2.3s)
+  ✓   43 [firefox] › tests/e2e/session-shell.spec.ts:297:1 › invitation is memory-only across reload and stays out of storage, referrers, and logs (918ms)
+  ✓   45 [firefox] › tests/e2e/session-shell.spec.ts:436:1 › readonly capability comes from the host and is not inferred from the invitation (861ms)
+  ✓   44 [firefox] › tests/e2e/session-shell.spec.ts:365:1 › protected access stays out of durable state and page-cache restoration (1.4s)
+  ✓   46 [firefox] › tests/e2e/session-shell.spec.ts:457:1 › busy is retryable and peer details stay redacted (1.5s)
+  ✓   48 [firefox] › tests/e2e/session-shell.spec.ts:502:1 › protocol mismatch is terminal and peer details stay redacted (748ms)
+  ✓   49 [firefox] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized global frame with one safe notification before closing (700ms)
+  ✓   50 [firefox] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized terminal frame with one safe notification before closing (666ms)
+  ✓   51 [firefox] › tests/e2e/session-shell.spec.ts:550:1 › disconnected sessions reconnect only on explicit retry (862ms)
+  ✓   52 [firefox] › tests/e2e/session-shell.spec.ts:572:1 › expired invitation shows a safe terminal error before loading transport (406ms)
+  ✓   53 [firefox] › tests/e2e/short-invitation.spec.ts:73:1 › short invitations prompt separately before dialing, reconnect explicitly and clear on reload (1.2s)
+  ✓   54 [firefox] › tests/e2e/short-invitation.spec.ts:141:1 › wrong-case, deleted and offline locators remain unavailable without a connection action (751ms)
+  ✓   55 [firefox] › tests/e2e/short-invitation.spec.ts:169:1 › short-link authentication reports rejected proofs and honors Host cooldown before a fresh attempt (2.8s)
+  ✓   56 [firefox] › tests/e2e/short-invitation.spec.ts:196:1 › short-path and fragment ambiguity is rejected and page restoration cannot reuse a resolved invitation (1.0s)
+  ✓   47 [firefox] › tests/e2e/session-shell.spec.ts:470:1 › a timed-out handshake closes its stream and retries only after explicit input (11.3s)
+  ✓   57 [firefox] › tests/e2e/static-cache.spec.ts:24:1 › production headers, fixed static cache and offline assets exclude invitation material (2.8s)
+  ✓   59 [firefox] › tests/e2e/static-cache.spec.ts:240:1 › unknown routes are not application pages and executable assets stay local (512ms)
+  ✓   58 [firefox] › tests/e2e/static-cache.spec.ts:190:1 › an update waits for live clients then deletes only its old scoped cache (2.5s)
+  ✓   60 [firefox] › tests/e2e/static-cache.spec.ts:262:1 › integrity rejects corrupted hashed assets without retaining partial worker caches (421ms)
+(node:206321) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:206332) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  -   61 [webkit] › tests/e2e/leash.spec.ts:9:1 › a mobile touch gesture scrolls terminal history without typing or moving the page
+  ✓   62 [webkit] › tests/e2e/leash.spec.ts:68:1 › Unicode text input works by default without corrupting terminal replies under virtual modifiers (1.7s)
+  ✓   64 [webkit] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (frame boundary) (2.5s)
+  ✓   63 [webkit] › tests/e2e/leash.spec.ts:96:1 › terminal rendering, keyboard, bounded paste and confirmed controls work across browser profiles (5.8s)
+  ✓   65 [webkit] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (partial frame) (2.6s)
+  ✓   66 [webkit] › tests/e2e/leash.spec.ts:237:1 › readonly terminal renders scrollback without input, resize or process controls (1.5s)
+  ✓   68 [webkit] › tests/e2e/session-shell.spec.ts:106:1 › Wasm byte progress precedes the combined relay handshake and usable session (1.6s)
+  ✓   67 [webkit] › tests/e2e/session-shell.spec.ts:18:1 › exact mode-specific MouseCard identifiers negotiate only their protocol and reject other ranges before dialing (2.5s)
+  ✓   69 [webkit] › tests/e2e/session-shell.spec.ts:164:1 › partial Wasm failure is safe and explicit retry starts progress again (1.5s)
+  ✓   71 [webkit] › tests/e2e/session-shell.spec.ts:264:1 › a redacted load failure retries only after user action (979ms)
+  ✓   70 [webkit] › tests/e2e/session-shell.spec.ts:224:1 › fragment stays out of requests, disappears from history, and establishes a session (2.5s)
+  ✓   72 [webkit] › tests/e2e/session-shell.spec.ts:286:1 › malformed invitation is removed and rejected without a connection attempt (528ms)
+  ✓   73 [webkit] › tests/e2e/session-shell.spec.ts:297:1 › invitation is memory-only across reload and stays out of storage, referrers, and logs (1.3s)
+  ✓   74 [webkit] › tests/e2e/session-shell.spec.ts:365:1 › protected access stays out of durable state and page-cache restoration (1.7s)
+  ✓   75 [webkit] › tests/e2e/session-shell.spec.ts:436:1 › readonly capability comes from the host and is not inferred from the invitation (1.1s)
+  ✓   76 [webkit] › tests/e2e/session-shell.spec.ts:457:1 › busy is retryable and peer details stay redacted (831ms)
+  ✓   78 [webkit] › tests/e2e/session-shell.spec.ts:502:1 › protocol mismatch is terminal and peer details stay redacted (823ms)
+  ✓   79 [webkit] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized global frame with one safe notification before closing (1.1s)
+  ✓   80 [webkit] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized terminal frame with one safe notification before closing (1.2s)
+  ✓   81 [webkit] › tests/e2e/session-shell.spec.ts:550:1 › disconnected sessions reconnect only on explicit retry (1.7s)
+  ✓   82 [webkit] › tests/e2e/session-shell.spec.ts:572:1 › expired invitation shows a safe terminal error before loading transport (654ms)
+  ✓   83 [webkit] › tests/e2e/short-invitation.spec.ts:73:1 › short invitations prompt separately before dialing, reconnect explicitly and clear on reload (2.3s)
+  ✓   84 [webkit] › tests/e2e/short-invitation.spec.ts:141:1 › wrong-case, deleted and offline locators remain unavailable without a connection action (1.2s)
+  ✓   77 [webkit] › tests/e2e/session-shell.spec.ts:470:1 › a timed-out handshake closes its stream and retries only after explicit input (11.6s)
+  ✓   86 [webkit] › tests/e2e/short-invitation.spec.ts:196:1 › short-path and fragment ambiguity is rejected and page restoration cannot reuse a resolved invitation (1.1s)
+  ✓   85 [webkit] › tests/e2e/short-invitation.spec.ts:169:1 › short-link authentication reports rejected proofs and honors Host cooldown before a fresh attempt (3.6s)
+  ✓   88 [webkit] › tests/e2e/static-cache.spec.ts:190:1 › an update waits for live clients then deletes only its old scoped cache (2.0s)
+  ✓   87 [webkit] › tests/e2e/static-cache.spec.ts:24:1 › production headers, fixed static cache and offline assets exclude invitation material (2.7s)
+  ✓   89 [webkit] › tests/e2e/static-cache.spec.ts:240:1 › unknown routes are not application pages and executable assets stay local (456ms)
+  ✓   90 [webkit] › tests/e2e/static-cache.spec.ts:262:1 › integrity rejects corrupted hashed assets without retaining partial worker caches (389ms)
+(node:207994) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:208036) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  -   91 [mobile-safari] › tests/e2e/leash.spec.ts:9:1 › a mobile touch gesture scrolls terminal history without typing or moving the page
+  ✓   92 [mobile-safari] › tests/e2e/leash.spec.ts:68:1 › Unicode text input works by default without corrupting terminal replies under virtual modifiers (1.6s)
+  ✓   94 [mobile-safari] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (frame boundary) (2.3s)
+  ✓   93 [mobile-safari] › tests/e2e/leash.spec.ts:96:1 › terminal rendering, keyboard, bounded paste and confirmed controls work across browser profiles (5.0s)
+  ✓   95 [mobile-safari] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (partial frame) (2.1s)
+  ✓   96 [mobile-safari] › tests/e2e/leash.spec.ts:237:1 › readonly terminal renders scrollback without input, resize or process controls (1.4s)
+  ✓   98 [mobile-safari] › tests/e2e/session-shell.spec.ts:106:1 › Wasm byte progress precedes the combined relay handshake and usable session (1.5s)
+  ✓   97 [mobile-safari] › tests/e2e/session-shell.spec.ts:18:1 › exact mode-specific MouseCard identifiers negotiate only their protocol and reject other ranges before dialing (2.4s)
+  ✓   99 [mobile-safari] › tests/e2e/session-shell.spec.ts:164:1 › partial Wasm failure is safe and explicit retry starts progress again (1.4s)
+  ✓  101 [mobile-safari] › tests/e2e/session-shell.spec.ts:264:1 › a redacted load failure retries only after user action (1.1s)
+  ✓  100 [mobile-safari] › tests/e2e/session-shell.spec.ts:224:1 › fragment stays out of requests, disappears from history, and establishes a session (2.2s)
+  ✓  102 [mobile-safari] › tests/e2e/session-shell.spec.ts:286:1 › malformed invitation is removed and rejected without a connection attempt (587ms)
+  ✓  103 [mobile-safari] › tests/e2e/session-shell.spec.ts:297:1 › invitation is memory-only across reload and stays out of storage, referrers, and logs (1.1s)
+  ✓  104 [mobile-safari] › tests/e2e/session-shell.spec.ts:365:1 › protected access stays out of durable state and page-cache restoration (1.5s)
+  ✓  105 [mobile-safari] › tests/e2e/session-shell.spec.ts:436:1 › readonly capability comes from the host and is not inferred from the invitation (1.0s)
+  ✓  106 [mobile-safari] › tests/e2e/session-shell.spec.ts:457:1 › busy is retryable and peer details stay redacted (713ms)
+  ✓  108 [mobile-safari] › tests/e2e/session-shell.spec.ts:502:1 › protocol mismatch is terminal and peer details stay redacted (768ms)
+  ✓  109 [mobile-safari] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized global frame with one safe notification before closing (893ms)
+  ✓  110 [mobile-safari] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized terminal frame with one safe notification before closing (927ms)
+  ✓  111 [mobile-safari] › tests/e2e/session-shell.spec.ts:550:1 › disconnected sessions reconnect only on explicit retry (1.6s)
+  ✓  112 [mobile-safari] › tests/e2e/session-shell.spec.ts:572:1 › expired invitation shows a safe terminal error before loading transport (583ms)
+  ✓  113 [mobile-safari] › tests/e2e/short-invitation.spec.ts:73:1 › short invitations prompt separately before dialing, reconnect explicitly and clear on reload (2.1s)
+  ✓  114 [mobile-safari] › tests/e2e/short-invitation.spec.ts:141:1 › wrong-case, deleted and offline locators remain unavailable without a connection action (1.1s)
+  ✓  107 [mobile-safari] › tests/e2e/session-shell.spec.ts:470:1 › a timed-out handshake closes its stream and retries only after explicit input (11.1s)
+  ✓  115 [mobile-safari] › tests/e2e/short-invitation.spec.ts:169:1 › short-link authentication reports rejected proofs and honors Host cooldown before a fresh attempt (3.4s)
+  ✓  116 [mobile-safari] › tests/e2e/short-invitation.spec.ts:196:1 › short-path and fragment ambiguity is rejected and page restoration cannot reuse a resolved invitation (1.2s)
+  ✓  118 [mobile-safari] › tests/e2e/static-cache.spec.ts:190:1 › an update waits for live clients then deletes only its old scoped cache (1.8s)
+  ✓  117 [mobile-safari] › tests/e2e/static-cache.spec.ts:24:1 › production headers, fixed static cache and offline assets exclude invitation material (2.5s)
+  ✓  119 [mobile-safari] › tests/e2e/static-cache.spec.ts:240:1 › unknown routes are not application pages and executable assets stay local (440ms)
+  ✓  120 [mobile-safari] › tests/e2e/static-cache.spec.ts:262:1 › integrity rejects corrupted hashed assets without retaining partial worker caches (433ms)
+(node:209652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:209665) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  122 [mobile-chrome] › tests/e2e/leash.spec.ts:68:1 › Unicode text input works by default without corrupting terminal replies under virtual modifiers (823ms)
+  ✓  121 [mobile-chrome] › tests/e2e/leash.spec.ts:9:1 › a mobile touch gesture scrolls terminal history without typing or moving the page (2.1s)
+  ✓  124 [mobile-chrome] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (frame boundary) (995ms)
+  ✓  123 [mobile-chrome] › tests/e2e/leash.spec.ts:96:1 › terminal rendering, keyboard, bounded paste and confirmed controls work across browser profiles (2.2s)
+  ✓  126 [mobile-chrome] › tests/e2e/leash.spec.ts:237:1 › readonly terminal renders scrollback without input, resize or process controls (653ms)
+  ✓  125 [mobile-chrome] › tests/e2e/leash.spec.ts:181:3 › backpressure pauses input and reconnect discards old paste, modifiers and display (partial frame) (894ms)
+  ✓  128 [mobile-chrome] › tests/e2e/session-shell.spec.ts:106:1 › Wasm byte progress precedes the combined relay handshake and usable session (906ms)
+  ✓  127 [mobile-chrome] › tests/e2e/session-shell.spec.ts:18:1 › exact mode-specific MouseCard identifiers negotiate only their protocol and reject other ranges before dialing (1.4s)
+  ✓  129 [mobile-chrome] › tests/e2e/session-shell.spec.ts:164:1 › partial Wasm failure is safe and explicit retry starts progress again (689ms)
+  ✓  131 [mobile-chrome] › tests/e2e/session-shell.spec.ts:264:1 › a redacted load failure retries only after user action (694ms)
+  ✓  132 [mobile-chrome] › tests/e2e/session-shell.spec.ts:286:1 › malformed invitation is removed and rejected without a connection attempt (176ms)
+  ✓  130 [mobile-chrome] › tests/e2e/session-shell.spec.ts:224:1 › fragment stays out of requests, disappears from history, and establishes a session (2.0s)
+  ✓  133 [mobile-chrome] › tests/e2e/session-shell.spec.ts:297:1 › invitation is memory-only across reload and stays out of storage, referrers, and logs (842ms)
+  ✓  135 [mobile-chrome] › tests/e2e/session-shell.spec.ts:436:1 › readonly capability comes from the host and is not inferred from the invitation (611ms)
+  ✓  134 [mobile-chrome] › tests/e2e/session-shell.spec.ts:365:1 › protected access stays out of durable state and page-cache restoration (1.1s)
+  ✓  136 [mobile-chrome] › tests/e2e/session-shell.spec.ts:457:1 › busy is retryable and peer details stay redacted (534ms)
+  ✓  138 [mobile-chrome] › tests/e2e/session-shell.spec.ts:502:1 › protocol mismatch is terminal and peer details stay redacted (444ms)
+  ✓  139 [mobile-chrome] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized global frame with one safe notification before closing (452ms)
+  ✓  140 [mobile-chrome] › tests/e2e/session-shell.spec.ts:522:3 › leash rejects an oversized terminal frame with one safe notification before closing (457ms)
+  ✓  141 [mobile-chrome] › tests/e2e/session-shell.spec.ts:550:1 › disconnected sessions reconnect only on explicit retry (601ms)
+  ✓  142 [mobile-chrome] › tests/e2e/session-shell.spec.ts:572:1 › expired invitation shows a safe terminal error before loading transport (241ms)
+  ✓  143 [mobile-chrome] › tests/e2e/short-invitation.spec.ts:73:1 › short invitations prompt separately before dialing, reconnect explicitly and clear on reload (1.0s)
+  ✓  144 [mobile-chrome] › tests/e2e/short-invitation.spec.ts:141:1 › wrong-case, deleted and offline locators remain unavailable without a connection action (589ms)
+  ✓  145 [mobile-chrome] › tests/e2e/short-invitation.spec.ts:169:1 › short-link authentication reports rejected proofs and honors Host cooldown before a fresh attempt (2.5s)
+  ✓  146 [mobile-chrome] › tests/e2e/short-invitation.spec.ts:196:1 › short-path and fragment ambiguity is rejected and page restoration cannot reuse a resolved invitation (614ms)
+  ✓  147 [mobile-chrome] › tests/e2e/static-cache.spec.ts:24:1 › production headers, fixed static cache and offline assets exclude invitation material (981ms)
+  ✓  148 [mobile-chrome] › tests/e2e/static-cache.spec.ts:190:1 › an update waits for live clients then deletes only its old scoped cache (2.3s)
+  ✓  149 [mobile-chrome] › tests/e2e/static-cache.spec.ts:240:1 › unknown routes are not application pages and executable assets stay local (167ms)
+  ✓  150 [mobile-chrome] › tests/e2e/static-cache.spec.ts:262:1 › integrity rejects corrupted hashed assets without retaining partial worker caches (220ms)
+  ✓  137 [mobile-chrome] › tests/e2e/session-shell.spec.ts:470:1 › a timed-out handshake closes its stream and retries only after explicit input (10.9s)
+
+  4 skipped
+  146 passed (2.1m)
+
+==> Firefox and WebKit real transport acceptance
+ok  	tailmouse/apps/cli/internal/transport/tailcat	131.988s
+
+==> Go race and vulnerability checks
+all modules verified
+ok  	tailmouse/apps/cli/cmd/tailmouse	32.924s
+ok  	tailmouse/apps/cli/internal/config	1.041s
+ok  	tailmouse/apps/cli/internal/flow	(cached)
+ok  	tailmouse/apps/cli/internal/invitation	1.469s
+ok  	tailmouse/apps/cli/internal/leash	(cached)
+ok  	tailmouse/apps/cli/internal/platform/pty	(cached)
+ok  	tailmouse/apps/cli/internal/protocol	1.514s
+ok  	tailmouse/apps/cli/internal/session	2.658s
+ok  	tailmouse/apps/cli/internal/share	2.579s
+ok  	tailmouse/apps/cli/internal/transport/tailcat	(cached)
+ok  	tailmouse/tools/archiveinfo	(cached)
+=== Symbol Results ===
+
+No vulnerabilities found.
+
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 6
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.
+Use '-show verbose' for more details.
+
+==> Unix Leash representative network profiles
+$ node tools/leash-acceptance.mjs --network-matrix
+2026/10/20 07:34:04 built dist in /tmp/tailmouse-tailcat-wasm-mQILea/dist in 1.216s
+[tailcat:build] passed at 52fbad323e9d with an unchanged submodule.
+$ node ../../tools/web-task.mjs build
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 58 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/NOTICE                                                                                             0.19 kB
+dist/.tailmouse/bridge.html                                                                             0.54 kB │ gzip:     0.34 kB
+dist/assets/resource-worker-DwucB-rz.js.br                                                              0.89 kB
+dist/assets/resource-worker-DwucB-rz.js.gz                                                              0.97 kB
+dist/index.html                                                                                         1.23 kB │ gzip:     0.56 kB
+dist/assets/resource-worker-DwucB-rz.js                                                                 2.01 kB
+dist/service-worker.js                                                                                  2.90 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.br           4.13 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz           4.34 kB
+dist/assets/index-CP0MTyoa.css.br                                                                       4.48 kB
+dist/assets/index-CP0MTyoa.css.gz                                                                       4.81 kB
+dist/.tailmouse/bridge.js                                                                               5.70 kB
+dist/.tailmouse/shim.js                                                                                 6.47 kB
+dist/.tailmouse/sw.js                                                                                   6.55 kB
+dist/LICENSE                                                                                           11.35 kB
+dist/tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js             16.99 kB
+dist/web-manifest.json                                                                                 20.47 kB │ gzip:     4.75 kB
+dist/assets/index-BETp3mTp.js.br                                                                      127.36 kB
+dist/assets/index-BETp3mTp.js.gz                                                                      138.70 kB
+dist/THIRD_PARTY_NOTICES.txt                                                                          396.81 kB │ gzip:    37.64 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.br   5,039.80 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm.br      5,107.91 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.gz   6,260.34 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm.gz      6,335.50 kB
+dist/tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm     26,955.58 kB │ gzip: 6,340.11 kB
+dist/tailcat/resource-cf69a7e20c54e17ac323adf918725e719b642e30997e66966d8be733c79218ee.wasm        27,277.76 kB │ gzip: 6,417.77 kB
+dist/.tailmouse/content.css                                                                             0.21 kB │ gzip:     0.16 kB
+dist/assets/index-CP0MTyoa.css                                                                         18.90 kB │ gzip:     4.85 kB
+dist/assets/index-BETp3mTp.js                                                                         510.44 kB │ gzip:   140.19 kB │ map: 1,297.29 kB
+
+✓ built in 10.07s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[33m[PLUGIN_TIMINGS] [0mYour build spent 94% of 10.1s inside plugin hooks (9.5s).
+Measured inside the callback, so queue time is excluded and time the callback itself awaited is not:
+  - tailmouse-tailcat-artifacts generateBundle (92%, 9.3s, 1 call)
+Those rows are 92% of the build; the rest of the 94% is below.
+Not measurable — 1 hook whose calls overlap, so elapsed time covers work other calls were doing. Profile with `node --cpu-prof`:
+  - vite:css transform (4 calls)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+
+ok  	tailmouse/apps/cli/cmd/tailmouse	270.809s
+
+Gate passed (full).
