@@ -19,10 +19,22 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.resetAllMocks();
 });
-async function route(pathname = '/', hash = '', hostname = 'localhost') {
+async function route(
+  pathname = '/',
+  hash = '',
+  hostname = 'localhost',
+  search = '',
+) {
   class Element {}
   const root = new Element();
-  const location = { pathname, hash, hostname, search: '' };
+  const location = {
+    pathname,
+    hash,
+    hostname,
+    search,
+    origin: `https://${hostname}`,
+    replace: vi.fn(),
+  };
   const history = { replaceState: vi.fn() };
   let change!: () => void;
   vi.stubGlobal('HTMLElement', Element);
@@ -100,3 +112,42 @@ it('recognizes a resource host and keeps the legacy terminal fallback separate',
   page.change();
   expect(page.last()?.type).toBe(state.share);
 });
+
+it.each([
+  '',
+  '#share',
+  '#guide',
+  '#get-started',
+  '#workflow',
+  '#permissions',
+  '#compatibility',
+])(
+  'uses the canonical product site for ordinary legacy-origin navigation %s',
+  async (hash) => {
+    const page = await route(
+      '/',
+      hash,
+      'link.tailmouse.com',
+      '?synthetic-query',
+    );
+    expect(page.location.replace).toHaveBeenCalledWith(
+      'https://tailmouse.com/' + hash,
+    );
+    expect(state.render).not.toHaveBeenCalled();
+    expect(state.consume).not.toHaveBeenCalled();
+  },
+);
+it.each([
+  ['/', '#/v1/synthetic', 'link.tailmouse.com'],
+  ['/AbCd12', '', 'link.tailmouse.com'],
+  ['/', '#tm=synthetic', 'link.tailmouse.com'],
+  ['/', '#share', 'link.tailmouse.com.example.test'],
+  ['/', '#guide', 'self-hosted.example.test'],
+])(
+  'never redirects credential, short locator or self-hosted navigation',
+  async (path, hash, host) => {
+    const page = await route(path, hash, host);
+    expect(page.location.replace).not.toHaveBeenCalled();
+    expect(state.render).toHaveBeenCalled();
+  },
+);

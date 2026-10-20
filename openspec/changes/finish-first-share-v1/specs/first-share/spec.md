@@ -49,3 +49,13 @@ The current source, CLI, browser, build and tests MUST no longer include the Esc
 - **WHEN** a user opens the homepage or lists CLI commands
 - **THEN** only supported sharing journeys and protected legacy terminal access are offered
 - **AND** no game runtime, assets or game-specific tests ship in the current build.
+
+### Requirement: Retire the old game frontend at every official entry
+
+The existing official legacy origin MUST serve the game-free release frontend while retaining its protected short-invitation API and storage bindings. Ordinary homepage and resource-hosting anchor navigation at that origin MUST use the canonical tailmouse.com product site. Credential-bearing fragments, short locator paths and self-hosted origins MUST NOT be redirected or forwarded by this convenience rule.
+
+#### Scenario: Open the previous official homepage
+
+- **WHEN** a visitor opens an ordinary homepage or hosting guide anchor at link.tailmouse.com
+- **THEN** the browser replaces that navigation with the same known anchor at tailmouse.com without forwarding query parameters
+- **AND** a legacy full invitation or protected short locator remains on its original authentication origin and can use the matching game-free frontend.

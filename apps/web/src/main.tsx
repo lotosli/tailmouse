@@ -13,7 +13,26 @@ if (!(root instanceof HTMLElement)) {
 }
 const container = root;
 let landing = false;
+const landingAnchors = [
+  '',
+  '#share',
+  '#get-started',
+  '#workflow',
+  '#guide',
+  '#permissions',
+  '#compatibility',
+];
 function mountRoute(): void {
+  // Keep legacy credential and locator navigation on its authentication origin.
+  // Only ordinary marketing/hosting anchors use the canonical resource site.
+  if (
+    location.origin === 'https://link.tailmouse.com' &&
+    location.pathname === '/' &&
+    landingAnchors.includes(location.hash)
+  ) {
+    location.replace('https://tailmouse.com/' + location.hash);
+    return;
+  }
   if (location.pathname === '/' && location.hash === '#share') {
     if (landing) render(null, container);
     render(<BrowserShare />, container);
@@ -44,14 +63,7 @@ function mountRoute(): void {
     }
   } else if (
     location.pathname === '/' &&
-    [
-      '',
-      '#get-started',
-      '#workflow',
-      '#guide',
-      '#permissions',
-      '#compatibility',
-    ].includes(location.hash)
+    landingAnchors.includes(location.hash)
   ) {
     if (landing) return;
     render(null, container);
