@@ -1,0 +1,19 @@
+# Configuration-free v0.1.0-alpha.2 — publication verified
+
+Observed on 2026-10-20 (Asia/Shanghai): source `223903c889b19b83b9baa20866a96bd46434df07` is preserved on remote `main` and by immutable annotated tag `v0.1.0-alpha.2`. The four resource commands use the hosted tailmouse.com defaults without a local configuration file. Custom deployment validation and configuration precedence remain strict. README, native help and the homepage show the matching short commands; alpha.1 clients need an upgrade.
+
+## Validation and source binding
+
+[Full Linux gate](full-gate.json) records the successful `pnpm gate` run before the source commit, including the changed production/test input hashes. Every hash matches the tagged source. The gate passes 186 browser cases with four existing skips, real resource/transport/protected-Leash acceptance, race checks and exactly four profiles in each Escape/Leash network suite. Go statement coverage is 86.9%, resource coverage is 80.9%, and every exposed Web/edge coverage metric exceeds 80%.
+
+A separate clean clone of the tag passes the normal build, actual Worker integration, six-target archive verification, eight CycloneDX inventories and 55 distribution checksums. The extracted Linux x64 archive reports the exact version/protocol/Tailcat identity and all four resource help commands describe the optional configuration. [Build and publication record](build-and-publication.json) records commands, exit codes, source identity, retained log hashes and asset digests. [Release manifest](release-manifest.json) and [SHA256SUMS](SHA256SUMS) are byte-identical copies of the published assets.
+
+## Public downloads and website
+
+[TailMouse v0.1.0-alpha.2](https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.2), release ID `417956284`, was published at `2026-10-20T03:02:21Z` with `draft: false`, `prerelease: false` and Latest verified, following the owner's publication preference. All six archives, six per-archive SBOMs, optional configuration, source manifest and checksums are attached. All 15 uploaded sizes and GitHub digests match the verified files. [Public download checks](public-downloads.json) repeat the download without an Authorization header or GitHub cookies, verify all file lengths and hashes, and execute the downloaded Linux x64 version and resource help commands.
+
+The same clean tagged source is deployed to https://tailmouse.com. Worker version `cd5c010f-223c-4d44-8534-a434e623a638` receives 100% of traffic, and the public manifest SHA-256 is `c8d67cbf0761f6cc60e16c92772c6d701288daa8a2eb52c123dff25a7d6f274c`. [Deployment](deployment.json) records the provider confirmation. [Public asset checks](public-assets.json) verify all 32 asset representations, both Wasm negotiation paths, routes, configuration and security headers. [Public browser checks](public-browser.json) verify the exact manifest, new download link, configuration-free command, walkthrough, loopback guidance and five widths from 390 to 2700 pixels with no overflow or page errors. Desktop headings retain two lines and the description one line. TLS verification remains enabled.
+
+## Limits
+
+These remain unsigned alpha binaries even though the owner requested the Latest release presentation. Only Linux x64 extracted-archive execution is claimed for this release. macOS Receive requires APFS; Windows Receive and Dev with Receive are unsupported. Final native Windows Worker acceptance, browser-to-ConPTY end-to-end acceptance, physical mobile devices and execution of every cross-built target remain unverified. Historical platform results are not reruns of this update. Same-origin hosted previews are for trusted applications. No release tag or previously published asset was replaced, and Tailcat remains pinned to `52fbad323e9d352f1febb623e0975368e9a8cbdd`.

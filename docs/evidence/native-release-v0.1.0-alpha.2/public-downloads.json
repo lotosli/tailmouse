@@ -1,0 +1,124 @@
+{
+  "repository": "https://github.com/lotosli/tailmouse",
+  "release": "https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.2",
+  "requestAuthentication": "No Authorization header or GitHub cookies supplied for public download URLs.",
+  "sourceRevision": "223903c889b19b83b9baa20866a96bd46434df07",
+  "downloadedAssets": [
+    {
+      "name": "SHA256SUMS",
+      "bytes": 1538,
+      "sha256": "ee31a96679f3e4977a525d5981cec0e34616f0e697437b7e06d5a7a731ebedf4",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/SHA256SUMS",
+      "status": "verified"
+    },
+    {
+      "name": "release-manifest.json",
+      "bytes": 3408,
+      "sha256": "492b1d2277b9b0385745ee0739b61eb82d2f6457e99dc5395e69670216a3ff4d",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/release-manifest.json",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse-config.json",
+      "bytes": 175,
+      "sha256": "318241bebc934100350a22a54c51cf2aa4ea8535ffd7f27725ed56d50b345e58",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse-config.json",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_darwin_amd64.tar.gz",
+      "bytes": 8788394,
+      "sha256": "a7efeed4441c8dd0d691c280225bedffebabe4d53ecfe23d3a8c365295e2a4b2",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_darwin_amd64.tar.gz",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_darwin_amd64.tar.gz.cdx.json",
+      "bytes": 23342,
+      "sha256": "6216de92f5d0b6be43b7b508a1cde893a449666637fba93a293eb64df44ddf59",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_darwin_amd64.tar.gz.cdx.json",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_darwin_arm64.tar.gz",
+      "bytes": 8185363,
+      "sha256": "ac02f6a88d961265438d56b91682a77fa0f423ebb6aca7e210f95f7fb4e59af2",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_darwin_arm64.tar.gz",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_darwin_arm64.tar.gz.cdx.json",
+      "bytes": 23342,
+      "sha256": "5ce986edfaca23b697964179ade57c1061a8daa0e221cd3ac056f554b89db169",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_darwin_arm64.tar.gz.cdx.json",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_linux_amd64.tar.gz",
+      "bytes": 8919581,
+      "sha256": "3ef053fdd8a23483722572a6d832a429b417722b59d289c997ec9f13ca98ea43",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_linux_amd64.tar.gz",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_linux_amd64.tar.gz.cdx.json",
+      "bytes": 25645,
+      "sha256": "aeb3e5a30d2bfd68aeb82c398c785949c4e46429f3eacdbda8c6512a675609f9",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_linux_amd64.tar.gz.cdx.json",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_linux_arm64.tar.gz",
+      "bytes": 8120908,
+      "sha256": "3ed36465e788a25301d8d18f85741b93d06f01169a28039011c268572924ca35",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_linux_arm64.tar.gz",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_linux_arm64.tar.gz.cdx.json",
+      "bytes": 25645,
+      "sha256": "7e828a729af073801969bf0fc24ae9d9f3c9f6e2c7cf987e7d3fe5e03aea5873",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_linux_arm64.tar.gz.cdx.json",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_windows_amd64.zip",
+      "bytes": 8916163,
+      "sha256": "d8ffdb79103b38a51b496e2c77292695d444dfb37d25aafcc81bb63cd2f7fb24",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_windows_amd64.zip",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_windows_amd64.zip.cdx.json",
+      "bytes": 24672,
+      "sha256": "ac0ee8ae39a9f67d7e9e8308d2a29e9f7a0aed13636ee3c18a26e9fbb9a53887",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_windows_amd64.zip.cdx.json",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_windows_arm64.zip",
+      "bytes": 8021734,
+      "sha256": "af864b82ffc3d162d956090e78ed75b014a0cfcd43309fad26ad7506fd795ca4",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_windows_arm64.zip",
+      "status": "verified"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.2_windows_arm64.zip.cdx.json",
+      "bytes": 24672,
+      "sha256": "da1e0e55faaf3b44afc7500a96f7db0b7667afb4050658b2b40e4028ae93dbbe",
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.2/tailmouse_0.1.0-alpha.2_windows_arm64.zip.cdx.json",
+      "status": "verified"
+    }
+  ],
+  "linuxNative": {
+    "version": "TailMouse 0.1.0-alpha.2\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTMOUSE Resource protocol 2\nTailcat revision 52fbad323e9d352f1febb623e0975368e9a8cbdd",
+    "helpCommands": [
+      "cli",
+      "web",
+      "receive",
+      "dev"
+    ],
+    "status": "verified"
+  },
+  "status": "verified"
+}
