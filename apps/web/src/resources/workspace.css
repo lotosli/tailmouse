@@ -349,3 +349,16 @@
   width: 100%;
   box-sizing: border-box;
 }
+
+@media (max-width: 800px) {
+  .resource-grid > .resource-panel[data-resource] {
+    display: none;
+  }
+  .resource-grid[data-active-tab='cli'] > [data-resource='cli'],
+  .resource-grid[data-active-tab='web'] > [data-resource='web'],
+  .resource-grid[data-active-tab='receive'] > [data-resource='receive'],
+  .resource-grid[data-active-tab='files'] > [data-resource='files'],
+  .resource-grid[data-active-tab='text'] > [data-resource='text'] {
+    display: block;
+  }
+}

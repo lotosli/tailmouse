@@ -38,6 +38,8 @@ const phases = [
         '--test-coverage-functions=80',
         'deploy/resource/worker.test.ts',
         'tools/resource-deploy.test.ts',
+        'tools/install-recipes.test.ts',
+        'tools/installer.test.ts',
         'tools/m0-acceptance.test.ts',
         'tools/go-gate.test.ts',
         'tools/check-architecture.test.ts',
@@ -169,7 +171,7 @@ const phases = [
         '-count=1',
         '-failfast',
         '-timeout=3m',
-        '-run=^Test(HermeticResourceWorkspace|HermeticResourceSingleOrigin|ResourceTUIRedraw)$',
+        '-run=^Test(HermeticResourceWorkspace|HermeticResourceSingleOrigin|HermeticSimpleSharing|ResourceTUIRedraw)$',
         './apps/cli/cmd/tailmouse',
         './apps/cli/internal/share',
       ]);

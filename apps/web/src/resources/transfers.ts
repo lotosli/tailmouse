@@ -16,11 +16,21 @@ export interface OfferedList {
   next: number;
   more: boolean;
 }
+function hasControl(value: string, whitespace = false): boolean {
+  return Array.from(value).some((char) => {
+    const point = char.charCodeAt(0);
+    return (
+      (point < 32 || (point >= 127 && point <= 159)) &&
+      !(whitespace && [9, 10, 13].includes(point))
+    );
+  });
+}
 export function validText(text: unknown): text is string {
   return (
     typeof text === 'string' &&
+    text.isWellFormed() &&
     new TextEncoder().encode(text).length <= MAX_TEXT &&
-    !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/u.test(text)
+    !hasControl(text, true)
   );
 }
 export function validFilePath(value: unknown, root = false): value is string {
@@ -36,7 +46,8 @@ export function validFilePath(value: unknown, root = false): value is string {
               part.length > 0 &&
               !part.startsWith('.') &&
               new TextEncoder().encode(part).length <= 180 &&
-              !/[\\:\u0000-\u001f\u007f-\u009f]/u.test(part),
+              !/[\\:]/u.test(part) &&
+              !hasControl(part),
           )))
   );
 }

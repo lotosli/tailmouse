@@ -197,10 +197,13 @@ export function TextPanel({
       <button
         disabled={incoming === ''}
         onClick={() =>
-          void navigator.clipboard.writeText(incoming).then(
-            () => setStatus('Text copied.'),
-            () => setStatus('Clipboard unavailable. Select and copy the text.'),
-          )
+          void Promise.resolve()
+            .then(() => navigator.clipboard.writeText(incoming))
+            .then(
+              () => setStatus('Text copied.'),
+              () =>
+                setStatus('Clipboard unavailable. Select and copy the text.'),
+            )
         }
       >
         Copy text

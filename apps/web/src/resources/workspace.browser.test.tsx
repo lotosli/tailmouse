@@ -122,13 +122,13 @@ describe('onboarding and support', () => {
     await expect
       .element(
         page.getByRole('link', {
-          name: 'Download v0.1.0-alpha.2 ↗',
+          name: 'Download v0.1.0-alpha.3 ↗',
           exact: true,
         }),
       )
       .toHaveAttribute(
         'href',
-        'https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.2',
+        'https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.3',
       );
     expect(root.textContent).toContain('127.0.0.1:8080');
     expect(root.textContent).toContain('not a sandbox');

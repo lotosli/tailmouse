@@ -147,7 +147,7 @@ export function ResourceLanding() {
         aria-labelledby="get-title"
       >
         <p class="eyebrow">Start on the sharing machine</p>
-        <h2 id="get-title">Download, extract, and share.</h2>
+        <h2 id="get-title">Install once, then share.</h2>
         <div class="availability-note">
           <strong>TailMouse v0.1.0-alpha.3 is available.</strong>
           <p>
@@ -180,6 +180,27 @@ export function ResourceLanding() {
           TailMouse to your PATH, or run ./tailmouse on Linux/macOS and
           .\tailmouse.exe on Windows from the extracted folder.
         </p>
+        <details>
+          <summary>Install or upgrade in one command</summary>
+          <p>macOS / Linux (user-local installation):</p>
+          <CopyCommand
+            command="curl -fsSL https://tailmouse.com/install.sh | sh"
+            label="Copy macOS/Linux install"
+          />
+          <p>Windows PowerShell:</p>
+          <CopyCommand
+            command="irm https://tailmouse.com/install.ps1 | iex"
+            label="Copy Windows install"
+          />
+          <p>
+            Already installed? Run <code>tailmouse update</code>. Homebrew and
+            Scoop installations use their package manager’s upgrade command.
+          </p>
+          <p>
+            <a href="/install.sh">Read the shell installer</a> ·{' '}
+            <a href="/install.ps1">Read the PowerShell installer</a>
+          </p>
+        </details>
         <CopyCommand command="tailmouse version" label="Copy version check" />
         <p>
           Keep the version supplied with your invitation. If the workspace

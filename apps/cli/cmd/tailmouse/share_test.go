@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	tailcattransport "tailmouse/apps/cli/internal/transport/tailcat"
@@ -40,6 +41,10 @@ func TestResourceStartupLifetimeAndTransportBoundary(t *testing.T) {
 		expectedURL string
 		hosted      bool
 	}{
+		{"json send", []string{"send", "--json"}, "", "", true},
+		{"human files", []string{"files"}, "", "", true},
+		{"human text", []string{"text"}, "", "", true},
+		{"json text", []string{"text", "--json"}, "", "", true},
 		{"json receive", []string{"receive", "--json"}, "", "", false},
 		{"json web", []string{"web", "--json"}, "", "", false},
 		{"json hosted web without config", []string{"web", "--json"}, "", "", true},
@@ -59,6 +64,15 @@ func TestResourceStartupLifetimeAndTransportBoundary(t *testing.T) {
 				app := httptest.NewServer(http.NotFoundHandler())
 				defer app.Close()
 				target = app.URL
+			}
+			if tc.args[0] == "send" {
+				target = filepath.Join(target, "report.txt")
+				if err := os.WriteFile(target, []byte("file"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tc.args[0] == "text" {
+				target = "plain text"
 			}
 			args := append(tc.args, target)
 			env := []string{"TAILMOUSE_FRONTEND_BASE=https://ui.example.com", "TAILMOUSE_CONTENT_BASE=https://preview.example.net"}

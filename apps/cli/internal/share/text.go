@@ -25,6 +25,19 @@ type TextMessage struct {
 }
 
 func (h *Host) TextValue() string { h.mu.Lock(); defer h.mu.Unlock(); return h.text }
+func (h *Host) HasText() bool     { return h.options.TextEnabled }
+func (h *Host) ReplaceText(value string) error {
+	if !h.options.TextEnabled || !ValidText(value) {
+		return ErrConfig
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if !h.liveLocked() {
+		return ErrExpired
+	}
+	h.text = value
+	return nil
+}
 func (h *Host) serveText(stream Stream) {
 	f, err := ReadFrame(stream)
 	if err != nil {

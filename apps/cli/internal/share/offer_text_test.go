@@ -171,6 +171,9 @@ func TestDownloadFramesAndBudgets(t *testing.T) {
 	if done.Type != "download.completed" || done.SHA256 != hex.EncodeToString(digest[:]) {
 		t.Fatal(done)
 	}
+	if _, err := io.Copy(io.Discard, c); err != nil {
+		t.Fatal(err)
+	}
 	for _, request := range []FileRequest{{Type: "files.list", Path: "../"}, {Type: "unknown"}, {Type: "download.begin", Path: "../report.txt"}, {Type: "download.begin", Path: "report.txt", Offset: 1}} {
 		c = directOffer(t, o, request, context.Background())
 		var failure WireError
@@ -179,7 +182,8 @@ func TestDownloadFramesAndBudgets(t *testing.T) {
 			t.Fatal(failure)
 		}
 	}
-	if !o.reserve(1000) || !o.reserve(1000) || o.reserve(1) {
+	first, second := o.reserve(1000), o.reserve(1000)
+	if !first || !second || o.reserve(1) {
 		t.Fatal("concurrency/budget not enforced")
 	}
 	o.mu.Lock()
@@ -280,7 +284,7 @@ func TestNewResourcesAuthenticateAndText(t *testing.T) {
 			t.Fatal("invalid text accepted")
 		}
 	}
-	if !ValidText("hello\n世界\ttext\r\n") {
+	if !ValidText("hello\n\u4e16\u754c\ttext\r\n") {
 		t.Fatal("valid text rejected")
 	}
 }

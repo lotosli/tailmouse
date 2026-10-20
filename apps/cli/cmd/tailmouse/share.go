@@ -152,12 +152,34 @@ func runShare(ctx context.Context, stdin *os.File, args, environ []string, confi
 			}
 		}
 		rights := "observe and control"
+		if len(options.Argv) == 0 {
+			switch {
+			case options.Offer != "":
+				rights = "download selected files (read-only)"
+			case options.TextEnabled:
+				rights = "exchange temporary text"
+			case options.Directory != "":
+				rights = "upload files to the selected directory"
+			default:
+				rights = "preview the configured web app"
+			}
+		}
 		if options.ReadOnly {
 			rights = "observe terminal only"
 		}
-		_, e = fmt.Fprintf(output, "TailMouse %s — %s\nTTL: %s; members: %d; approval: %s\nTransport: encrypted Tailcat over DERP\nWeb scope: whole configured origin; uploads never execute automatically.\n%s\n", options.Command, rights, options.TTL, options.MaxClients, options.Approval, link)
+		_, e = fmt.Fprintf(output, "TailMouse %s — %s\nTTL: %s; members: %d; approval: %s\nTransport: encrypted Tailcat over DERP\n%s\n", options.Command, rights, options.TTL, options.MaxClients, options.Approval, link)
 		if e != nil {
 			return e
+		}
+		if options.Target != "" {
+			if _, e = io.WriteString(output, "Web scope: whole configured origin.\n"); e != nil {
+				return e
+			}
+		}
+		if options.Directory != "" {
+			if _, e = io.WriteString(output, "Uploads never execute automatically.\n"); e != nil {
+				return e
+			}
 		}
 		if file, ok := stdout.(*os.File); ok && term.IsTerminal(int(file.Fd())) && !options.NoQR {
 			qr, e := qrcode.New(link, qrcode.Medium)
@@ -171,6 +193,11 @@ func runShare(ctx context.Context, stdin *os.File, args, environ []string, confi
 		if options.Open {
 			if e = openShareBrowser(sessionCtx, link); e != nil {
 				_, _ = fmt.Fprintln(stderr, "Could not open a local browser; use the displayed link.")
+			}
+		}
+		if options.TextEnabled && !options.JSON {
+			if _, err := io.WriteString(output, "Type a line and press Enter to update shared text. Ctrl+C ends sharing.\n"); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -280,6 +307,8 @@ waiting:
 func manageShare(ctx context.Context, console *leashLocalConsole, host *share.Host, output io.Writer, publish func(string) error, cancel context.CancelFunc) (failure error) {
 	buffer := make([]byte, 4096)
 	menu := false
+	var textInput shareTextInput
+	defer func() { clear(textInput.data) }()
 	var selection byte
 	for {
 		n, e := console.ReadInput(ctx, buffer)
@@ -291,6 +320,9 @@ func manageShare(ctx context.Context, console *leashLocalConsole, host *share.Ho
 		}
 		start := 0
 		flush := func(end int) bool {
+			if end > start && host.HasText() && host.Terminal() == nil {
+				return textInput.Feed(host, buffer[start:end], output) == nil
+			}
 			if end > start && host.Terminal() != nil && host.Terminal().Running() {
 				if host.Terminal().LocalInput(ctx, buffer[start:end]) != nil {
 					return false

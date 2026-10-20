@@ -97,11 +97,12 @@ export function ResourceApp({
           Leave workspace
         </button>
       </header>
-      {view.manifest?.testSingleOrigin === true && (
-        <p class="workspace-notice" role="status">
-          Single-origin test mode. Open only applications you trust.
-        </p>
-      )}
+      {view.manifest?.testSingleOrigin === true &&
+        resources.some((r) => r.id === 'web') && (
+          <p class="workspace-notice" role="status">
+            Single-origin test mode. Open only applications you trust.
+          </p>
+        )}
       {view.expiring && view.status !== 'closed' && (
         <p role="status" class="workspace-notice">
           This session expires in less than five minutes.{' '}
@@ -163,7 +164,7 @@ export function ResourceApp({
                   ? 'Text'
                   : resource.id === 'files'
                     ? 'Downloads'
-                    : 'Upload'}
+                    : 'Files'}
           </button>
         ))}
       </nav>
@@ -189,19 +190,23 @@ export function ResourceApp({
           {filesOpen ? 'Collapse files' : 'Show files'}
         </button>
       )}
-      {resources.some((r) => r.id === 'files') && (
-        <FilesPanel session={session} enabled={view.status === 'active'} />
-      )}
-      {resources.some((r) => r.id === 'text') && (
-        <TextPanel session={session} enabled={view.status === 'active'} />
-      )}
       <div
         class="resource-grid"
         data-active-tab={tab}
         style={{ '--terminal-width': `${split}%` }}
       >
+        {resources.some((r) => r.id === 'files') && (
+          <section class="resource-panel download-panel" data-resource="files">
+            <FilesPanel session={session} enabled={view.status === 'active'} />
+          </section>
+        )}
+        {resources.some((r) => r.id === 'text') && (
+          <section class="resource-panel text-panel" data-resource="text">
+            <TextPanel session={session} enabled={view.status === 'active'} />
+          </section>
+        )}
         {resources.some((r) => r.id === 'cli') && (
-          <section class="resource-panel terminal-panel">
+          <section class="resource-panel terminal-panel" data-resource="cli">
             <TerminalPanel
               session={session}
               status={view.status}
@@ -215,7 +220,7 @@ export function ResourceApp({
           </section>
         )}
         {resources.find((r) => r.id === 'web') !== undefined && (
-          <section class="resource-panel preview-panel">
+          <section class="resource-panel preview-panel" data-resource="web">
             <PreviewPanel
               session={session}
               manifest={view.manifest!}
@@ -226,6 +231,7 @@ export function ResourceApp({
         {resources.some((r) => r.id === 'receive') && (
           <section
             class={`resource-panel receive-panel ${filesOpen ? '' : 'files-collapsed'}`}
+            data-resource="receive"
           >
             <ReceivePanel
               session={session}

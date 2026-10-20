@@ -37,6 +37,31 @@ afterEach(() => {
 });
 
 describe('resource worker boundary', () => {
+  it('starts a browser listener and exposes only authenticated accepted peers', async () => {
+    const value = transport();
+    const listening = value.listen('https://relay-map.example.invalid');
+    const worker = TransportWorker.current;
+    worker.reply();
+    await Promise.resolve();
+    expect(worker.messages[0]?.op).toBe('listen');
+    worker.reply('synthetic-address');
+    expect(await listening).toBe('synthetic-address');
+    const accepted = value.accept();
+    worker.reply({ id: 7, peer: 'nodekey:' + 'a'.repeat(64) });
+    const peer = await accepted;
+    expect(peer.peer.startsWith('nodekey:')).toBe(true);
+    const close = peer.stream.close();
+    worker.reply();
+    await close;
+    const invalid = value.accept();
+    worker.reply({ id: 8, peer: 'unverified' });
+    await expect(invalid).rejects.toThrow('Invalid transport peer');
+    const badListener = value.listen('https://relay-map.example.invalid');
+    worker.reply();
+    await Promise.resolve();
+    worker.reply('');
+    await expect(badListener).rejects.toThrow('Listener unavailable');
+  });
   it('reports runtime readiness only after load completes and opens before dialing', async () => {
     const value = transport();
     const loaded = vi.fn();

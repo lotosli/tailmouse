@@ -1,6 +1,16 @@
 # Resource sharing
 
-This guide describes `cli`, `web`, `receive` and `dev` under TMOUSE/2. Escape and legacy Leash keep their existing contracts.
+This guide describes `cli`, `web`, `receive`, `dev`, `send`, `files` and `text` under TMOUSE/2. Escape and legacy Leash keep their existing contracts.
+
+## Simple sharing additions (alpha.3)
+
+`tailmouse send FILE` offers one file and `tailmouse files DIRECTORY` offers read-only, root-confined browsing. The `files` manifest resource authorizes only `download` streams. `files.list` takes a relative `path` and bounded `offset`; replies contain at most 40 entries plus `next`/`more`. `download.begin` selects one path, followed by `download.ready` (name/size), bounded data frames, an end frame and `download.completed` (size/SHA-256). Clients verify both before committing the save. Symlinks, hidden names, non-regular files, absolute paths and traversal are rejected or omitted. Directory enumeration stops at 10,000 entries. Two active downloads, configured file/traffic budgets and attempt counts bound resource use; failed attempts do not refund reservations. Changes to native file size/mtime during reading fail the transfer.
+
+`tailmouse text [TEXT]` exposes the `text` resource and authenticated text channel. `text.get` reads the current value; explicit `text.set` replaces it. `text.value` replies contain at most 16 KiB of plain UTF-8 with only newline, carriage return and tab control characters. Native stdin is bounded; diagnostics contain only operational metadata. The host command's deliberate text surface displays replies. There is no shell/clipboard side effect. Text exists only in session memory.
+
+The website's `/#share` page can initiate a browser-host session with selected File objects and text. Its Worker owns an ephemeral Tailcat listener, pins authenticated peers to member grants and reuses the same framing, visitor UI and integrity checks. The default is one visitor, one hour, up to 100 selected files, 256 MiB per file and a 1 GiB download budget. A reconnect uses the existing peer key and grant within a 60-second control-disconnect window. Host keys/invitations/text are not saved; a closed host page requires a new session. Closing or expiring the host ends active access. Background mobile continuity is not promised. Browsers without a streaming save picker have a 64 MiB Blob fallback ceiling. Static hosting does not relay or store transferred content.
+
+Old frontends fail closed on unfamiliar resource IDs. These are optional TMOUSE/2 resources; Escape, protected Leash and existing resource channels retain their contracts. See [installation and usage](../README.md) for the startup wizard, checksum-verified archive installers, native updater and package-manager recipes. Published archives remain unsigned.
 
 ## Native configuration
 

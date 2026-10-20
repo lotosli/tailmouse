@@ -5,6 +5,7 @@ package tailcat
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"net"
 	"net/http"
@@ -123,4 +124,15 @@ func serveLocalSTUN(listener *net.UDPConn, done chan<- struct{}) {
 		}
 		_, _ = listener.WriteToUDPAddrPort(stun.Response(transaction, source), source)
 	}
+}
+
+// LocalTestDERPMap exposes only a hermetic relay fixture, never an invitation.
+func LocalTestDERPMap(t testing.TB) []byte {
+	t.Helper()
+	region := runLocalDERP(t)
+	data, err := json.Marshal(&tailcfg.DERPMap{Regions: map[tailcfg.DERPRegionID]*tailcfg.DERPRegion{region.RegionID: region}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return data
 }

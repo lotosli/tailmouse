@@ -178,22 +178,21 @@ export default defineConfig({
               contentEncoding?: 'br' | 'gzip';
             }
           > = {};
-          const publicManifest = readFileSync(
-            resolve(import.meta.dirname, 'public/manifest.webmanifest'),
-          );
-          const socialCard = readFileSync(
-            resolve(import.meta.dirname, 'public/social-card.png'),
-          );
-          files['social-card.png'] = {
-            bytes: socialCard.length,
-            sha256: digest(socialCard),
-            ...webObjectMetadata('social-card.png'),
-          };
-          files['manifest.webmanifest'] = {
-            bytes: publicManifest.byteLength,
-            sha256: digest(publicManifest),
-            ...webObjectMetadata('manifest.webmanifest'),
-          };
+          for (const name of [
+            'manifest.webmanifest',
+            'social-card.png',
+            'install.sh',
+            'install.ps1',
+          ]) {
+            const data = readFileSync(
+              resolve(import.meta.dirname, 'public', name),
+            );
+            files[name] = {
+              bytes: data.byteLength,
+              sha256: digest(data),
+              ...webObjectMetadata(name),
+            };
+          }
           const assets: { path: string; integrity: string }[] = [];
           for (const fileName of Object.keys(bundle).sort()) {
             const item = bundle[fileName]!;

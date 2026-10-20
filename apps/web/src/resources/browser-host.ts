@@ -372,6 +372,11 @@ export class BrowserHost {
     guest.streams.clear();
     guest.control = null;
     guest.grant = '';
+    this.#update({
+      visitors: [...this.#guests.values()].filter(
+        (item) => item.control !== null,
+      ).length,
+    });
   }
   async #text(wire: ResourceWire): Promise<void> {
     const message = await wire.object();

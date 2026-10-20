@@ -6,6 +6,8 @@ The accepted `integrate-resource-release` change restores the native Host under 
 
 The static-only Worker under `deploy/resource` serves the authorized tailmouse.com same-origin test configuration. It never relays application traffic. The accepted `default-hosted-resource-config` change embeds this existing trusted-app deployment as the four resource commands' default when no origins are configured. Custom origins retain strict separate-origin validation unless the user explicitly selects test mode. Hosted defaults are selected by the native parser without a configuration download; the browser still validates its static deployment configuration. Bounded per-tab resource sessionStorage recovery follows the resource PRD; legacy invitations keep their in-memory semantics. Release acceptance is recorded separately from source integration.
 
+The accepted `complete-simple-sharing` change adds concrete `FileOffer` and text resources to the same native authority. The browser-host session uses the existing owned Worker/Wasm adapter's listener and authenticated peer identity, while the browser resource layer owns grants, heartbeat, quotas, text and selected File objects. File listing/download/text are optional authenticated TMOUSE/2 channels, not raw SFTP exposure. The CLI owns a cancellable terminal startup wizard and an explicit verified-archive updater. User-local installer assets ship through the same static manifest; Homebrew/Scoop recipes are generated from the immutable public release manifest after publication. No extra service, package or upstream change is introduced.
+
 ## Repository shape
 
 ```text
