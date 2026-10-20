@@ -1,4 +1,4 @@
-import { chromium, firefox, webkit } from '@playwright/test';
+import { chromium, firefox, webkit, expect } from '@playwright/test';
 
 class ProbeError extends Error {
   constructor(code) {
@@ -56,17 +56,15 @@ async function main() {
     enterStage('session');
     const validPage = await context.newPage();
     await validPage.goto(invitationURL(request.baseURL, request.validFragment));
-    await validPage.waitForFunction(
-      () =>
-        document.querySelector('[role="status"]')?.textContent === 'Connected',
-    );
+    const connection = validPage.getByRole('region', { name: 'Connection' });
+    await expect(connection.getByRole('status')).toHaveText('Connected');
     assertCleanURL(validPage.url(), request.baseURL);
     await validPage.waitForFunction(() =>
       document
         .querySelector('[data-testid="latency"]')
         ?.textContent?.includes('ms /'),
     );
-    await validPage
+    await connection
       .getByText('Read only', { exact: true })
       .waitFor({ timeout: 5000 });
     enterStage('busy');
@@ -92,11 +90,7 @@ async function main() {
 
     enterStage('session-close');
     await validPage.getByRole('button', { name: 'Exit session' }).click();
-    await validPage.waitForFunction(
-      () =>
-        document.querySelector('[role="status"]')?.textContent ===
-        'Session closed.',
-    );
+    await expect(connection.getByRole('status')).toHaveText('Session closed.');
     await validPage.close();
 
     enterStage('incorrect-token');

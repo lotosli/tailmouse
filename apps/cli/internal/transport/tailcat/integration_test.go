@@ -255,7 +255,9 @@ func testRelayBrowserWasm(t *testing.T, mode RelayMode, engine string) {
 		}
 		t.Fatal("browser probe ended before visitor disconnection")
 	case <-time.After(30 * time.Second):
-		t.Fatal("native session handler did not finish")
+		cancelProbe()
+		probeErr := <-probeDone
+		t.Fatalf("native session handler did not finish: %v", probeErr)
 	}
 	// Assert drain immediately, while the unrelated incorrect-token test is
 	// still running. Its sixty-second timeout must not hide TCP TIME-WAIT.
@@ -347,7 +349,7 @@ func assertPSKInvitation(t *testing.T, address []byte) {
 	}
 	defer created.Erase()
 	var rendered bytes.Buffer
-	if err := created.Render(&rendered, now, invitation.DisplayOptions{Relay: "official", NoQR: false}); err != nil {
+	if err := created.Render(&rendered, now, invitation.DisplayOptions{Relay: "official", AccessMode: "link", NoQR: false}); err != nil {
 		t.Fatal("PSK-bearing invitation did not fit the existing QR contract")
 	}
 	eraseBytes(rendered.Bytes())
@@ -404,9 +406,6 @@ func mouseCardFragment(t *testing.T, address string, mode invitation.Mode) strin
 	t.Helper()
 	identifier := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 	protocolIdentifier := invitation.LeashProtocol
-	if mode == invitation.ModeLeash {
-		protocolIdentifier = invitation.LeashProtocol
-	}
 	encoded, err := invitation.Encode(invitation.MouseCard{
 		Version:     invitation.CardVersion,
 		Mode:        mode,
@@ -454,9 +453,7 @@ func runBrowserProbe(t *testing.T, ctx context.Context, root string, payload []b
 		"browser transport stage: input",
 		"browser transport stage: launch",
 		"browser transport stage: session",
-		"browser transport stage: game-view",
 		"browser transport stage: busy",
-		"browser transport stage: mode-mismatch",
 		"browser transport stage: session-close",
 		"browser transport stage: incorrect-token",
 		"browser transport stage: context-close",

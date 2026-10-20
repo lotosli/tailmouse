@@ -175,6 +175,25 @@ describe('resource session guidance follows host authority', () => {
     expect(storage.getItem('tailmouse.resource.v1')).toBeNull();
     expect(recovery.invitation.token).toBe('');
   });
+  it('keeps connection loss labelled as reconnecting when the runtime is already loaded', async () => {
+    const first = host();
+    first.push(welcome());
+    const replacement = host();
+    dialed.push(first, replacement);
+    const { session } = makeSession();
+    await session.connect();
+    const messages: string[] = [];
+    session.subscribe((view) => messages.push(view.message));
+    await first.close();
+    await vi.waitFor(() =>
+      expect(replacement.writes.length).toBeGreaterThan(0),
+    );
+    expect(session.view.status).toBe('reconnecting');
+    expect(session.view.message).toContain('Reconnecting');
+    expect(messages).not.toContain('Loading the secure connection runtime…');
+    replacement.push(welcome());
+    await vi.waitFor(() => expect(session.view.status).toBe('active'));
+  });
   it.each([
     ['SESSION_BUSY', 'disconnected', 'visitor slots'],
     ['EXPIRED', 'closed', 'new session'],

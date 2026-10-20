@@ -39,7 +39,9 @@ test('production headers, fixed static cache and offline assets exclude invitati
   const response = await page.goto(`${site.url}${invitationURL().slice(1)}`);
   for (const [name, value] of Object.entries(securityHeaders))
     expect(response!.headers()[name.toLowerCase()]).toBe(value);
-  await expect(page.getByRole('status')).toHaveText('Connected');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Connected');
   await expect(page).toHaveURL(site.url);
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;

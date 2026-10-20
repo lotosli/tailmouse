@@ -119,6 +119,7 @@ export class ResourceSession {
     const generation = ++this.#generation;
     const deadline = performance.now() + 60_000;
     let attempt = 0;
+    const reconnecting = this.#view.status === 'reconnecting';
     const budget = setTimeout(() => {
       this.#transport?.close();
       this.#transport = undefined;
@@ -140,10 +141,11 @@ export class ResourceSession {
       while (!this.#closed && generation === this.#generation) {
         try {
           this.#update({
-            status: attempt === 0 ? 'connecting' : 'reconnecting',
+            status:
+              attempt === 0 && !reconnecting ? 'connecting' : 'reconnecting',
             controller: false,
             message:
-              attempt === 0
+              attempt === 0 && !reconnecting
                 ? 'Loading the secure connection runtime…'
                 : 'Reconnecting; pending input and requests were discarded.',
           });
@@ -706,6 +708,7 @@ export class ResourceSession {
     this.recovery.invitation.address = '';
     this.#update({
       status: 'closed',
+      runtimeProgress: undefined,
       controller: false,
       manifest: null,
       message,

@@ -1,6 +1,6 @@
 # Resource sharing
 
-This guide describes `cli`, `web`, `receive`, `dev`, `send`, `files` and `text` under TMOUSE/2. Escape and legacy Leash keep their existing contracts.
+This guide describes `cli`, `web`, `receive`, `dev`, `send`, `files` and `text` under TMOUSE/2. Protected legacy Leash retains its separate contract; the minigame was removed in 1.0.
 
 ## Simple sharing additions (alpha.3)
 
@@ -10,7 +10,7 @@ This guide describes `cli`, `web`, `receive`, `dev`, `send`, `files` and `text` 
 
 The website's `/#share` page can initiate a browser-host session with selected File objects and text. Its Worker owns an ephemeral Tailcat listener, pins authenticated peers to member grants and reuses the same framing, visitor UI and integrity checks. The default is one visitor, one hour, up to 100 selected files, 256 MiB per file and a 1 GiB download budget. A reconnect uses the existing peer key and grant within a 60-second control-disconnect window. Host keys/invitations/text are not saved; a closed host page requires a new session. Closing or expiring the host ends active access. Background mobile continuity is not promised. Browsers without a streaming save picker have a 64 MiB Blob fallback ceiling. Static hosting does not relay or store transferred content.
 
-Old frontends fail closed on unfamiliar resource IDs. These are optional TMOUSE/2 resources; Escape, protected Leash and existing resource channels retain their contracts. See [installation and usage](../README.md) for the startup wizard, checksum-verified archive installers, native updater and package-manager recipes. Published archives remain unsigned.
+Old frontends fail closed on unfamiliar resource IDs. These are optional TMOUSE/2 resources; Protected Leash and existing resource channels retain their contracts. See [installation and usage](../README.md) for the startup wizard, checksum-verified archive installers, native updater and package-manager recipes. Published archives remain unsigned.
 
 ## Native configuration
 

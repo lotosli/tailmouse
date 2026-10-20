@@ -8,6 +8,10 @@ Share files, temporary text, a terminal or a local web app through one browser l
 
 Open [browser sharing](https://tailmouse.com/#share), select files or enter text, then privately copy the link, scan its locally generated QR code or use the device sharing sheet. Selection errors identify the affected file before starting; remove, add or clear files to correct them. Neither side needs an installation or account. Keep both pages open; closing the host page ends access. Data uses encrypted Tailcat transport rather than website-server storage. Browser sessions last one hour and allow one visitor at a time. Mobile lock/background suspension can interrupt transfers.
 
+![Actual browser file and shared-text transfer using synthetic data](docs/media/browser-sharing.gif)
+
+The recording shows only the receiving browser; invitations and the host’s private QR code are not recorded.
+
 ## Install or upgrade
 
 macOS / Linux, installed for your current user:

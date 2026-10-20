@@ -18,8 +18,8 @@ import { SessionError } from './session.ts';
 import { TerminalDisplayError } from './leash.ts';
 import { TailcatTransportError } from './transport/tailcat/adapter.ts';
 
-const escapeInvitation: MouseCard = {
-  address: 'tcSyntheticEscapeCredential',
+const baseInvitation: MouseCard = {
+  address: 'tcSyntheticBaseCredential',
   expiresAt: 0,
   mode: 'leash',
   port: 44321,
@@ -29,7 +29,7 @@ const escapeInvitation: MouseCard = {
   version: 1,
 };
 const leashInvitation: MouseCard = {
-  ...escapeInvitation,
+  ...baseInvitation,
   address: 'tcSyntheticLeashCredential',
   mode: 'leash',
 };
@@ -66,12 +66,12 @@ describe('Session connection presentation', () => {
 
   it('renders mode hints only for validated invitations', () => {
     const invalid = new InvitationError();
-    expect(initialView(escapeInvitation)).toEqual(viewForStage('loading'));
+    expect(initialView(baseInvitation)).toEqual(viewForStage('loading'));
     expect(initialView(invalid)).toEqual({
       detail: invalid.message,
       stage: 'error',
     });
-    expect(titleFor(escapeInvitation)).toBe('TailMouse Leash');
+    expect(titleFor(baseInvitation)).toBe('TailMouse Leash');
     expect(titleFor(leashInvitation)).toBe('TailMouse Leash');
     expect(titleFor(invalid)).toBe('TailMouse');
   });
@@ -168,12 +168,12 @@ describe('Session connection presentation', () => {
       retryable: true,
       stage: 'error',
     } as const;
-    expect(retryAllowed(errorView, escapeInvitation)).toBe(true);
-    expect(retryAllowed(viewForStage('loading'), escapeInvitation)).toBe(false);
+    expect(retryAllowed(errorView, baseInvitation)).toBe(true);
+    expect(retryAllowed(viewForStage('loading'), baseInvitation)).toBe(false);
     expect(retryAllowed(errorView, new InvitationError())).toBe(false);
     expect(retryAllowed(errorView, undefined)).toBe(false);
     expect(
-      retryAllowed({ detail: 'expired', stage: 'error' }, escapeInvitation),
+      retryAllowed({ detail: 'expired', stage: 'error' }, baseInvitation),
     ).toBe(false);
     expect(retryableFailure(new ProtocolError('SESSION_BUSY'))).toBe(true);
     expect(retryableFailure(new ProtocolError('PROTOCOL_MISMATCH'))).toBe(

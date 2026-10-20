@@ -431,15 +431,15 @@ it('supports drag/drop before sharing and protects an active hosting page', asyn
   const warning = new Event('beforeunload', { cancelable: true });
   window.dispatchEvent(warning);
   expect(warning.defaultPrevented).toBe(true);
-  await act(() =>
+  await act(() => {
     zone.dispatchEvent(
       new DragEvent('drop', {
         bubbles: true,
         cancelable: true,
         dataTransfer: transfer,
       }),
-    ),
-  );
+    );
+  });
   await expect
     .element(page.getByRole('button', { name: 'Remove drop.txt, item 2' }))
     .not.toBeInTheDocument();

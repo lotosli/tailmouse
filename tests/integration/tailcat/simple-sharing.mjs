@@ -83,8 +83,8 @@ try {
     ...options,
     ...(recording
       ? {
-          recordVideo: { dir: recording, size: { width: 1280, height: 800 } },
-          viewport: { width: 1280, height: 800 },
+          recordVideo: { dir: recording, size: { width: 390, height: 844 } },
+          viewport: { width: 390, height: 844 },
         }
       : {}),
   });
@@ -128,11 +128,14 @@ try {
     .getByText('Connected · encrypted Tailcat over DERP', { exact: true })
     .waitFor({ timeout: 70000 });
   assert.equal(new URL(guest.url()).hash, '');
+  // Presentation pauses apply only to the optional human-viewed recording.
+  if (recording) await guest.waitForTimeout(1200);
   stage = 'browser-download';
   assert.equal(
     await downloadBytes(guest, 'Download ' + filename),
     createHash('sha256').update(content).digest('hex'),
   );
+  if (recording) await guest.waitForTimeout(1200);
   await guest.setViewportSize({ width: 390, height: 844 });
   await guest.getByRole('button', { name: 'Text', exact: true }).click();
   assert.equal(
@@ -141,6 +144,7 @@ try {
     ),
     false,
   );
+  if (recording) await guest.waitForTimeout(1200);
   stage = 'browser-text';
   await expect(
     guest.getByText('browser host text', { exact: true }),
@@ -162,6 +166,7 @@ try {
     .getByRole('button', { name: 'Refresh text', exact: true })
     .click();
   await expect(guest.getByText('host response', { exact: true })).toBeVisible();
+  if (recording) await guest.waitForTimeout(1200);
   stage = 'browser-end';
   await host
     .getByRole('button', { name: 'End browser sharing', exact: true })

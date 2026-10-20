@@ -298,7 +298,7 @@ func TestShortInvalidRequestsAndResolution(t *testing.T) {
 		t.Fatal("nil publication accepted")
 	}
 	if lease, err := client.Publish(t.Context(), testInvitation(t, ModeLeash)); err == nil || lease != nil {
-		t.Fatal("Escape publication accepted")
+		t.Fatal("nonofficial origin publication accepted")
 	}
 	if lease, err := client.Publish(t.Context(), value); !errors.Is(err, ErrShortRequest) || lease != nil || strings.Contains(err.Error(), "synthetic-secret") {
 		t.Fatal("network error escaped redaction")

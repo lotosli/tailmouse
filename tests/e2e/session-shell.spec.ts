@@ -137,14 +137,16 @@ test('Wasm byte progress precedes the combined relay handshake and usable sessio
     body.enqueue(new Uint8Array([1, 0, 0, 0]));
     body.close();
   });
-  await expect(page.getByRole('status')).toHaveText(
-    'Connecting to relay / Meow handshake',
-  );
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Connecting to relay / Meow handshake');
   await expect(progress).toHaveCount(0);
   await page.evaluate(() =>
     (window as DownloadFixtureWindow).testReleaseDial!(),
   );
-  await expect(page.getByRole('status')).toHaveText('Connected');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Connected');
   expect(
     await page.evaluate(
       () => (window as DownloadFixtureWindow).testWasmDownloads,
@@ -154,7 +156,9 @@ test('Wasm byte progress precedes the combined relay handshake and usable sessio
     await page.evaluate(() => (window as DownloadFixtureWindow).testDialCount),
   ).toBe(1);
   await page.getByRole('button', { name: 'Exit session', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Session closed.');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Session closed.');
 });
 
 test('partial Wasm failure is safe and explicit retry starts progress again', async ({
@@ -205,12 +209,16 @@ test('partial Wasm failure is safe and explicit retry starts progress again', as
     body.enqueue(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]));
     body.close();
   });
-  await expect(page.getByRole('status')).toHaveText('Connected');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Connected');
   await expect(progress).toHaveCount(0);
   expect(await page.locator('body').innerText()).not.toContain(address);
   expect(messages.join('\n')).not.toContain(address);
   await page.getByRole('button', { name: 'Exit session', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Session closed.');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Session closed.');
 });
 
 test('fragment stays out of requests, disappears from history, and establishes a session', async ({
@@ -221,10 +229,12 @@ test('fragment stays out of requests, disappears from history, and establishes a
   await installTailcatBridge(page);
 
   await page.goto(invitationURL());
-  await expect(page.getByRole('status')).toContainText(
-    'Loading Tailcat WebAssembly',
-  );
-  await expect(page.getByRole('status')).toContainText('Connected');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toContainText('Loading Tailcat WebAssembly');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toContainText('Connected');
   await expect(page).toHaveURL('http://127.0.0.1:4173/');
   expect(requests).not.toEqual([]);
   for (const request of requests) {
@@ -243,7 +253,9 @@ test('fragment stays out of requests, disappears from history, and establishes a
     page.getByText(/^Tailcat revision [0-9a-f]{40}$/u),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Exit session' }).click();
-  await expect(page.getByRole('status')).toHaveText('Session closed.');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Session closed.');
   await expect(
     page.getByRole('button', { name: 'Retry connection' }),
   ).toHaveCount(0);
@@ -266,7 +278,9 @@ test('a redacted load failure retries only after user action', async ({
   await expect(alert).not.toContainText(address);
   failScript = false;
   await page.getByRole('button', { name: 'Retry connection' }).click();
-  await expect(page.getByRole('status')).toContainText('Connected');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toContainText('Connected');
 });
 
 test('malformed invitation is removed and rejected without a connection attempt', async ({
@@ -292,7 +306,9 @@ test('invitation is memory-only across reload and stays out of storage, referrer
   );
   await installTailcatBridge(page);
   await page.goto(invitationURL());
-  await expect(page.getByRole('status')).toContainText('Connected');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toContainText('Connected');
 
   const persistentState = await page.evaluate(async () => {
     const cacheEntries: { url: string; body: string }[] = [];
@@ -408,7 +424,10 @@ test('protected access stays out of durable state and page-cache restoration', a
       .or(page.getByRole('heading', { level: 1, name: /Let them test/u })),
   ).toBeVisible();
   await expect(
-    page.getByRole('status').filter({ hasText: /^Connected$/u }),
+    page
+      .getByRole('region', { name: 'Connection' })
+      .getByRole('status')
+      .filter({ hasText: /^Connected$/u }),
   ).toHaveCount(0);
   await expect(page.getByLabel('Access code')).toHaveCount(0);
   expect(await page.locator('body').innerText()).not.toContain(code);
@@ -430,7 +449,9 @@ test('readonly capability comes from the host and is not inferred from the invit
     page.getByRole('heading', { name: 'TailMouse Leash' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Exit session' }).click();
-  await expect(page.getByRole('status')).toHaveText('Session closed.');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Session closed.');
 });
 
 test('busy is retryable and peer details stay redacted', async ({ page }) => {
@@ -498,7 +519,7 @@ for (const [mode, oversizedFrame] of [
   ['leash', 'global'],
   ['leash', 'terminal'],
 ] as const) {
-  test(`${mode} rejects an oversized frame with one safe notification before closing`, async ({
+  test(`${mode} rejects an oversized ${oversizedFrame} frame with one safe notification before closing`, async ({
     page,
   }) => {
     await installTailcatBridge(page, (route) =>
@@ -531,15 +552,21 @@ test('disconnected sessions reconnect only on explicit retry', async ({
 }) => {
   await installTailcatBridge(page);
   await page.goto(invitationURL());
-  await expect(page.getByRole('status')).toHaveText('Connected');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Connected');
   await page.evaluate('globalThis.testDisconnect()');
   await expect(page.getByRole('alert')).toContainText('session disconnected');
   expect(await page.evaluate('globalThis.testDialCount')).toBe(1);
   await page.getByRole('button', { name: 'Retry connection' }).click();
-  await expect(page.getByRole('status')).toHaveText('Connected');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Connected');
   expect(await page.evaluate('globalThis.testDialCount')).toBe(2);
   await page.getByRole('button', { name: 'Exit session' }).click();
-  await expect(page.getByRole('status')).toHaveText('Session closed.');
+  await expect(
+    page.getByRole('region', { name: 'Connection' }).getByRole('status'),
+  ).toHaveText('Session closed.');
 });
 
 test('expired invitation shows a safe terminal error before loading transport', async ({

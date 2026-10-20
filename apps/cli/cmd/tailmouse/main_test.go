@@ -18,9 +18,9 @@ const syntheticAddress = "tcSyntheticM1Credential"
 
 func TestRunRejectsInvalidCommandsAndConfigurationBeforeTransport(t *testing.T) {
 	for _, args := range [][]string{
-		nil, {"unknown"}, {"escape", "extra"}, {"escape", "--web-base-url", "https://user@example.com"},
-		{"escape", "--web-base-url", "https://example.com/#secret"}, {"escape", "--ttl", "-1s"},
-		{"leash"}, {"leash", "--scrollback-bytes", "65535", "--", "unused"}, {"escape", "--unknown"},
+		nil, {"unknown"}, {"escape"}, {"leash", "--web-base-url", "https://user@example.com", "--", "unused"},
+		{"leash", "--web-base-url", "https://example.com/#secret", "--", "unused"}, {"leash", "--ttl", "-1s", "--", "unused"},
+		{"leash"}, {"leash", "--scrollback-bytes", "65535", "--", "unused"}, {"leash", "--unknown", "--", "unused"},
 	} {
 		called := false
 		code := run(context.Background(), nil, args, nil, t.TempDir(), io.Discard, io.Discard,
@@ -32,7 +32,7 @@ func TestRunRejectsInvalidCommandsAndConfigurationBeforeTransport(t *testing.T) 
 			t.Fatalf("configuration failure code = %d, initialized = %v", code, called)
 		}
 	}
-	if code := run(context.Background(), nil, []string{"escape"}, nil, t.TempDir(), nil, io.Discard, startTailcat); code != exitInternal {
+	if code := run(context.Background(), nil, []string{"version"}, nil, t.TempDir(), nil, io.Discard, startTailcat); code != exitInternal {
 		t.Fatal("invalid output boundary accepted")
 	}
 }
