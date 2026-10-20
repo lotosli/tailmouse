@@ -37,7 +37,6 @@
     "test:transport": "node tools/tailcat-gate.mjs build && pnpm --filter @tailmouse/web build && go test -tags=tailcatintegration -count=1 -failfast -timeout=5m -run=\"^TestHermeticTailcat(Transport|ExpiredHost|ClientVerification)$\" ./apps/cli/internal/transport/tailcat",
     "typecheck": "pnpm --recursive --if-present run typecheck",
     "verify:origin": "node tools/verify-public-origin.mjs",
-    "web:recover-assets": "node tools/recover-web-assets.mjs",
     "resource:bridge": "node tools/resource-bridge.mjs",
     "resource:deploy": "node tools/resource-deploy.mjs"
   },
