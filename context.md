@@ -1,5 +1,9 @@
 # TailMouse project memory
 
+## Finish first share and publish 1.0 — 2026-10-20
+
+- **Owner-directed/in progress:** Implement the accepted product/UX review and publish/deploy v1.0.0. `finish-first-share-v1` records the design. Baseline main a6800d1 is clean and agrees with the published alpha.3 memory. Preserve immutable prior tags, current Tailcat pin, Escape/protected Leash, four network profiles and direct main `[skip ci]` publication. Signing identities and independent participant outcomes remain unavailable; record actual limits without inventing evidence.
+
 ## Complete simple sharing — 2026-10-20
 
 - **Owner-directed/in progress:** Implement all six reviewed suggestions: native send/files/text, browser-host transfer, no-argument startup and install/update distribution; commit and deploy. Accepted change `complete-simple-sharing` and decision `2026-008` record scope and boundaries. Baseline main is `0b83f54`; alpha.2 remains the published release until new acceptance completes. Keep the Tailcat pin, Escape, four network profiles and owner-authorized direct `[skip ci]` publication.

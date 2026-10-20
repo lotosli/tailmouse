@@ -1,0 +1,41 @@
+## ADDED Requirements
+
+### Requirement: Start with the user's task
+
+The homepage and guide MUST distinguish browser file/text sharing from native app/terminal sharing, present installation commands directly, and show current platform capabilities without directing Windows users into unsupported Receive.
+
+#### Scenario: Complete a first browser transfer
+
+- **WHEN** a new user chooses file/text sharing
+- **THEN** they reach selection without installing a client or reading the native workflow
+- **AND** selected-file errors can be corrected before starting a session.
+
+### Requirement: Make transfer state understandable
+
+The browser MUST show runtime download progress, persistent connection/expiry state, local QR and explicit native sharing where supported. Transient action feedback MUST NOT hide connection failures. Receiving browsers MUST disclose actual download limits before an attempt and verify files before confirming successful transfer to their download mechanism. Shared text MUST explicitly replace one value and preserve unsent edits.
+
+#### Scenario: Correct a file and recover from a failed transfer
+
+- **WHEN** a selection or download is invalid or canceled
+- **THEN** the interface identifies the relevant file and actionable reason
+- **AND** the user can correct selection or deliberately retry without automatic replay or false delivery claims.
+
+### Requirement: Guide platform-appropriate native startup
+
+The native wizard MUST allow invalid-choice correction, expose read-only versus interactive terminal intent, hide unsupported platform choices, and explain local management after startup.
+
+#### Scenario: Correct startup input
+
+- **WHEN** a user selects an invalid menu choice or declines unsupported behavior
+- **THEN** they can choose again or quit under the existing cancellation context
+- **AND** no terminal launches without explicit confirmation.
+
+### Requirement: Publish an evidence-bound 1.0 release
+
+The project MUST publish v1.0.0 from preserved accepted source, verify all six archive targets and public assets, update package recipes and deploy the same source. Documentation MUST include installation, uninstall/recovery and actual validation limits.
+
+#### Scenario: Install the published version
+
+- **WHEN** a user follows the documented installer or package-manager path
+- **THEN** the recipe matches published version/checksums and hosted commands need no configuration file
+- **AND** unavailable signing identities or native-platform evidence are not represented as completed validation.
