@@ -19,6 +19,16 @@ async function shortSite(page: Page, authRejections = false) {
     body: string | null;
     headers: Record<string, string>;
   }[] = [];
+  await page.route('https://**/*', (route) => route.abort());
+  await page.route('https://tailmouse.com/**', async (route) => {
+    const url = new URL(route.request().url());
+    const response = await route.fetch({
+      url: `http://127.0.0.1:4173${url.pathname}${url.search}`,
+      headers: { Host: '127.0.0.1:4173' },
+      maxRedirects: 0,
+    });
+    await route.fulfill({ response });
+  });
   await page.route(`${origin}/**`, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -130,6 +140,7 @@ test('short invitations prompt separately before dialing, reconnect explicitly a
       JSON.stringify({ state, requests: site.requests, output }),
     ).not.toContain(secret);
   await page.reload();
+  await expect(page).toHaveURL('https://tailmouse.com/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'Let them test your work. Skip the setup.',
     { useInnerText: true },
@@ -217,4 +228,18 @@ test('short-path and fragment ambiguity is rejected and page restoration cannot 
   await expect(page.getByLabel('Access code')).toHaveCount(0);
   expect(site.requests).toHaveLength(1);
   expect(await page.locator('body').innerText()).not.toContain(accessCode);
+});
+
+test('ordinary legacy anchors use the canonical site without forwarding query parameters', async ({
+  page,
+}) => {
+  const site = await shortSite(page);
+  await page.goto(`${origin}/?synthetic=${code}#guide`);
+  await expect(page).toHaveURL('https://tailmouse.com/#guide');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Let them test your work. Skip the setup.',
+    { useInnerText: true },
+  );
+  expect(site.requests).toEqual([]);
+  expect(await page.evaluate('globalThis.testDialCount')).toBeUndefined();
 });
