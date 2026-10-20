@@ -12,8 +12,6 @@ Share your terminal and local development workspace through one browser link. Le
 - **Keep the debugging workflow together.** A Dev workspace combines a terminal, local app preview and optional upload directory in one invitation. A visitor can inspect the app, send a reproduction file and use the terminal you shared, rather than setting up the project on their own machine.
 - **Keep control on the host.** Resource sessions have expiry and visitor limits; local management lets you approve visitors, grant the single remote input seat or revoke access. Read-only permissions are enforced by the host. The native executable includes hosted defaults, so starting a share needs no configuration file.
 
-Tailcat already includes CLI port forwarding, SSH, SFTP and an experimental browser file/text demo. Browser access, account-free use and encryption are not exclusive to TailMouse. Choose Tailcat directly for networking tools, shell pipelines or embedding its Go library; choose TailMouse for the integrated browser terminal and resource workflow above. TailMouse uses its own application protocol and is not a drop-in client for arbitrary Tailcat services.
-
 Browser traffic uses DERP relays rather than direct peer-to-peer connections. Terminal access has the launched process's user permissions; it is not an OS sandbox or desktop sharing. AI CLI examples use programs installed and configured on the host, with no AI-provider integration. See [platform status and boundaries](#platform-status-and-boundaries).
 
 ## Quick start: share a terminal
