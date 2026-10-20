@@ -1,6 +1,6 @@
 # TailMouse
 
-Send files and temporary text, offer a read-only folder, share a terminal, preview a local web app, and receive files through one browser link. The host runs TailMouse; guests need only a browser. No account or guest installation is required. The Escape minigame remains available.
+Share files, temporary text, a terminal or a local web app through one browser link. Guests need only a browser. For files and text, the host can also use the website without installing anything. No account is required. The Escape minigame remains available.
 
 [Download v0.1.0-alpha.3](https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.3) · [Website and guide](https://tailmouse.com/#guide) · [Resource documentation](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.3/docs/resource-sharing.md) · [Feedback](https://github.com/lotosli/tailmouse/issues/new)
 
@@ -24,7 +24,7 @@ irm https://tailmouse.com/install.ps1 | iex
 
 The [shell installer](https://tailmouse.com/install.sh) and [PowerShell installer](https://tailmouse.com/install.ps1) can be reviewed before execution. They select x64/ARM64 automatically, verify the release archive against `SHA256SUMS` and set up a user-local executable. The shell installer may add the default directory to your shell profile; open a new terminal afterward. A custom shell destination can be selected with `TAILMOUSE_INSTALL_DIR`.
 
-Run `tailmouse` for guided startup, or use a command below. Upgrade standalone installations with `tailmouse update`; `tailmouse update --check` only checks the current Latest release. Failed downloads or checksum verification preserve the existing executable. On Windows the running updater may retain its previous executable in the reported recovery location until it exits.
+Run `tailmouse` for guided startup, or use a command below. For alpha.2 or earlier, run the installer once or replace the extracted executable. From alpha.3 onward, upgrade standalone installations with `tailmouse update`; `tailmouse update --check` only checks the current Latest release. Failed downloads or checksum verification preserve the existing executable. On Windows the running updater may retain its previous executable in the reported recovery location until it exits.
 
 Homebrew (macOS/Linux) and Scoop (Windows) use this repository as their tap/bucket:
 
@@ -116,7 +116,7 @@ Sessions expire after one hour by default. Ending or expiring a resource session
 
 ## File and text sharing
 
-`send` exposes only its selected file; `files` offers a read-only browser rooted at the selected directory. Hidden entries, symlinks and special files are omitted; traversal is rejected. Each directory can show up to 10,000 entries in pages of 40. Downloads use the same one-hour/one-visitor defaults and configurable transfer budgets as other resources: 256 MiB per file, 1 GiB cumulative downloads, 100 attempts and two simultaneous downloads. Failed/canceled attempts consume their reserved budget. File changes during a transfer fail verification instead of reporting success.
+`send` exposes only its selected file; `files` offers a read-only browser rooted at the selected directory. Hidden entries, symlinks and special files are omitted; traversal is rejected. Names are limited to 180 UTF-8 bytes and paths relative to the shared root to 512 bytes. Each directory can show up to 10,000 entries in pages of 40. Downloads use the same one-hour/one-visitor defaults and configurable transfer budgets as other resources: 256 MiB per file, 1 GiB cumulative downloads, 100 attempts and two simultaneous downloads. Failed/canceled attempts consume their reserved budget. File changes during a transfer fail verification instead of reporting success.
 
 Downloads stream to an explicitly selected save file where supported. Other browsers use a bounded in-memory download up to 64 MiB; larger files require a browser with a streaming save picker. Every completed download verifies its length and SHA-256. Ending sharing stops further access; already downloaded files remain on the receiving device.
 

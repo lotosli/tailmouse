@@ -73,11 +73,15 @@ func writeFull(w io.Writer, data []byte) error {
 	return nil
 }
 func WriteJSON(w io.Writer, value any) error {
-	b, e := json.Marshal(value)
-	if e != nil {
+	var buffer bytes.Buffer
+	encoder := json.NewEncoder(&buffer)
+	// These are framed JSON objects, never HTML or inline script. Match the
+	// browser encoder and avoid expanding valid bounded text sixfold.
+	encoder.SetEscapeHTML(false)
+	if encoder.Encode(value) != nil {
 		return ErrFrame
 	}
-	return WriteFrame(w, JSONFrame, b)
+	return WriteFrame(w, JSONFrame, bytes.TrimSuffix(buffer.Bytes(), []byte("\n")))
 }
 func Decode(f Frame, out any) error {
 	if f.Kind != JSONFrame || !utf8.Valid(f.Data) || len(f.Data) == 0 || f.Data[0] != '{' {

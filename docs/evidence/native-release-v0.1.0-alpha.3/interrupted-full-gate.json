@@ -1,0 +1,14 @@
+{
+  "startedAt": "2026-10-20T04:09:30.627111+00:00",
+  "sourceRevision": "1bc223ee96546fb7272dc29387ea026a9866d7bd",
+  "sourceCleanAtStart": true,
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "command": "pnpm gate",
+  "finishedAt": "2026-10-20T04:15:27.103422+00:00",
+  "seconds": 356.475,
+  "exitCode": 1,
+  "logSha256": "7308e5f2bbfe881118a1705fdf919091271d1e745f9c97687b4a1006497d51bf",
+  "sourceCleanAtEnd": true,
+  "status": "interrupted; not a passing gate",
+  "reason": "Stopped the in-progress gate for a newly reproduced maximum-size HTML-text encoding overflow. The failing regression was added and corrected before restarting full acceptance."
+}

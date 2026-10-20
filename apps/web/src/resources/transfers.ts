@@ -38,7 +38,7 @@ export function validFilePath(value: unknown, root = false): value is string {
     typeof value === 'string' &&
     ((root && value === '') ||
       (value.length > 0 &&
-        new TextEncoder().encode(value).length <= 1024 &&
+        new TextEncoder().encode(value).length <= 512 &&
         value
           .split('/')
           .every(

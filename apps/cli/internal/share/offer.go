@@ -49,7 +49,7 @@ func safeOfferPath(value string, root bool) bool {
 	if root && value == "" {
 		return true
 	}
-	if len(value) > 1024 || !utf8.ValidString(value) || !fs.ValidPath(value) || strings.ContainsAny(value, "\\:") {
+	if len(value) > 512 || !utf8.ValidString(value) || !fs.ValidPath(value) || strings.ContainsAny(value, "\\:") {
 		return false
 	}
 	for _, part := range strings.Split(value, "/") {

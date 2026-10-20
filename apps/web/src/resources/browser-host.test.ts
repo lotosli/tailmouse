@@ -272,6 +272,11 @@ it('validates listings and text at the protocol boundary', () => {
   ])
     expect(validFilePath(path)).toBe(false);
   expect(validFilePath('', true)).toBe(true);
+  const boundedPath = ['a'.repeat(180), 'b'.repeat(180), 'c'.repeat(150)].join(
+    '/',
+  );
+  expect(validFilePath(boundedPath)).toBe(true);
+  expect(validFilePath(boundedPath + 'x')).toBe(false);
   expect(validText('safe\ntext')).toBe(true);
   expect(validText('x'.repeat(16385))).toBe(false);
   expect(validText('\x00')).toBe(false);

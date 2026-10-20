@@ -1,4 +1,4 @@
-// Package share implements the four resource-sharing commands and their native authority.
+// Package share implements the resource-sharing commands and their native authority.
 package share
 
 import (
