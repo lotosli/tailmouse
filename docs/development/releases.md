@@ -6,10 +6,10 @@ Use a clean source commit already preserved on `main`. Native archives must cont
 
 Use the exact versions in `tooling/versions.json`, including GoReleaser and CycloneDX CLI. Create an annotated version tag locally and build in a clean, separate checkout of it with the recorded Tailcat submodule initialized. Never move an existing release tag or overwrite a published asset to repair a release; use a new version.
 
-For `v0.1.0-alpha.1`, from that clean checkout:
+For `v0.1.0-alpha.2`, from that clean checkout:
 
 ```sh
-export TAILMOUSE_BUILD_VERSION=0.1.0-alpha.1
+export TAILMOUSE_BUILD_VERSION=0.1.0-alpha.2
 export TAILMOUSE_TAILCAT_REVISION="$(git rev-parse HEAD:third_party/tailcat)"
 pnpm install --frozen-lockfile
 pnpm build
@@ -30,7 +30,7 @@ Check the extracted Linux x64 executable's `version` and resource help commands.
 1. In a new owned directory, copy the six verified native archives and their six `.cdx.json` files from `.artifacts/distribution`. Add the reviewed `deploy/resource/tailmouse-config.test.json` as `tailmouse-config.json`.
 2. Generate `release-manifest.json` with the version, exact source revision, Tailcat pin, toolchains, known platform limits and byte length/SHA-256 for each of those files. Generate a flat `SHA256SUMS` covering every staged file except itself. Do not publish the distribution's broader checksum list without its Web/edge files.
 3. Verify the local tag points to the accepted commit, then push that tag. The existing workflow only runs for `main` pushes and pull requests; keep `[skip ci]` on owner-authorized main commits.
-4. Create a draft GitHub prerelease with `--verify-tag`, a title and the reviewed release notes from `docs/releases/`. Upload the complete staged asset list without `--clobber` and compare GitHub's asset inventory and available SHA-256 digests with the local files.
-5. Publish the draft as a prerelease. Verify every public download's bytes against `SHA256SUMS`, rerun the extracted Linux package's version/help checks, and record the actual release URL and asset identities in project memory.
+4. Create a draft GitHub release with `--verify-tag`, a title and the reviewed release notes from `docs/releases/`. Upload the complete staged asset list without `--clobber` and compare GitHub's asset inventory and available SHA-256 digests with the local files.
+5. Publish with `prerelease: false` and `make_latest: true`, following the owner's 2026-10-20 Latest preference. Verify every public download's bytes against `SHA256SUMS`, rerun the extracted Linux package's version/help checks, and record the actual release URL and asset identities in project memory.
 
-Publication is explicitly authorized for this task; a draft is only an upload staging step. Retain precise failed/deferred test outcomes and publish as a preview until the remaining platform acceptance is complete. Do not claim signing, notarization or all-platform execution from checksum or build verification.
+Publication is explicitly authorized for this task; a draft is only an upload staging step. Keep alpha version names and precise failed/deferred outcomes until the remaining platform acceptance is complete. GitHub's Latest label does not establish stability, signing, notarization or all-platform execution.

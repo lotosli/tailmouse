@@ -130,7 +130,7 @@ export function ResourceLanding() {
         </p>
         <CopyCommand
           command={
-            'curl -fSso ./tailmouse-config.json https://tailmouse.com/tailmouse-config.json\nmkdir -p ./tailmouse-uploads\ntailmouse dev --config ./tailmouse-config.json --web 5173 --receive ./tailmouse-uploads -- sh'
+            'mkdir -p ./tailmouse-uploads\ntailmouse dev --web 5173 --receive ./tailmouse-uploads -- sh'
           }
           label="Copy Dev example"
         />
@@ -147,19 +147,19 @@ export function ResourceLanding() {
         aria-labelledby="get-title"
       >
         <p class="eyebrow">Start on the sharing machine</p>
-        <h2 id="get-title">Get the matching TailMouse build.</h2>
+        <h2 id="get-title">Download, extract, and share.</h2>
         <div class="availability-note">
-          <strong>TailMouse v0.1.0-alpha.1 is available.</strong>
+          <strong>TailMouse v0.1.0-alpha.2 is available.</strong>
           <p>
             Download the sharing app for Linux, macOS or Windows on x64 or
             ARM64. Guests do not install anything.
           </p>
           <a
-            href="https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.1"
+            href="https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.2"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Download v0.1.0-alpha.1 ↗
+            Download v0.1.0-alpha.2 ↗
           </a>{' '}
           <a
             href="https://github.com/lotosli/tailmouse#build-from-source"
@@ -175,16 +175,12 @@ export function ResourceLanding() {
           </p>
         </div>
         <p>
-          On the sharing machine, check that your build provides the four
-          commands below. A build listing only Escape and Leash cannot run these
-          examples.
+          Use v0.1.0-alpha.2 or newer for built-in tailmouse.com defaults. No
+          configuration file or account is needed. Extract the archive and add
+          TailMouse to your PATH, or run ./tailmouse on Linux/macOS and
+          .\tailmouse.exe on Windows from the extracted folder.
         </p>
-        <CopyCommand
-          command={
-            'tailmouse version\ntailmouse cli --help\ntailmouse web --help\ntailmouse receive --help\ntailmouse dev --help'
-          }
-          label="Copy version checks"
-        />
+        <CopyCommand command="tailmouse version" label="Copy version check" />
         <p>
           Keep the version supplied with your invitation. If the workspace
           reports an incompatible host, ask the host for a matching build and a
@@ -205,14 +201,14 @@ export function ResourceLanding() {
             <h3>Create a dedicated folder and start sharing.</h3>
             <CopyCommand
               command={
-                'curl -fSso ./tailmouse-config.json https://tailmouse.com/tailmouse-config.json\nmkdir -p ./tailmouse-uploads\ntailmouse receive --config ./tailmouse-config.json ./tailmouse-uploads'
+                'mkdir -p ./tailmouse-uploads\ntailmouse receive ./tailmouse-uploads'
               }
               label="Copy first-share command"
             />
             <p>
-              The command downloads the test configuration for trusted apps on
-              tailmouse.com. Keep the host terminal open; TailMouse prints a
-              sharing link and the session settings.
+              TailMouse uses its built-in tailmouse.com settings. Keep the host
+              terminal open; TailMouse prints a sharing link and the session
+              settings.
             </p>
           </li>
           <li>

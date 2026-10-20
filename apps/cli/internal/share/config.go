@@ -42,7 +42,7 @@ func IsCommand(value string) bool {
 
 // Parse has no process, transport or directory-creation side effects.
 func Parse(args, environ []string, configDir string) (Options, bool, error) {
-	o := Options{TTL: time.Hour, Approval: "auto", MaxClients: 1, MaxFiles: 100, MaxFile: 256 << 20, MaxTotal: 1 << 30, Cwd: ".", FrontendBase: "https://link.tailmouse.com"}
+	o := Options{TTL: time.Hour, Approval: "auto", MaxClients: 1, MaxFiles: 100, MaxFile: 256 << 20, MaxTotal: 1 << 30, Cwd: ".", FrontendBase: "https://tailmouse.com"}
 	if len(args) == 0 || !IsCommand(args[0]) {
 		return o, false, ErrConfig
 	}
@@ -184,6 +184,23 @@ func Parse(args, environ []string, configDir string) (Options, bool, error) {
 			}
 			return ErrConfig
 		}()
+	}
+	// The hosted pair is one default deployment, not permission to use custom
+	// same-origin previews. Visit includes values set by files and environment.
+	var customOrigin, explicitTestMode bool
+	fs.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "frontend-base", "content-base":
+			customOrigin = true
+		case "test-single-origin":
+			explicitTestMode = true
+		}
+	})
+	if !customOrigin {
+		o.ContentBase = o.FrontendBase
+		if !explicitTestMode {
+			o.TestSingleOrigin = true
+		}
 	}
 	rest := fs.Args()
 	switch o.Command {
@@ -337,13 +354,16 @@ One command. One link. Just a browser.
   tailmouse dev --cli codex --web localhost:5173
   tailmouse escape                     retained minigame
 
-Testing: --test-single-origin allows UI and trusted previews on one origin; not hostile-content isolation.
+Default: tailmouse.com, with no configuration file or account required.
+The hosted UI and previews share an origin; use only apps you trust.
 Common: --ttl 1h (0 until end), --title TEXT, --approval auto|manual,
   --max-clients 1 (1–4), --open, --json, --verbose, --no-qr,
   --derp-map FILE|HTTPS-URL, --derp-region ID, --config FILE,
   --frontend-base HTTPS-BASE, --content-base HTTPS-BASE.
-Web requires an explicit content base on a different registrable domain;
-it must match tailmouse-config.json in the trusted static deployment.
+Custom deployments: --config accepts TOML or deployment JSON. Configuring
+either origin disables the hosted pairing. Web then needs a content base on
+a different registrable domain, or explicit --test-single-origin for trusted
+test apps. Origins must match the trusted static deployment.
 CLI: --cwd DIR, --read-only (Dev: --cli-read-only).
 Web: --allow-remote, --ca-file PEM. Shares the whole configured origin.
 Receive: --max-file 256MiB, --max-total 1GiB, --max-files 100.

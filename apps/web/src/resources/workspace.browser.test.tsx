@@ -122,13 +122,13 @@ describe('onboarding and support', () => {
     await expect
       .element(
         page.getByRole('link', {
-          name: 'Download v0.1.0-alpha.1 ↗',
+          name: 'Download v0.1.0-alpha.2 ↗',
           exact: true,
         }),
       )
       .toHaveAttribute(
         'href',
-        'https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.1',
+        'https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.2',
       );
     expect(root.textContent).toContain('127.0.0.1:8080');
     expect(root.textContent).toContain('not a sandbox');
@@ -136,7 +136,7 @@ describe('onboarding and support', () => {
       .getByRole('button', { name: 'Copy first-share command' })
       .click();
     expect(clipboard).toHaveBeenCalledWith(
-      'curl -fSso ./tailmouse-config.json https://tailmouse.com/tailmouse-config.json\nmkdir -p ./tailmouse-uploads\ntailmouse receive --config ./tailmouse-config.json ./tailmouse-uploads',
+      'mkdir -p ./tailmouse-uploads\ntailmouse receive ./tailmouse-uploads',
     );
     await expect
       .element(page.getByText('Copied. Review the command before running it.'))

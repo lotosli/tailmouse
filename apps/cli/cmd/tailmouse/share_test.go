@@ -38,12 +38,14 @@ func TestResourceStartupLifetimeAndTransportBoundary(t *testing.T) {
 		args        []string
 		expectedMap string
 		expectedURL string
+		hosted      bool
 	}{
-		{"json receive", []string{"receive", "--json"}, "", ""},
-		{"json web", []string{"web", "--json"}, "", ""},
-		{"human indefinite", []string{"web", "--ttl", "0"}, "", ""},
-		{"custom relay file", []string{"web", "--derp-map", "/synthetic/relay.json", "--derp-region", "7"}, "/synthetic/relay.json", ""},
-		{"custom relay URL", []string{"web", "--derp-map", "https://relay.example.test/map.json"}, "", "https://relay.example.test/map.json"},
+		{"json receive", []string{"receive", "--json"}, "", "", false},
+		{"json web", []string{"web", "--json"}, "", "", false},
+		{"json hosted web without config", []string{"web", "--json"}, "", "", true},
+		{"human indefinite", []string{"web", "--ttl", "0"}, "", "", false},
+		{"custom relay file", []string{"web", "--derp-map", "/synthetic/relay.json", "--derp-region", "7"}, "/synthetic/relay.json", "", false},
+		{"custom relay URL", []string{"web", "--derp-map", "https://relay.example.test/map.json"}, "", "https://relay.example.test/map.json", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.args[0] == "receive" && runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
@@ -60,6 +62,9 @@ func TestResourceStartupLifetimeAndTransportBoundary(t *testing.T) {
 			}
 			args := append(tc.args, target)
 			env := []string{"TAILMOUSE_FRONTEND_BASE=https://ui.example.com", "TAILMOUSE_CONTENT_BASE=https://preview.example.net"}
+			if tc.hosted {
+				env = nil
+			}
 			code := runShare(t.Context(), nil, args, env, t.TempDir(), &output, &diagnostic, fake.start, interrupts, func() { interrupts <- os.Interrupt })
 			if code != 0 || fake.closeCalls != 1 || diagnostic.Len() != 0 {
 				t.Fatal("resource session failed to close cleanly", code)
@@ -76,7 +81,11 @@ func TestResourceStartupLifetimeAndTransportBoundary(t *testing.T) {
 					}
 					if name == "share.created" {
 						url, ok := event["url"].(string)
-						if !ok || !strings.HasPrefix(url, "https://s-") {
+						prefix := "https://s-"
+						if tc.hosted {
+							prefix = "https://tailmouse.com/.tailmouse/workspace/#"
+						}
+						if !ok || !strings.HasPrefix(url, prefix) {
 							t.Fatal("sharing surface missing")
 						}
 					} else if len(event) != 1 {

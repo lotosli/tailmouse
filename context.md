@@ -1,5 +1,10 @@
 # TailMouse project memory
 
+## Configuration-free hosted sharing — 2026-10-20
+
+- **Owner-directed:** Remove the local configuration-file prerequisite, use sensible hosted defaults and lower the entry barrier. The accepted `default-hosted-resource-config` change and decision `2026-007` preserve custom-deployment validation and existing safety/resource limits. Ship the change in a new immutable `v0.1.0-alpha.2` release and retain the owner's Latest and `[skip ci]` preferences.
+- **Observed/in progress:** All four resource commands now select the hosted tailmouse.com deployment when neither origin is configured. Explicit test-mode settings still win; configuring either origin disables the implicit hosted pairing. CLI help, README and homepage show short commands, and `--config` remains available. Focused configuration/precedence/error tests, configuration-free CLI startup and all seven existing workspace browser tests pass. The complete Linux gate passes with 186 browser cases/four existing skips, real resource/Leash/transport acceptance, race checks and exactly four profiles per network suite. Go coverage is 86.9%; resource coverage is 80.9%; all Web/edge metrics exceed 80%. [Source-bound gate evidence](docs/evidence/native-release-v0.1.0-alpha.2/full-gate.json) records the input hashes. Native packaging/publication and website deployment are pending; alpha.1 downloads do not contain this behavior.
+
 ## Homepage width and public downloads — 2026-10-19
 
 - **Owner-directed:** Correct the narrow, unnecessarily wrapped text on a wide homepage, publish the common-platform downloads and preserve the work remotely. Continue direct `main` commits with `[skip ci]` and the authorized tailmouse.com deployment.

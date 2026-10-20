@@ -1,5 +1,7 @@
 # TailMouse configuration
 
+Resource commands (`cli`, `web`, `receive`, `dev`) use built-in tailmouse.com settings in v0.1.0-alpha.2 and newer; they do not require a local file. See [resource configuration](resource-sharing.md#native-configuration) for their optional `[share]` TOML/deployment JSON and flags. The schema and mode-specific settings below describe Escape and legacy Leash.
+
 Use `tailmouse config path` to locate the file. Defaults are the OS user configuration directory plus `tailmouse/config.toml`: `$HOME/Library/Application Support/tailmouse/config.toml` on macOS, `$XDG_CONFIG_HOME/tailmouse/config.toml` (otherwise `$HOME/.config/tailmouse/config.toml`) on Linux, and `%AppData%\tailmouse\config.toml` on Windows.
 
 The default file may be absent. An explicitly selected missing/unreadable file, unknown field, unsupported version or invalid value is an error before network or child startup. The file must be a regular file no larger than 64 KiB. Flags override environment, which overrides TOML, which overrides built-in defaults, independently for each field.

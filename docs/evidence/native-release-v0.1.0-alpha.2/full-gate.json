@@ -1,0 +1,40 @@
+{
+  "verifiedAt": "2026-10-20T02:57:03.405730+00:00",
+  "command": "pnpm gate",
+  "exitCode": 0,
+  "source": {
+    "baseRevision": "7c5576dc8789315bd38eb0ccff8de53e44b2dc27",
+    "files": {
+      "apps/cli/internal/share/config.go": "72636ba0fa94363d567712573800763f76f6d41e52b0ce540764dc433c2a0351",
+      "apps/cli/internal/share/config_test.go": "825f769520fcfd37c4a72602b85b5a2720eb00946da6cb13e8f9bed71d7395b3",
+      "apps/cli/cmd/tailmouse/share_test.go": "6bc490323dd9ecc52fdacea42caafa52559ff6e62b7c3263a3767f92d39a07c5",
+      "apps/web/src/resources/landing.tsx": "f123b3de6d9b12e74e02a1257350e12f9591f337bd798445751f159c46a773f4",
+      "apps/web/src/resources/workspace.browser.test.tsx": "43c09dc501a3b7f0b53b1f394047681c1ccf7f6e343ad228416cb3060126918f"
+    }
+  },
+  "logSha256": "310f98d27af16b617a28bddfcb20d74744794b10b21ea0d4db0712111e0e9418",
+  "browserCases": {
+    "passed": 186,
+    "existingSkips": 4
+  },
+  "networkProfiles": {
+    "escape": 4,
+    "leash": 4
+  },
+  "coverage": {
+    "goStatements": 86.9,
+    "resourceStatements": 80.9,
+    "web": {
+      "statements": 83.79,
+      "branches": 82.07,
+      "functions": 80.83,
+      "lines": 85.32
+    },
+    "link-edge": {
+      "statements": 99.37,
+      "branches": 98.98,
+      "functions": 97.36,
+      "lines": 99.64
+    }
+  }
+}

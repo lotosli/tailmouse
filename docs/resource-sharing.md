@@ -4,6 +4,10 @@ This guide describes `cli`, `web`, `receive` and `dev` under TMOUSE/2. Escape an
 
 ## Native configuration
 
+With v0.1.0-alpha.2 or newer, no local configuration file is needed for the hosted service. Run `tailmouse web 8080`, `tailmouse cli -- sh`, `tailmouse receive ./uploads` or a valid combined `dev` command. Create the receive directory first. Both hosted origins default to `https://tailmouse.com` with the existing trusted-app same-origin mode; use only preview applications you trust.
+
+`--config FILE` remains optional for custom deployments and saved preferences, and accepts either native TOML or deployment JSON. Limits-only configuration keeps the hosted defaults. Setting either frontend or content origin disables the implicit hosted pairing: custom Web deployments need an explicit content origin and separate registrable domains, or explicit `--test-single-origin` for trusted test applications. An explicit test-mode value always takes precedence. Defaults are embedded; startup does not fetch or create a local configuration file. The browser still reads its deployment's static configuration normally.
+
 Default limits are TTL 1h, approval `auto`, one member, 256 MiB per file, 1 GiB cumulative upload traffic, 100 creation attempts and two active uploads. `--max-clients` permits 1–4. Decimal KB/MB/GB and binary KiB/MiB/GiB are deliberately different. Canceled traffic and failed creation attempts consume their respective budgets.
 
 `--cli PROGRAM` declares one executable with no shell splitting. Use `-- PROGRAM ARGS...` for arguments; the two forms cannot be combined. Dev needs at least two resources. No uploaded file is executed, extracted or automatically sent to a CLI.
