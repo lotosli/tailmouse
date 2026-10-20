@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-10-20T04:57:04.997399+00:00",
+  "sourceRevision": "ed3b47cd6a1465df6deead93fe16c65e71d08d12",
+  "version": "0.1.0-alpha.3",
+  "runtime": "linux/amd64",
+  "posixInstaller": {
+    "status": "verified",
+    "source": "public GitHub install.sh asset",
+    "installerSha256": "dccfab965458a07cf802003cbc7eeaffe707db4fa08f48d9934e3b2cbb5191ea",
+    "installedExecutableSha256": "5a461bbc01193774a0312f8f07c8a1a8c8c13543dbd300f0d5750d89000b27d6"
+  },
+  "standaloneUpdater": {
+    "status": "verified",
+    "fixture": "Current tagged updater source built with an explicit synthetic 0.0.0-update-fixture version stamp to exercise a real public release upgrade. This is not an alpha.2 executable.",
+    "installedExecutableSha256": "5a461bbc01193774a0312f8f07c8a1a8c8c13543dbd300f0d5750d89000b27d6",
+    "alreadyCurrentCheck": "passed"
+  },
+  "powershell": {
+    "existingExecutable": "preserved",
+    "checksumMismatch": "rejected before executable replacement",
+    "runtime": "PowerShell Core on Linux; native Windows execution remains unverified",
+    "sourceSha256": "02b14cb10f2a3b5017f9f283f22a1525e4d118fc81c4fbd05f789b04bd0decb6",
+    "syntax": "valid",
+    "powershell": "7.6.7",
+    "stagingCleanup": "passed"
+  },
+  "status": "verified"
+}

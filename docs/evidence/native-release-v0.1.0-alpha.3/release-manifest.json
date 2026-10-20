@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "protocols": {
+    "escape": 1,
+    "leash": 2,
+    "resource": 2
+  },
+  "toolchains": {
+    "cyclonedx": "0.33.1",
+    "go": "1.27.2",
+    "goreleaser": "2.18.0",
+    "node": "26.8.1",
+    "pnpm": "11.25.0"
+  },
+  "nativeArchiveRuntimeVerified": [
+    "linux/amd64"
+  ],
+  "limits": [
+    "Preview binaries are unsigned.",
+    "Windows Receive and Dev with Receive are unsupported.",
+    "macOS Receive requires APFS.",
+    "Final Windows Worker fixture confirmation and browser-to-ConPTY end-to-end acceptance remain unverified.",
+    "Physical devices and runtime execution of every cross-built archive remain unverified.",
+    "The hosted test UI and previews share one origin for trusted applications.",
+    "Browser hosts require both pages to remain open; mobile background continuity is unverified.",
+    "Browsers without a streaming save picker have a 64 MiB download fallback ceiling.",
+    "PowerShell installer syntax and failure preservation were checked on Linux; native Windows installation is unverified."
+  ],
+  "version": "0.1.0-alpha.3",
+  "tag": "v0.1.0-alpha.3",
+  "sourceRevision": "ed3b47cd6a1465df6deead93fe16c65e71d08d12",
+  "configuration": "Hosted tailmouse.com defaults are embedded; the configuration JSON asset is optional.",
+  "files": [
+    {
+      "name": "install.ps1",
+      "bytes": 3281,
+      "sha256": "02b14cb10f2a3b5017f9f283f22a1525e4d118fc81c4fbd05f789b04bd0decb6"
+    },
+    {
+      "name": "install.sh",
+      "bytes": 3246,
+      "sha256": "dccfab965458a07cf802003cbc7eeaffe707db4fa08f48d9934e3b2cbb5191ea"
+    },
+    {
+      "name": "tailmouse-config.json",
+      "bytes": 175,
+      "sha256": "318241bebc934100350a22a54c51cf2aa4ea8535ffd7f27725ed56d50b345e58"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz",
+      "bytes": 8900760,
+      "sha256": "55c4a3bca06f3431dc0bfd18f87b2510fdba0bd12df2702b7425c83eb10012be"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz.cdx.json",
+      "bytes": 23342,
+      "sha256": "1bb577a903ec198e657f73fa5c483e02d9527e2ead56b93b5ae99b2e0173f398"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz",
+      "bytes": 8290152,
+      "sha256": "6f06e799de8b5e1e0d3b223f94f70069e010661bb95e6c6fbe16de9b9a638fe9"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz.cdx.json",
+      "bytes": 23342,
+      "sha256": "ef9590cd7d6b8e468b690b30d8237d89ba0ed8d34e80f168021a009ee9c45403"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz",
+      "bytes": 9021922,
+      "sha256": "57a65f3aa3e94c8c4b6583d2d99626a36ffee95a0afed4f4e49d506f55edcf5c"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz.cdx.json",
+      "bytes": 25645,
+      "sha256": "7ff55c299a48fb4e52980851106ead5e30fe14aebc430d2ea13f09a71d9058d0"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz",
+      "bytes": 8214922,
+      "sha256": "de341193375afb94f1d0517bab70ed413fd4d576109ac4ec945dea2790d6467f"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz.cdx.json",
+      "bytes": 25645,
+      "sha256": "77eefabdf69af30b8863e7698fe1b006e0f3611b5502860a0ce9315e73852b46"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_amd64.zip",
+      "bytes": 9030141,
+      "sha256": "b9a6ee5123bb06e69bed6b74db58481766250feaa914c3deffafeefc4320eecc"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_amd64.zip.cdx.json",
+      "bytes": 24672,
+      "sha256": "d95f0bbbe9425aa8347edcfc2bc555c706ac4e32516f7a8ff35748a557da63b0"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_arm64.zip",
+      "bytes": 8113112,
+      "sha256": "0ecabbc2d0f23b1014b42ed4fc26a10a0fc23fcf773d1f3fe10039b4595d8a82"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_arm64.zip.cdx.json",
+      "bytes": 24672,
+      "sha256": "8c57d29aafe6ad326f042d01ab7a904220968b11f73eaad33c2853a435e5681d"
+    }
+  ]
+}

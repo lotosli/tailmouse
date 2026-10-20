@@ -1,0 +1,37 @@
+{
+  "source": "Publicly downloaded release-manifest.json",
+  "version": "0.1.0-alpha.3",
+  "sourceRevision": "ed3b47cd6a1465df6deead93fe16c65e71d08d12",
+  "recipeSha256": {
+    "Formula/tailmouse.rb": "e56282b8ba96134fba29df529bebd522319c05fa0902839a7560fbc494985854",
+    "bucket/tailmouse.json": "225a4f108ed03115723383e20846b07fa0ffd25062e227ac4bd78fb8ce9e168c"
+  },
+  "targets": [
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz",
+      "sha256": "55c4a3bca06f3431dc0bfd18f87b2510fdba0bd12df2702b7425c83eb10012be"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz",
+      "sha256": "6f06e799de8b5e1e0d3b223f94f70069e010661bb95e6c6fbe16de9b9a638fe9"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz",
+      "sha256": "57a65f3aa3e94c8c4b6583d2d99626a36ffee95a0afed4f4e49d506f55edcf5c"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz",
+      "sha256": "de341193375afb94f1d0517bab70ed413fd4d576109ac4ec945dea2790d6467f"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_amd64.zip",
+      "sha256": "b9a6ee5123bb06e69bed6b74db58481766250feaa914c3deffafeefc4320eecc"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_arm64.zip",
+      "sha256": "0ecabbc2d0f23b1014b42ed4fc26a10a0fc23fcf773d1f3fe10039b4595d8a82"
+    }
+  ],
+  "validation": "All six URLs and archive SHA-256 values match the public manifest; generator fixture passes. Native Homebrew/Scoop runtime installation is unverified.",
+  "status": "verified"
+}

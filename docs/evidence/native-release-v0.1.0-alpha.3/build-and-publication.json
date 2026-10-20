@@ -1,0 +1,336 @@
+{
+  "version": "0.1.0-alpha.3",
+  "tag": "v0.1.0-alpha.3",
+  "sourceRevision": "ed3b47cd6a1465df6deead93fe16c65e71d08d12",
+  "validation": {
+    "normalBuild": "passed",
+    "workerIntegration": "passed",
+    "sixNativeArchives": "verified",
+    "eightSBOMs": "verified",
+    "distributionChecksums": 57,
+    "nativeArchive": {
+      "sourceRevision": "ed3b47cd6a1465df6deead93fe16c65e71d08d12",
+      "archive": "tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz",
+      "archiveSha256": "57a65f3aa3e94c8c4b6583d2d99626a36ffee95a0afed4f4e49d506f55edcf5c",
+      "version": "TailMouse 0.1.0-alpha.3\nTMOUSE Escape protocol 1\nTMOUSE Leash protocol 2\nTMOUSE Resource protocol 2\nTailcat revision 52fbad323e9d352f1febb623e0975368e9a8cbdd",
+      "commands": [
+        "cli",
+        "web",
+        "receive",
+        "dev",
+        "send",
+        "files",
+        "text"
+      ],
+      "runtime": "linux/amd64",
+      "status": "verified"
+    },
+    "fullLinuxGate": {
+      "record": "full-gate.json",
+      "status": "passed",
+      "sourceRevision": "b84ffc7bd7f4bbdc0da93ee5ab68e19558a0c900",
+      "sourceBinding": "Native/protocol/tooling inputs are unchanged; the tagged UI-only delta is bound and checked in ui-supplement.json. The clean tagged normal build and Worker check ran afterward."
+    }
+  },
+  "releaseAssets": [
+    {
+      "name": "SHA256SUMS",
+      "bytes": 1693,
+      "sha256": "451be9944948fbfa51eabfe7eb550f99b68e70c5d09c9774b1c6b5167f4f2002"
+    },
+    {
+      "name": "install.ps1",
+      "bytes": 3281,
+      "sha256": "02b14cb10f2a3b5017f9f283f22a1525e4d118fc81c4fbd05f789b04bd0decb6"
+    },
+    {
+      "name": "install.sh",
+      "bytes": 3246,
+      "sha256": "dccfab965458a07cf802003cbc7eeaffe707db4fa08f48d9934e3b2cbb5191ea"
+    },
+    {
+      "name": "release-manifest.json",
+      "bytes": 4014,
+      "sha256": "2aa2658911c8d3833fea047d079d27eb8de1a49b56c5e0a770bdf9d38e9e135a"
+    },
+    {
+      "name": "tailmouse-config.json",
+      "bytes": 175,
+      "sha256": "318241bebc934100350a22a54c51cf2aa4ea8535ffd7f27725ed56d50b345e58"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz",
+      "bytes": 8900760,
+      "sha256": "55c4a3bca06f3431dc0bfd18f87b2510fdba0bd12df2702b7425c83eb10012be"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz.cdx.json",
+      "bytes": 23342,
+      "sha256": "1bb577a903ec198e657f73fa5c483e02d9527e2ead56b93b5ae99b2e0173f398"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz",
+      "bytes": 8290152,
+      "sha256": "6f06e799de8b5e1e0d3b223f94f70069e010661bb95e6c6fbe16de9b9a638fe9"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz.cdx.json",
+      "bytes": 23342,
+      "sha256": "ef9590cd7d6b8e468b690b30d8237d89ba0ed8d34e80f168021a009ee9c45403"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz",
+      "bytes": 9021922,
+      "sha256": "57a65f3aa3e94c8c4b6583d2d99626a36ffee95a0afed4f4e49d506f55edcf5c"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz.cdx.json",
+      "bytes": 25645,
+      "sha256": "7ff55c299a48fb4e52980851106ead5e30fe14aebc430d2ea13f09a71d9058d0"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz",
+      "bytes": 8214922,
+      "sha256": "de341193375afb94f1d0517bab70ed413fd4d576109ac4ec945dea2790d6467f"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz.cdx.json",
+      "bytes": 25645,
+      "sha256": "77eefabdf69af30b8863e7698fe1b006e0f3611b5502860a0ce9315e73852b46"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_amd64.zip",
+      "bytes": 9030141,
+      "sha256": "b9a6ee5123bb06e69bed6b74db58481766250feaa914c3deffafeefc4320eecc"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_amd64.zip.cdx.json",
+      "bytes": 24672,
+      "sha256": "d95f0bbbe9425aa8347edcfc2bc555c706ac4e32516f7a8ff35748a557da63b0"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_arm64.zip",
+      "bytes": 8113112,
+      "sha256": "0ecabbc2d0f23b1014b42ed4fc26a10a0fc23fcf773d1f3fe10039b4595d8a82"
+    },
+    {
+      "name": "tailmouse_0.1.0-alpha.3_windows_arm64.zip.cdx.json",
+      "bytes": 24672,
+      "sha256": "8c57d29aafe6ad326f042d01ab7a904220968b11f73eaad33c2853a435e5681d"
+    }
+  ],
+  "buildSteps": [
+    {
+      "step": "build",
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "exitCode": 0,
+      "seconds": 35.987,
+      "logSha256": "a8cb14b82da873b441ce54c834d786c1c097929e4b4de85d9bd07467550ba256"
+    },
+    {
+      "step": "worker",
+      "command": [
+        "node",
+        "tools/resource-integration.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 4.288,
+      "logSha256": "18230e129f0c64ec8fa6b0f8285d6d79423e7d25cbdf0426f4fbb85c5bbb5837"
+    },
+    {
+      "step": "goreleaser-check",
+      "command": [
+        "goreleaser",
+        "check",
+        "--config",
+        ".goreleaser.yaml"
+      ],
+      "exitCode": 0,
+      "seconds": 0.038,
+      "logSha256": "ae01e5017521cb1cda3e60ff9483664f748ee4ba4a69ae0795f62936d036753a"
+    },
+    {
+      "step": "archives",
+      "command": [
+        "goreleaser",
+        "release",
+        "--config",
+        ".goreleaser.yaml",
+        "--skip=publish",
+        "--parallelism=1",
+        "--fail-fast",
+        "--timeout=15m"
+      ],
+      "exitCode": 0,
+      "seconds": 27.437,
+      "logSha256": "6e5cb49066a4593449c9b511a8e95584f2dc04a597ae687be9928ec4d0e1483f"
+    },
+    {
+      "step": "sbom",
+      "command": [
+        "pnpm",
+        "release:sbom"
+      ],
+      "exitCode": 0,
+      "seconds": 7.785,
+      "logSha256": "16efa5fb1ac8130ff73f6793c7f5e0534d72e5b68475fb7d7117130732f157ea"
+    },
+    {
+      "step": "verify",
+      "command": [
+        "pnpm",
+        "release:verify"
+      ],
+      "exitCode": 0,
+      "seconds": 7.721,
+      "logSha256": "3d3b2cfaac5edec8fb9160ebb2710e7d40579cf5dc80e0c2f3d69da7625329a7"
+    },
+    {
+      "step": "checksums",
+      "command": [
+        "sha256sum",
+        "--check",
+        "--strict",
+        "checksums.txt"
+      ],
+      "exitCode": 0,
+      "seconds": 0.093,
+      "logSha256": "11500b27dab96d8202c4376e618f21651da9fe839811465d50885158db393752"
+    }
+  ],
+  "publication": {
+    "verifiedAt": "2026-10-20T04:56:07.767145+00:00",
+    "releaseId": 418013885,
+    "tag": "v0.1.0-alpha.3",
+    "sourceRevision": "ed3b47cd6a1465df6deead93fe16c65e71d08d12",
+    "url": "https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.3",
+    "publishedAt": "2026-10-20T04:56:07Z",
+    "draft": false,
+    "prerelease": false,
+    "latest": true,
+    "assets": [
+      {
+        "id": 658305693,
+        "name": "SHA256SUMS",
+        "size": 1693,
+        "digest": "sha256:451be9944948fbfa51eabfe7eb550f99b68e70c5d09c9774b1c6b5167f4f2002",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/SHA256SUMS"
+      },
+      {
+        "id": 658305729,
+        "name": "install.ps1",
+        "size": 3281,
+        "digest": "sha256:02b14cb10f2a3b5017f9f283f22a1525e4d118fc81c4fbd05f789b04bd0decb6",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/install.ps1"
+      },
+      {
+        "id": 658305759,
+        "name": "install.sh",
+        "size": 3246,
+        "digest": "sha256:dccfab965458a07cf802003cbc7eeaffe707db4fa08f48d9934e3b2cbb5191ea",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/install.sh"
+      },
+      {
+        "id": 658305795,
+        "name": "release-manifest.json",
+        "size": 4014,
+        "digest": "sha256:2aa2658911c8d3833fea047d079d27eb8de1a49b56c5e0a770bdf9d38e9e135a",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/release-manifest.json"
+      },
+      {
+        "id": 658305811,
+        "name": "tailmouse-config.json",
+        "size": 175,
+        "digest": "sha256:318241bebc934100350a22a54c51cf2aa4ea8535ffd7f27725ed56d50b345e58",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse-config.json"
+      },
+      {
+        "id": 658305845,
+        "name": "tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz",
+        "size": 8900760,
+        "digest": "sha256:55c4a3bca06f3431dc0bfd18f87b2510fdba0bd12df2702b7425c83eb10012be",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz"
+      },
+      {
+        "id": 658305910,
+        "name": "tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz.cdx.json",
+        "size": 23342,
+        "digest": "sha256:1bb577a903ec198e657f73fa5c483e02d9527e2ead56b93b5ae99b2e0173f398",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz.cdx.json"
+      },
+      {
+        "id": 658305947,
+        "name": "tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz",
+        "size": 8290152,
+        "digest": "sha256:6f06e799de8b5e1e0d3b223f94f70069e010661bb95e6c6fbe16de9b9a638fe9",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz"
+      },
+      {
+        "id": 658305972,
+        "name": "tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz.cdx.json",
+        "size": 23342,
+        "digest": "sha256:ef9590cd7d6b8e468b690b30d8237d89ba0ed8d34e80f168021a009ee9c45403",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz.cdx.json"
+      },
+      {
+        "id": 658306025,
+        "name": "tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz",
+        "size": 9021922,
+        "digest": "sha256:57a65f3aa3e94c8c4b6583d2d99626a36ffee95a0afed4f4e49d506f55edcf5c",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz"
+      },
+      {
+        "id": 658306097,
+        "name": "tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz.cdx.json",
+        "size": 25645,
+        "digest": "sha256:7ff55c299a48fb4e52980851106ead5e30fe14aebc430d2ea13f09a71d9058d0",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz.cdx.json"
+      },
+      {
+        "id": 658306145,
+        "name": "tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz",
+        "size": 8214922,
+        "digest": "sha256:de341193375afb94f1d0517bab70ed413fd4d576109ac4ec945dea2790d6467f",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz"
+      },
+      {
+        "id": 658306200,
+        "name": "tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz.cdx.json",
+        "size": 25645,
+        "digest": "sha256:77eefabdf69af30b8863e7698fe1b006e0f3611b5502860a0ce9315e73852b46",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz.cdx.json"
+      },
+      {
+        "id": 658306239,
+        "name": "tailmouse_0.1.0-alpha.3_windows_amd64.zip",
+        "size": 9030141,
+        "digest": "sha256:b9a6ee5123bb06e69bed6b74db58481766250feaa914c3deffafeefc4320eecc",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_windows_amd64.zip"
+      },
+      {
+        "id": 658306283,
+        "name": "tailmouse_0.1.0-alpha.3_windows_amd64.zip.cdx.json",
+        "size": 24672,
+        "digest": "sha256:d95f0bbbe9425aa8347edcfc2bc555c706ac4e32516f7a8ff35748a557da63b0",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_windows_amd64.zip.cdx.json"
+      },
+      {
+        "id": 658306308,
+        "name": "tailmouse_0.1.0-alpha.3_windows_arm64.zip",
+        "size": 8113112,
+        "digest": "sha256:0ecabbc2d0f23b1014b42ed4fc26a10a0fc23fcf773d1f3fe10039b4595d8a82",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_windows_arm64.zip"
+      },
+      {
+        "id": 658306360,
+        "name": "tailmouse_0.1.0-alpha.3_windows_arm64.zip.cdx.json",
+        "size": 24672,
+        "digest": "sha256:8c57d29aafe6ad326f042d01ab7a904220968b11f73eaad33c2853a435e5681d",
+        "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-0ed195a4e401c27d57f9/tailmouse_0.1.0-alpha.3_windows_arm64.zip.cdx.json"
+      }
+    ]
+  }
+}
