@@ -6,10 +6,10 @@ Use a clean source commit already preserved on `main`. Native archives must cont
 
 Use the exact versions in `tooling/versions.json`, including GoReleaser and CycloneDX CLI. Create an annotated version tag locally and build in a clean, separate checkout of it with the recorded Tailcat submodule initialized. Never move an existing release tag or overwrite a published asset to repair a release; use a new version.
 
-For `v0.1.0-alpha.2`, from that clean checkout:
+For `v0.1.0-alpha.3`, from that clean checkout:
 
 ```sh
-export TAILMOUSE_BUILD_VERSION=0.1.0-alpha.2
+export TAILMOUSE_BUILD_VERSION=0.1.0-alpha.3
 export TAILMOUSE_TAILCAT_REVISION="$(git rev-parse HEAD:third_party/tailcat)"
 pnpm install --frozen-lockfile
 pnpm build
@@ -27,10 +27,12 @@ Check the extracted Linux x64 executable's `version` and resource help commands.
 
 ## Stage and publish
 
-1. In a new owned directory, copy the six verified native archives and their six `.cdx.json` files from `.artifacts/distribution`. Add the reviewed `deploy/resource/tailmouse-config.test.json` as `tailmouse-config.json`.
+1. In a new owned directory, copy the six verified native archives and their six `.cdx.json` files from `.artifacts/distribution`. Add the reviewed `deploy/resource/tailmouse-config.test.json` as `tailmouse-config.json`. Include the tagged `apps/web/public/install.sh` and `install.ps1` files: the complete release has 17 assets including its manifest and checksum list.
 2. Generate `release-manifest.json` with the version, exact source revision, Tailcat pin, toolchains, known platform limits and byte length/SHA-256 for each of those files. Generate a flat `SHA256SUMS` covering every staged file except itself. Do not publish the distribution's broader checksum list without its Web/edge files.
 3. Verify the local tag points to the accepted commit, then push that tag. The existing workflow only runs for `main` pushes and pull requests; keep `[skip ci]` on owner-authorized main commits.
 4. Create a draft GitHub release with `--verify-tag`, a title and the reviewed release notes from `docs/releases/`. Upload the complete staged asset list without `--clobber` and compare GitHub's asset inventory and available SHA-256 digests with the local files.
 5. Publish with `prerelease: false` and `make_latest: true`, following the owner's 2026-10-20 Latest preference. Verify every public download's bytes against `SHA256SUMS`, rerun the extracted Linux package's version/help checks, and record the actual release URL and asset identities in project memory.
 
 Publication is explicitly authorized for this task; a draft is only an upload staging step. Keep alpha version names and precise failed/deferred outcomes until the remaining platform acceptance is complete. GitHub's Latest label does not establish stability, signing, notarization or all-platform execution.
+
+After public download verification, generate the same-repository Homebrew and Scoop recipes with `node tools/install-recipes.mjs PATH/TO/release-manifest.json .`. Commit the recipes and evidence separately from the immutable release tag; generating archive digests before the archives exist creates a source/checksum cycle. Verify the generated recipes against the public manifest.

@@ -9,6 +9,7 @@ export function BrowserShare() {
   const [link, setLink] = useState('');
   const [status, setStatus] = useState('');
   const host = useRef<BrowserHost | null>(null);
+  const picker = useRef<HTMLInputElement | null>(null);
   const active = view?.status === 'starting' || view?.status === 'sharing';
   useEffect(() => {
     const end = (): void => host.current?.close('The hosting page was closed.');
@@ -45,6 +46,7 @@ export function BrowserShare() {
       if (next.view.status === 'sharing')
         setLink(next.invitation(location.origin));
     } catch (error) {
+      if (next !== undefined && host.current !== next) return;
       next?.close();
       setStatus(
         error instanceof Error ? error.message : 'Could not start sharing.',
@@ -69,6 +71,7 @@ export function BrowserShare() {
       <label>
         Files to share
         <input
+          ref={picker}
           type="file"
           multiple
           disabled={active}
@@ -158,9 +161,13 @@ export function BrowserShare() {
         <button
           class="secondary"
           onClick={() => {
-            host.current?.close();
+            const current = host.current;
+            host.current = null;
+            current?.close();
             setFiles([]);
             setText('');
+            setStatus('');
+            if (picker.current !== null) picker.current.value = '';
           }}
         >
           End browser sharing

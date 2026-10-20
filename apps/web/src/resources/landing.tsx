@@ -78,6 +78,9 @@ export function ResourceLanding() {
           <a class="button-link secondary" href="#workflow">
             See a complete workflow <span aria-hidden="true">↓</span>
           </a>
+          <a class="button-link secondary" href="/#share">
+            Send files or text in browser
+          </a>
         </div>
         <p class="hero-footnote">
           The host runs TailMouse. Guests only need a browser. No account.

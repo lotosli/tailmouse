@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-10-20T04:18:44.992082+00:00",
+  "sourceRevision": "b84ffc7bd7f4bbdc0da93ee5ab68e19558a0c900",
+  "runtimeTrees": {
+    "apps": "6ef981184f3939ec5c2d038e21165399a062470e",
+    "tools": "6e2671f9e78643b04d462c976b89433a115288b8",
+    "tests": "2b6f27e9596b790a268ed14dc622a9783e7bc138",
+    "protocol": "62d73ba995a197ab7aa982240293496da3e9cc2c",
+    "deploy": "16c4f3d2da4e01ed70a1a3ae684bfd0ee4a26402",
+    "tooling": "1d88d61703aece31a1b483d184633c3f72dfa5f1",
+    "go.mod": "050b376cb631c5578f20b4751b18e1464fd535ba",
+    "go.sum": "6b77f13513204b69f4a5bce66d6e946faad72d5c",
+    "go.work": "865525408dc70b35beed1b2b084d551177436f8a",
+    "package.json": "e67fe7d90600ae6119e529b22e8e91d0faa0f933",
+    "pnpm-lock.yaml": "7ea2870be99f48ab83329733839d660cfa2ee894",
+    "pnpm-workspace.yaml": "98065cc1c0c92efed4b576f9c6fcc13c641cbcaa",
+    ".goreleaser.yaml": "f42d75df866d8f1a2aa46f2f08fe5084e32fb7b7"
+  },
+  "sourceCleanAtStart": true,
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "command": "pnpm gate",
+  "finishedAt": "2026-10-20T04:43:26.536585+00:00",
+  "seconds": 1481.543,
+  "exitCode": 0,
+  "logSha256": "4de8b432e5f07edd2670ccf8a8c0f7eb92d9e87d2e6817a890e92133b76df0a6",
+  "sourceCleanAtEnd": true,
+  "networkProfiles": {
+    "escape": 4,
+    "leash": 4
+  },
+  "browserCases": {
+    "passed": 186,
+    "existingSkips": 4
+  },
+  "coverage": {
+    "web": {
+      "statements": 84.36,
+      "branches": 82.12,
+      "functions": 81.24,
+      "lines": 86.13
+    },
+    "link-edge": {
+      "statements": 99.37,
+      "branches": 98.98,
+      "functions": 97.36,
+      "lines": 99.64
+    },
+    "goStatements": 86.3,
+    "resourceStatements": 81.0
+  },
+  "nativeSourceTree": "a45184685d2c69edb651002fe9796d7db1a96c11"
+}

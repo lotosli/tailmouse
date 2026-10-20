@@ -350,7 +350,7 @@
   box-sizing: border-box;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 760px) {
   .resource-grid > .resource-panel[data-resource] {
     display: none;
   }
@@ -361,4 +361,13 @@
   .resource-grid[data-active-tab='text'] > [data-resource='text'] {
     display: block;
   }
+}
+
+.download-panel button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.browser-sharing li {
+  overflow-wrap: anywhere;
 }

@@ -1,0 +1,74 @@
+{
+  "fullGateSource": "b84ffc7bd7f4bbdc0da93ee5ab68e19558a0c900",
+  "scope": "UI-only supplement after the complete full gate: browser first-screen entry, tablet breakpoint, long filenames and clearing host selections on end. Native/protocol source unchanged.",
+  "files": [
+    {
+      "path": "apps/web/src/resources/browser-share.tsx",
+      "baseSha256": "871b3722bd39b5b224b68be32deea2abf0bc621f188fe8d24477c082f7f98156",
+      "acceptedSha256": "43753a07563794125a0c0374966fb5de1dcf7f05af9e530937e383930033985c"
+    },
+    {
+      "path": "apps/web/src/resources/landing.tsx",
+      "baseSha256": "d5a91f30b184d67c43638dbacc8d6569e2bb852792be60cc8bf14b15879ae49b",
+      "acceptedSha256": "02c3f1211b3cca31edb53dc0b67dc8da094bbe6fbd42e7c73156aab491dea29a"
+    },
+    {
+      "path": "apps/web/src/resources/workspace.css",
+      "baseSha256": "c25593bfeeb17216277cde1f37952ff50edd42f3863c0b9e99d05e3fdf866d8b",
+      "acceptedSha256": "756ea6f85972099b7ecf6c7b69afffa0245169868f6787f54401cac4aac7fb4a"
+    },
+    {
+      "path": "tests/integration/tailcat/simple-sharing.mjs",
+      "baseSha256": "635f01a6c90ddb8092772a4d034399919f373fb09d81733b994b76cc4b1580c6",
+      "acceptedSha256": "d131cf0ace79ca52c44497ad344774b45cad4ff6296eafbe38bb90e77ea25e19"
+    }
+  ],
+  "checks": [
+    {
+      "command": "Prettier write changed UI/test files",
+      "logSha256": "b60da72c6285273bf62680007a2f36fafcffea6c71990b597f4e4fdfc1934b4d",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm typecheck",
+      "logSha256": "f2f7567885933314b71ca666f99dc3c590ec76c5e85f507167261f5ca7ada38a",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm lint",
+      "logSha256": "1683a63b520020ce578a36e63c8c7f6b0727d86b0de0d178475df5d9aa8cbb19",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm --filter @tailmouse/web test -- src/resources/browser-share.test.tsx src/resources/transfer-panels.test.tsx",
+      "logSha256": "89ea32e58443c166de082bf687a3304ea0628dc1ff1d2a63332a1d760d0d75f0",
+      "status": "passed"
+    },
+    {
+      "command": "pnpm --filter @tailmouse/web build",
+      "logSha256": "83a0136c8b35be4aea3c5701b25e90c2b1c44a808f6e84b33b5c5afcb6fdac2c",
+      "status": "passed"
+    },
+    {
+      "command": "node tools/resource-integration.mjs",
+      "logSha256": "6ff8bdeb2020dddbbd9adcfe87046c20a703d7e3ed640368c1d9193a26efddd5",
+      "status": "passed"
+    },
+    {
+      "command": "go test -tags=tailcatintegration -count=1 -failfast -timeout=4m -run=^TestHermeticSimpleSharing$ ./apps/cli/cmd/tailmouse",
+      "logSha256": "b3a1709280b6650e9bc92280aef5787602f6ad3effa3977fe285987ea169db69",
+      "status": "passed"
+    }
+  ],
+  "outcomes": [
+    "331 browser unit tests passed (32 files); command forwards filters through the existing wrapper and runs the complete unit suite",
+    "native folder download and text",
+    "768-pixel panels remain visible",
+    "two-browser file/text with long filename and 390-pixel overflow check",
+    "host end removes access and clears selected files"
+  ],
+  "preFixReproduction": {
+    "tablet768": "failed as expected with the old 800px-only panel breakpoint; corrected to the existing 760px workspace breakpoint"
+  },
+  "status": "passed"
+}

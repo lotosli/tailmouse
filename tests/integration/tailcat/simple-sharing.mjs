@@ -55,6 +55,10 @@ try {
   stage = 'native-download';
   assert.equal(await downloadBytes(native, 'Download report.txt'), expected);
   stage = 'native-text';
+  await native.setViewportSize({ width: 768, height: 1024 });
+  await expect(
+    native.getByRole('heading', { name: 'Temporary text', exact: true }),
+  ).toBeVisible();
   await native
     .getByLabel('Text to send', { exact: true })
     .fill('native visitor reply');
@@ -77,8 +81,9 @@ try {
   stage = 'browser-host';
   await host.goto(request.origin + '/#share');
   const content = Buffer.from('browser transfer\n'.repeat(4000));
+  const filename = 'browser-' + 'long-'.repeat(30) + '.txt';
   await host.getByLabel('Files to share', { exact: true }).setInputFiles({
-    name: 'browser.txt',
+    name: filename,
     mimeType: 'text/plain',
     buffer: content,
   });
@@ -103,11 +108,17 @@ try {
   assert.equal(new URL(guest.url()).hash, '');
   stage = 'browser-download';
   assert.equal(
-    await downloadBytes(guest, 'Download browser.txt'),
+    await downloadBytes(guest, 'Download ' + filename),
     createHash('sha256').update(content).digest('hex'),
   );
   await guest.setViewportSize({ width: 390, height: 844 });
   await guest.getByRole('button', { name: 'Text', exact: true }).click();
+  assert.equal(
+    await guest.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
   stage = 'browser-text';
   await expect(
     guest.getByText('browser host text', { exact: true }),
@@ -134,8 +145,11 @@ try {
   await expect(
     host.getByLabel('Private sharing link', { exact: true }),
   ).toHaveCount(0);
+  await expect(host.getByLabel('Files to share', { exact: true })).toHaveValue(
+    '',
+  );
   await expect(
-    guest.locator('button:enabled').filter({ hasText: 'Download browser.txt' }),
+    guest.locator('button:enabled').filter({ hasText: 'Download ' + filename }),
   ).toHaveCount(0, { timeout: 25000 });
   await hostContext.close();
   await guestContext.close();
