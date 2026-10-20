@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "protocols": {
+    "leash": 2,
+    "resource": 2
+  },
+  "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+  "role": "protected-short-invitation-and-static-edge",
+  "configuration": {
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "tailmouse-link-edge",
+    "main": "src/index.ts",
+    "compatibility_date": "2026-09-07",
+    "workers_dev": false,
+    "preview_urls": false,
+    "send_metrics": false,
+    "logpush": false,
+    "observability": {
+      "enabled": false
+    },
+    "limits": {
+      "cpu_ms": 50,
+      "subrequests": 20
+    },
+    "ratelimits": [
+      {
+        "name": "CREATE_IP",
+        "namespace_id": "8101",
+        "simple": {
+          "limit": 5,
+          "period": 60
+        }
+      },
+      {
+        "name": "CREATE_EDGE",
+        "namespace_id": "8102",
+        "simple": {
+          "limit": 100,
+          "period": 60
+        }
+      },
+      {
+        "name": "READ_IP",
+        "namespace_id": "8103",
+        "simple": {
+          "limit": 60,
+          "period": 60
+        }
+      },
+      {
+        "name": "READ_EDGE",
+        "namespace_id": "8104",
+        "simple": {
+          "limit": 1000,
+          "period": 60
+        }
+      }
+    ],
+    "route": {
+      "pattern": "link.tailmouse.com/*",
+      "zone_name": "tailmouse.com"
+    },
+    "durable_objects": {
+      "bindings": [
+        {
+          "name": "SHORT_INVITATIONS",
+          "class_name": "ShortInvitation"
+        }
+      ]
+    },
+    "exports": {
+      "ShortInvitation": {
+        "type": "durable-object",
+        "storage": "sqlite"
+      }
+    },
+    "r2_buckets": [
+      {
+        "binding": "STATIC_ASSETS",
+        "bucket_name": "tailmouse-link-production"
+      }
+    ]
+  },
+  "webManifestSha256": "7dc5b804b6cacd6c2a67402054e919f9ee889d4cd8d433e013c0448a83bfb0ee",
+  "toolchains": {
+    "node": "26.8.1",
+    "wrangler": "4.129.0",
+    "esbuild": "0.28.1"
+  },
+  "dependencies": {
+    "npm": [
+      {
+        "name": "cborg",
+        "version": "6.1.2"
+      }
+    ],
+    "platformImports": [
+      "cloudflare:workers"
+    ]
+  },
+  "inputs": [
+    {
+      "name": ".artifacts/static-manifest.json",
+      "bytes": 10263,
+      "sha256": "68cfb050d5822ad8155bc876f41fc62a58e498c9317479d0d0dc2df7d00a4b69"
+    },
+    {
+      "name": "npm/cborg/cborg.js",
+      "bytes": 944,
+      "sha256": "5c6e4f5205a0e5ed7c664b55a19b0e8938c16b57164c51bcee5d024612c56867"
+    },
+    {
+      "name": "npm/cborg/lib/0uint.js",
+      "bytes": 6582,
+      "sha256": "7dc975832761bf854b88204f73336bc0f904081bfa8052abc76080e657b5253c"
+    },
+    {
+      "name": "npm/cborg/lib/1negint.js",
+      "bytes": 2980,
+      "sha256": "be3f46047fd5e7fc98e4e377d0303eb5f94404ec975dcb2fe37779598b3598af"
+    },
+    {
+      "name": "npm/cborg/lib/2bytes.js",
+      "bytes": 3451,
+      "sha256": "2a62bde26edff44d3d7eaabd67ce10cf1a217cd4880f3288123ab24cdd654058"
+    },
+    {
+      "name": "npm/cborg/lib/3string.js",
+      "bytes": 3340,
+      "sha256": "ea455067c71f3fe1abdacd8bb8c27af9d8c3d6c91ee8e9541610d6896666ca54"
+    },
+    {
+      "name": "npm/cborg/lib/4array.js",
+      "bytes": 2944,
+      "sha256": "7c13d0f1ef59bd4839e12f0f883cee878511e19cc757eb998c676b999a505053"
+    },
+    {
+      "name": "npm/cborg/lib/5map.js",
+      "bytes": 2917,
+      "sha256": "1d9799d3abe714baaf2dca12e45bef7a8d1a29356f06093d311337b1459dc602"
+    },
+    {
+      "name": "npm/cborg/lib/6tag.js",
+      "bytes": 1957,
+      "sha256": "cf6c9daad0e695477d8328e585b88fe204608a16466edefa17737234eeea97af"
+    },
+    {
+      "name": "npm/cborg/lib/7float.js",
+      "bytes": 11111,
+      "sha256": "426e171aea3b743fcc51b3c586c5abe58b725211b4420bfa6c8ae2c3a6c936e2"
+    },
+    {
+      "name": "npm/cborg/lib/bl.js",
+      "bytes": 6220,
+      "sha256": "72ddf1514d69d340606e913fa479993c853db1e8b720782ea752baf7ab382438"
+    },
+    {
+      "name": "npm/cborg/lib/byte-utils.js",
+      "bytes": 8369,
+      "sha256": "95fbaaf2227dfefaaf6d59ed7e7d716a095399edffde815d79413bda2b7e555d"
+    },
+    {
+      "name": "npm/cborg/lib/common.js",
+      "bytes": 598,
+      "sha256": "a4d11b33417ce5a56771c4786d322969c95a6bb07af6ab58e7068b9fbbbe9a17"
+    },
+    {
+      "name": "npm/cborg/lib/decode.js",
+      "bytes": 9146,
+      "sha256": "cc6f7c1fd2b97b90a268eb4c455b34f69b73f82b386493ada17a657589eab869"
+    },
+    {
+      "name": "npm/cborg/lib/encode.js",
+      "bytes": 24381,
+      "sha256": "9480ffa3a4b39efec3762cc72ef859c72805eec75f6568246b57c81409b243f7"
+    },
+    {
+      "name": "npm/cborg/lib/is.js",
+      "bytes": 2061,
+      "sha256": "41b161f64fc79437714cba010b839c730d75eda03915ef107778c9f81aff14d5"
+    },
+    {
+      "name": "npm/cborg/lib/jump.js",
+      "bytes": 7942,
+      "sha256": "b96dad20a099543bb925f11427a041ee809a2cd865b7bb49ef360597d7976ba4"
+    },
+    {
+      "name": "npm/cborg/lib/tagged.js",
+      "bytes": 2821,
+      "sha256": "92eb0f53f4a62de1fdc870b7152b6a9440307adaf9b64844c9b155fca565ebd4"
+    },
+    {
+      "name": "npm/cborg/lib/token.js",
+      "bytes": 2019,
+      "sha256": "6087c6b3041964aad0101a12b15ac5eeb3b6f8c9318f95d3df8c3454dd08c979"
+    },
+    {
+      "name": "src/api.ts",
+      "bytes": 6963,
+      "sha256": "53c55caee4636b208eca6cd27ca4f3588171f26c5bd212b67c70714ab2cc24c1"
+    },
+    {
+      "name": "src/index.ts",
+      "bytes": 4037,
+      "sha256": "cf4897ed7acf7de37369a5e885eb1aa0b79c79a7f0ae2517f9e9947ae84c1856"
+    },
+    {
+      "name": "src/short-invitation.ts",
+      "bytes": 4085,
+      "sha256": "31ebe8b276a552a32b2810a3741c9fabb555f5fe0ca584264c5ecad527b20b87"
+    },
+    {
+      "name": "src/static.ts",
+      "bytes": 6183,
+      "sha256": "7082ae8537e0ef9bcc8adbae5c31c5cfdef7b3b61ba26e417e02badb100ada58"
+    }
+  ],
+  "files": {
+    "bundle-meta.json": {
+      "bytes": 20528,
+      "sha256": "2841a5cbbcf6e88e01c99ef9b9bd6331b5f030ff6e0e9a0a4a5af7d34f7ee758"
+    },
+    "index.js": {
+      "bytes": 93848,
+      "sha256": "17e319f82207f414b64a7fd1e58e3026999cbe3c96588cb6ce27a0154050277c"
+    },
+    "index.js.map": {
+      "bytes": 197125,
+      "sha256": "b063d8132dd0aa49722ff0878c33ebab02f6fde3276066681f84a20b78dbc49d"
+    },
+    "LICENSE": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "NOTICE": {
+      "bytes": 197,
+      "sha256": "d06acc407b129cf43d516d2571544fa5f0f8d4c5dde5cebc4fe78599790d0272"
+    },
+    "THIRD_PARTY_NOTICES.txt": {
+      "bytes": 396813,
+      "sha256": "73cc0e25c4cc4b0f83883a1a04dcf2d32d8d0b1f21056d7acb54fc8f72965a72"
+    },
+    "wrangler.jsonc": {
+      "bytes": 1293,
+      "sha256": "2f6bd19ccdd28677988f2bb13a140bdb6b36b436c8b7a06edbb8f769ba1d6d7f"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "status": "verified",
+  "data": "Synthetic example-report.txt and temporary text only",
+  "surface": "Guest viewport only; no host, QR, address bar, active invitation or credentials recorded",
+  "sourceInputs": {
+    "tests/integration/tailcat/simple-sharing.mjs": "d35156215730fd73cbfa000282e4f6800e4b8a2f4b5fa867f8786926f984b906",
+    "apps/web/src/resources/browser-share.tsx": "214092d23e602c9153634532f875cb1b20de529215082427ba8c25c82164f83a",
+    "apps/web/src/resources/browser-host.ts": "c5fd4aa69e6da4d3abbdb79a934fa20a6a8f6ca0d7c7963fd9a731306df23b94",
+    "apps/web/src/resources/session.ts": "7c0495e1c8d459ffad575b60f0a15639cb8f6335afca2973ee37096a1df60c91",
+    "apps/web/src/resources/transfer-panels.tsx": "1926d4eba195f40290e144582341861fa31c32dc8c517c11c08694387d50ca67",
+    "docs/media/browser-sharing.gif": "7754cc678b336f3a68cba63e1a711fa289a42f50913bc48e82870f399028aac7"
+  },
+  "acceptanceLogSha256": "7d2a89e4433026edd4014ccde0ad3b6a263a9968b83dee04c96bbdac181a865a",
+  "recording": "docs/media/browser-sharing.gif",
+  "durationSeconds": 10,
+  "actualChecks": [
+    "native file download SHA-256",
+    "native visitor text reply",
+    "browser file download length/SHA-256",
+    "browser text in both directions",
+    "host revocation disables further access"
+  ],
+  "command": "TAILMOUSE_RECORDING_DIR=<temporary directory> python3 tools/test-subinit.py go test -tags=tailcatintegration -count=1 -failfast -timeout=3m -run=^TestHermeticSimpleSharing$ ./apps/cli/cmd/tailmouse"
+}

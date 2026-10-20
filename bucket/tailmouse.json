@@ -1,16 +1,16 @@
 {
-  "version": "0.1.0-alpha.3",
+  "version": "1.0.0",
   "description": "Share files, text, terminals and web apps with a browser",
   "homepage": "https://tailmouse.com",
   "license": "Apache-2.0",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_windows_amd64.zip",
-      "hash": "b9a6ee5123bb06e69bed6b74db58481766250feaa914c3deffafeefc4320eecc"
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_windows_amd64.zip",
+      "hash": "83badafb3846ee95057232e60a3b50357ad7eb9cab9f8d3681e17b6f7c475bfe"
     },
     "arm64": {
-      "url": "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_windows_arm64.zip",
-      "hash": "0ecabbc2d0f23b1014b42ed4fc26a10a0fc23fcf773d1f3fe10039b4595d8a82"
+      "url": "https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_windows_arm64.zip",
+      "hash": "944fcf84f285224c25ba3e2554346ec8ff0127648e7f86ce5bddcf75ff615584"
     }
   },
   "bin": "tailmouse.exe",

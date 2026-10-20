@@ -1,0 +1,34 @@
+{
+  "verifiedAt": "2026-10-20T08:00:27.806149+00:00",
+  "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+  "version": "1.0.0",
+  "runtime": "linux/amd64",
+  "posixInstaller": {
+    "status": "verified",
+    "source": "public GitHub install.sh asset",
+    "installerSha256": "bcb733e4db8d957e314e84b6897228e099e9ee3a43648237ffca181cf4279c55",
+    "installedExecutableSha256": "bb9a8435e3031a160071f1987ec675290d35dfb298edb2a3819b855ce658260e"
+  },
+  "standaloneUpdater": {
+    "status": "verified",
+    "fixture": "Current tagged updater source built with an explicit synthetic 0.0.0-update-fixture version stamp to exercise a real public release upgrade. This is not an alpha.2 executable.",
+    "installedExecutableSha256": "bb9a8435e3031a160071f1987ec675290d35dfb298edb2a3819b855ce658260e",
+    "alreadyCurrentCheck": "passed"
+  },
+  "powershell": {
+    "stagingCleanup": "passed",
+    "powershell": "7.6.7",
+    "checksumMismatch": "rejected before executable replacement",
+    "runtime": "PowerShell Core on Linux; native Windows execution remains unverified",
+    "existingExecutable": "preserved",
+    "sourceSha256": "a88e4e4186c1fdbf1cf7159f3dc90998248e9b37cc113d4c42f588ccf543714a",
+    "syntax": "valid"
+  },
+  "status": "verified",
+  "websiteAcquisition": {
+    "url": "https://tailmouse.com/install.sh",
+    "client": "curl with default User-Agent and normal TLS verification",
+    "sha256": "bcb733e4db8d957e314e84b6897228e099e9ee3a43648237ffca181cf4279c55",
+    "status": "verified"
+  }
+}

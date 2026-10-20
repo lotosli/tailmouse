@@ -1,0 +1,101 @@
+{
+  "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+  "fullGateSourceRevision": "1ea54b2541117eac8c8408a4cad6f99318180021",
+  "nativeProtocolEdgeAndToolTreesUnchanged": true,
+  "changedFiles": [
+    "apps/web/src/main.test.ts",
+    "apps/web/src/main.tsx",
+    "context.md",
+    "openspec/changes/finish-first-share-v1/proposal.md",
+    "openspec/changes/finish-first-share-v1/specs/first-share/spec.md",
+    "tests/e2e/short-invitation.spec.ts"
+  ],
+  "steps": [
+    {
+      "name": "type",
+      "command": [
+        "pnpm",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "seconds": 3.994,
+      "logSha256": "f2f7567885933314b71ca666f99dc3c590ec76c5e85f507167261f5ca7ada38a"
+    },
+    {
+      "name": "lint",
+      "command": [
+        "pnpm",
+        "lint"
+      ],
+      "exitCode": 0,
+      "seconds": 1.495,
+      "logSha256": "1683a63b520020ce578a36e63c8c7f6b0727d86b0de0d178475df5d9aa8cbb19"
+    },
+    {
+      "name": "coverage",
+      "command": [
+        "pnpm",
+        "--filter",
+        "@tailmouse/web",
+        "coverage"
+      ],
+      "exitCode": 0,
+      "seconds": 9.395,
+      "logSha256": "bcf7f014571d00b60d5dd9a9b055517b0e02add24a79c35328d8684985839b31"
+    },
+    {
+      "name": "build",
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "exitCode": 0,
+      "seconds": 26.242,
+      "logSha256": "0cc09adf242526f8e6bfebf097456d4a2cd8e94ea197409bf0c24ff23dd2299c"
+    },
+    {
+      "name": "worker",
+      "command": [
+        "node",
+        "tools/resource-integration.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 4.238,
+      "logSha256": "1d8c209e028c50891afd3bdc399310fd9b6fda1e948bd151e569010a2523ea01"
+    },
+    {
+      "name": "edge",
+      "command": [
+        "pnpm",
+        "--filter",
+        "@tailmouse/link-edge",
+        "test:integration"
+      ],
+      "exitCode": 0,
+      "seconds": 10.319,
+      "logSha256": "f7221665ef32d6373713e7f2f3be9c5a12e9a85373f37b8c7809795190c1c076"
+    },
+    {
+      "name": "e2e",
+      "command": [
+        "pnpm",
+        "e2e"
+      ],
+      "exitCode": 0,
+      "seconds": 134.865,
+      "logSha256": "28ef4bb4bd85828aefbec7defad96b59fbdbb01345c921c8e4286a8e0f4a10ee"
+    },
+    {
+      "name": "layout",
+      "command": [
+        "node",
+        ".artifacts/v1-public/local-layout.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 2.244,
+      "logSha256": "118c343088a1868aafe2eee9b5d480b44cdb8bd218c145db50b29feef47f8270"
+    }
+  ],
+  "status": "passed",
+  "sourceFinallyClean": true
+}

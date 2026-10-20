@@ -1,0 +1,15 @@
+{
+  "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+  "version": "1.0.0",
+  "canonicalManifestSha256": "086123a41eae1c58b85b23a7b81859e79fd4bb3d1aaca9bbe47140bc72768667",
+  "legacyManifestSha256": "7dc5b804b6cacd6c2a67402054e919f9ee889d4cd8d433e013c0448a83bfb0ee",
+  "adaptedFile": "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz",
+  "normalEncodedSha256": "be3987f4a9c27c5a94ba36ae399a54d209955773e617932c16ff928565003914",
+  "retainedEncodedSha256": "609ac5c5edbfa3526ccc405624c45049b2d71a39bba786703fa8a6b060cc495d",
+  "differentByteOffsets": [
+    9
+  ],
+  "reason": "Retain the already published immutable gzip representation; its sole difference is the gzip operating-system header byte. Every decoded application/runtime byte remains identical to the fresh tagged build.",
+  "decodedBytesExactlyMatchTaggedBuild": true,
+  "noPublishedObjectReplaced": true
+}

@@ -1,0 +1,51 @@
+{
+  "sourceRevision": "1ea54b2541117eac8c8408a4cad6f99318180021",
+  "command": [
+    "pnpm",
+    "gate"
+  ],
+  "startedAt": "2026-10-20T07:18:29.832110+00:00",
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "sourceInitiallyClean": true,
+  "networkProfiles": "Exactly four representative Leash profiles; no game suite.",
+  "runtimeTrees": {
+    "apps": "4ea5b0c52abefd78892f29907aa7a3f76f0db977",
+    "tools": "4b70c00063a728a64d96f82f130d7f50eb3218bc",
+    "tests": "17d820385a21ee05d2ff5c3ef643f849da3526a5",
+    "protocol": "31a7da81b9e3644688cc146045914336528a8705",
+    "deploy": "16c4f3d2da4e01ed70a1a3ae684bfd0ee4a26402",
+    "tooling": "1d88d61703aece31a1b483d184633c3f72dfa5f1",
+    "go.mod": "050b376cb631c5578f20b4751b18e1464fd535ba",
+    "go.sum": "6b77f13513204b69f4a5bce66d6e946faad72d5c",
+    "go.work": "865525408dc70b35beed1b2b084d551177436f8a",
+    "package.json": "e1689cea908e3e95f1490a79a34c6b0d468079bd",
+    "pnpm-lock.yaml": "7ea2870be99f48ab83329733839d660cfa2ee894",
+    "pnpm-workspace.yaml": "98065cc1c0c92efed4b576f9c6fcc13c641cbcaa",
+    ".goreleaser.yaml": "f42d75df866d8f1a2aa46f2f08fe5084e32fb7b7"
+  },
+  "exitCode": 0,
+  "status": "passed",
+  "finishedAt": "2026-10-20T07:38:48.190583+00:00",
+  "seconds": 1218.337,
+  "logSha256": "13fff250c57b15e743e1042b4d4efdf07f59d4ce24cbab61597980726f68d03b",
+  "sourceFinallyClean": true,
+  "coverage": {
+    "web": {
+      "statements": 82.94,
+      "branches": 80.42,
+      "functions": 80.34,
+      "lines": 85.08
+    },
+    "link-edge": {
+      "statements": 99.37,
+      "branches": 98.98,
+      "functions": 97.36,
+      "lines": 99.64
+    },
+    "goStatements": 84.8
+  },
+  "browserCases": {
+    "passed": 146,
+    "existingSkips": 4
+  }
+}

@@ -1,0 +1,1073 @@
+{
+  "$schema": "https://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:04c76854-b5cc-451c-8b39-d48fb65b4bde",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-20T08:20:58.006Z",
+    "component": {
+      "bom-ref": "tailmouse:web",
+      "type": "application",
+      "name": "TailMouse Web",
+      "version": "1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "components": [
+        {
+          "bom-ref": "file:.tailmouse/bridge.html",
+          "type": "file",
+          "name": ".tailmouse/bridge.html",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "fcfd42d11ebfb7d3b44622610da93d8ea7889d56760c1d5cd5d82081f9a55177"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "548"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:.tailmouse/bridge.js",
+          "type": "file",
+          "name": ".tailmouse/bridge.js",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "a2afb818106bfc5ac278249bd8249bc73d21f2e620ee7e440565febcc4dedc3f"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "5700"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:.tailmouse/content.css",
+          "type": "file",
+          "name": ".tailmouse/content.css",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "6918fa9fa58de42b2f02be49e3bc49145ea82ba1bea1e3cffd43e80227f2f2a5"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "215"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:.tailmouse/shim.js",
+          "type": "file",
+          "name": ".tailmouse/shim.js",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "2c46841986544d50453112df3208b6f2e61d7b37ad8ed773d63798faebac68bc"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "6476"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:.tailmouse/sw.js",
+          "type": "file",
+          "name": ".tailmouse/sw.js",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "719b347f32728d912a3d22cbae87ed7721fe1967de4d8f7ca519443844d70c0e"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "6552"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/index-Bd4u-7xP.js",
+          "type": "file",
+          "name": "assets/index-Bd4u-7xP.js",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "a36151232607d01f7a721c50f9e1217a0703d5241b2d75ee5969c304cd80a6c1"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "510613"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/index-Bd4u-7xP.js.br",
+          "type": "file",
+          "name": "assets/index-Bd4u-7xP.js.br",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "d6bc1dab0ef57308797326783b62a28c9626accc3fdcd816dc96b9a80cd0f950"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "127401"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/index-Bd4u-7xP.js.gz",
+          "type": "file",
+          "name": "assets/index-Bd4u-7xP.js.gz",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "a13c8b128553996f739e7fb999b17f2cbfc8c82ca996f6ca333dbfbfa1911ab8"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "138742"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/index-Bd4u-7xP.js.map",
+          "type": "file",
+          "name": "assets/index-Bd4u-7xP.js.map",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "e3721e6ebfd8c307a0867cbdf6fa8fefc7d623aca68ba79b8cf5b5162de4b594"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "1297834"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/index-CP0MTyoa.css",
+          "type": "file",
+          "name": "assets/index-CP0MTyoa.css",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "cc6863e1a2f0b41138075c7415ef2ca961018e11baf8611b9f75756cf9bbeb23"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "18904"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/index-CP0MTyoa.css.br",
+          "type": "file",
+          "name": "assets/index-CP0MTyoa.css.br",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "419e55b66edb22c8862755f85ed544a7dc82026e05239df7a4a1e623cee369aa"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "4485"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/index-CP0MTyoa.css.gz",
+          "type": "file",
+          "name": "assets/index-CP0MTyoa.css.gz",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "6f8ac70b51c89288654166a319e843e7879e286f9750ba29884619462ff623ce"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "4813"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/resource-worker-DwucB-rz.js",
+          "type": "file",
+          "name": "assets/resource-worker-DwucB-rz.js",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "752fff92d275dc81e63734d5791c527c455bdb1cf8a84de9e8d2521e89989edc"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "2010"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/resource-worker-DwucB-rz.js.br",
+          "type": "file",
+          "name": "assets/resource-worker-DwucB-rz.js.br",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "375c6c4dcbb2b06b03b0779ff9c14485ac48ae299ee1e71c15748152793fc557"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "897"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/resource-worker-DwucB-rz.js.gz",
+          "type": "file",
+          "name": "assets/resource-worker-DwucB-rz.js.gz",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "75249e65c439f9d855d314f843db6d6de27adff99d515dbf509d744f628c64d0"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "977"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:assets/resource-worker-DwucB-rz.js.map",
+          "type": "file",
+          "name": "assets/resource-worker-DwucB-rz.js.map",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "ee1e9576228982bdcdec42f5d7974f71f4d0fae153c3d8a2ea8cda183c17a1fc"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "6917"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:index.html",
+          "type": "file",
+          "name": "index.html",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "761336d00d36c06d8c14802adc03d47495128fbaf434f3448ae56fa82e93b6d8"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "1232"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:install.ps1",
+          "type": "file",
+          "name": "install.ps1",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "a88e4e4186c1fdbf1cf7159f3dc90998248e9b37cc113d4c42f588ccf543714a"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "3273"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:install.sh",
+          "type": "file",
+          "name": "install.sh",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "bcb733e4db8d957e314e84b6897228e099e9ee3a43648237ffca181cf4279c55"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "3238"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:LICENSE",
+          "type": "file",
+          "name": "LICENSE",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "11358"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:manifest.webmanifest",
+          "type": "file",
+          "name": "manifest.webmanifest",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "c00dd49351860e0ae33ad013d0c8af3868e58c510a10729294672584dc02f47d"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "263"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:NOTICE",
+          "type": "file",
+          "name": "NOTICE",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "d06acc407b129cf43d516d2571544fa5f0f8d4c5dde5cebc4fe78599790d0272"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "197"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:service-worker.js",
+          "type": "file",
+          "name": "service-worker.js",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "b27d00702fec5c15ed53880b5af3329405a7b4e334a16b554449cabc856125e5"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "2904"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:social-card.png",
+          "type": "file",
+          "name": "social-card.png",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "2a32f5bdab613e53f5fe04116a5b30818dd64694e1fb227870f3e9e5cf2f90bc"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "47522"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm",
+          "type": "file",
+          "name": "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "27277674"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm.br",
+          "type": "file",
+          "name": "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm.br",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "97d5e58a9e5acf837f21bf2761497517d58ee63e740933f2fda45db2d4680a76"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "5113977"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm.gz",
+          "type": "file",
+          "name": "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm.gz",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "bd60e59ecc86a0d7860ed5f52d6ea8988122852fd0d3b8dcdf5973d8724464d2"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "6335541"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm",
+          "type": "file",
+          "name": "tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "26955585"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.br",
+          "type": "file",
+          "name": "tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.br",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "c3c0a5aa849ea4e2c26f2b930b606cd9937bbdf2a8ff1a49acc6828e58cc44ee"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "5039800"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.gz",
+          "type": "file",
+          "name": "tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.gz",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "edfc4381f5ab5460e58f4f87ff08494465e7cd43307bd170ad24ad27d28ed68c"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "6260341"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js",
+          "type": "file",
+          "name": "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "16992"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.br",
+          "type": "file",
+          "name": "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.br",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "08f3ff652247bca159df65b1b9291996f751e35844c21edb8e2eba9cefec12fd"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "4132"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz",
+          "type": "file",
+          "name": "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "609ac5c5edbfa3526ccc405624c45049b2d71a39bba786703fa8a6b060cc495d"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "4348"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:THIRD_PARTY_NOTICES.txt",
+          "type": "file",
+          "name": "THIRD_PARTY_NOTICES.txt",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "73cc0e25c4cc4b0f83883a1a04dcf2d32d8d0b1f21056d7acb54fc8f72965a72"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "396813"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:web-manifest.json",
+          "type": "file",
+          "name": "web-manifest.json",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "7dc5b804b6cacd6c2a67402054e919f9ee889d4cd8d433e013c0448a83bfb0ee"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "20424"
+            }
+          ]
+        }
+      ],
+      "properties": [
+        {
+          "name": "tailmouse:target",
+          "value": "web"
+        },
+        {
+          "name": "tailmouse:source-revision",
+          "value": "b99f3b090fbb9dd2f3ce66cc147044f35df41025"
+        },
+        {
+          "name": "tailmouse:tailcat-revision",
+          "value": "52fbad323e9d352f1febb623e0975368e9a8cbdd"
+        },
+        {
+          "name": "tailmouse:protocol-leash",
+          "value": "2"
+        },
+        {
+          "name": "tailmouse:dependency-scope",
+          "value": "Compiled and bundled component inventory; internal library dependency edges are not asserted."
+        }
+      ]
+    },
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "TailMouse release verifier",
+          "version": "1.0.0"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:golang/github.com/akutz/memconn@v0.1.0",
+      "type": "library",
+      "name": "github.com/akutz/memconn",
+      "version": "v0.1.0",
+      "purl": "pkg:golang/github.com/akutz/memconn@v0.1.0",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:NawI0TORU4hcOMsMr11g7vwlCdkYeLKXBcxWu2W/P8A="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/coder/websocket@v1.8.15",
+      "type": "library",
+      "name": "github.com/coder/websocket",
+      "version": "v1.8.15",
+      "purl": "pkg:golang/github.com/coder/websocket@v1.8.15",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/fxamacker/cbor/v2@v2.9.3",
+      "type": "library",
+      "name": "github.com/fxamacker/cbor/v2",
+      "version": "v2.9.3",
+      "purl": "pkg:golang/github.com/fxamacker/cbor/v2@v2.9.3",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:oQBnFATpNdY8gJHTndDDv5Xl4QqNaz51G5LLEPhng3Q="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/gaissmai/bart@v0.29.0",
+      "type": "library",
+      "name": "github.com/gaissmai/bart",
+      "version": "v0.29.0",
+      "purl": "pkg:golang/github.com/gaissmai/bart@v0.29.0",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:wO6HGE8g9YE0Wm0bCpYxwRzfQ4+fbJKOhL64e5ACGCI="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/go-json-experiment/json@v0.0.0-20260820222146-c27c302e5fc3",
+      "type": "library",
+      "name": "github.com/go-json-experiment/json",
+      "version": "v0.0.0-20260820222146-c27c302e5fc3",
+      "purl": "pkg:golang/github.com/go-json-experiment/json@v0.0.0-20260820222146-c27c302e5fc3",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:UADEEmDKgfXbtnGJZ97beY5XLo9ZechG1nlU4KnRrkE="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/golang/groupcache@v0.0.0-20241129210726-2c02b8208cf8",
+      "type": "library",
+      "name": "github.com/golang/groupcache",
+      "version": "v0.0.0-20241129210726-2c02b8208cf8",
+      "purl": "pkg:golang/github.com/golang/groupcache@v0.0.0-20241129210726-2c02b8208cf8",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:f+oWsMOmNPc8JmEHVZIycC7hBoQxHH9pNKQORJNozsQ="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/google/btree@v1.1.3",
+      "type": "library",
+      "name": "github.com/google/btree",
+      "version": "v1.1.3",
+      "purl": "pkg:golang/github.com/google/btree@v1.1.3",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:CVpQJjYgC4VbzxeGVHfvZrv1ctoYCAI8vbl07Fcxlyg="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/klauspost/compress@v1.20.0",
+      "type": "library",
+      "name": "github.com/klauspost/compress",
+      "version": "v1.20.0",
+      "purl": "pkg:golang/github.com/klauspost/compress@v1.20.0",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:a3C1ke2ohxFymNlb2HWAHjDeKCI90scRskErZkR0ezA="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/skip2/go-qrcode@v0.0.0-20200617195104-da1b6568686e",
+      "type": "library",
+      "name": "github.com/skip2/go-qrcode",
+      "version": "v0.0.0-20200617195104-da1b6568686e",
+      "purl": "pkg:golang/github.com/skip2/go-qrcode@v0.0.0-20200617195104-da1b6568686e",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:MRM5ITcdelLK2j1vwZ3Je0FKVCfqOLp5zO6trqMLYs0="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/tailscale/tailcat@v0.0.0-20261007201807-52fbad323e9d",
+      "type": "library",
+      "name": "github.com/tailscale/tailcat",
+      "version": "v0.0.0-20261007201807-52fbad323e9d",
+      "purl": "pkg:golang/github.com/tailscale/tailcat@v0.0.0-20261007201807-52fbad323e9d",
+      "properties": [
+        {
+          "name": "tailmouse:git-revision",
+          "value": "52fbad323e9d352f1febb623e0975368e9a8cbdd"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/tailscale/wireguard-go@v0.0.0-20260924224943-0a83b87f7908",
+      "type": "library",
+      "name": "github.com/tailscale/wireguard-go",
+      "version": "v0.0.0-20260924224943-0a83b87f7908",
+      "purl": "pkg:golang/github.com/tailscale/wireguard-go@v0.0.0-20260924224943-0a83b87f7908",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:+nNMmeMU/JoRY1Y4iWrCWYHMOMQhFpx9NKBAb+DH7So="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/github.com/x448/float16@v0.8.4",
+      "type": "library",
+      "name": "github.com/x448/float16",
+      "version": "v0.8.4",
+      "purl": "pkg:golang/github.com/x448/float16@v0.8.4",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/go4.org/mem@v0.0.0-20240501181205-ae6ca9944745",
+      "type": "library",
+      "name": "go4.org/mem",
+      "version": "v0.0.0-20240501181205-ae6ca9944745",
+      "purl": "pkg:golang/go4.org/mem@v0.0.0-20240501181205-ae6ca9944745",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:Tl++JLUCe4sxGu8cTpDzRLd3tN7US4hOxG5YpKCzkek="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/go4.org/netipx@v0.0.0-20260823151212-3075585bcbeb",
+      "type": "library",
+      "name": "go4.org/netipx",
+      "version": "v0.0.0-20260823151212-3075585bcbeb",
+      "purl": "pkg:golang/go4.org/netipx@v0.0.0-20260823151212-3075585bcbeb",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:XBM4hvfwGAttkkiTIFfeigdfcL1xIfdKXqFdgiHGtDs="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/crypto@v0.57.0",
+      "type": "library",
+      "name": "golang.org/x/crypto",
+      "version": "v0.57.0",
+      "purl": "pkg:golang/golang.org/x/crypto@v0.57.0",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/exp@v0.0.0-20260908205506-85c1c2202aba",
+      "type": "library",
+      "name": "golang.org/x/exp",
+      "version": "v0.0.0-20260908205506-85c1c2202aba",
+      "purl": "pkg:golang/golang.org/x/exp@v0.0.0-20260908205506-85c1c2202aba",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:Ck8QetSgk912qxWLMCKxd0in+aiyBQyDSMae6e/xmpU="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/net@v0.59.0",
+      "type": "library",
+      "name": "golang.org/x/net",
+      "version": "v0.59.0",
+      "purl": "pkg:golang/golang.org/x/net@v0.59.0",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/sys@v0.48.0",
+      "type": "library",
+      "name": "golang.org/x/sys",
+      "version": "v0.48.0",
+      "purl": "pkg:golang/golang.org/x/sys@v0.48.0",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/term@v0.46.0",
+      "type": "library",
+      "name": "golang.org/x/term",
+      "version": "v0.46.0",
+      "purl": "pkg:golang/golang.org/x/term@v0.46.0",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:3+OXuTbaKDgwk8jTi3aSLHRlmWqHEUDUtxnbFigO4YE="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/text@v0.42.0",
+      "type": "library",
+      "name": "golang.org/x/text",
+      "version": "v0.42.0",
+      "purl": "pkg:golang/golang.org/x/text@v0.42.0",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/golang.org/x/time@v0.16.0",
+      "type": "library",
+      "name": "golang.org/x/time",
+      "version": "v0.16.0",
+      "purl": "pkg:golang/golang.org/x/time@v0.16.0",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:vMb6ptszcQMkcwiRTAuNNU50gom6++Q/6gY2hDM6VDE="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/gvisor.dev/gvisor@v0.0.0-20260915211658-a6f909f08a72",
+      "type": "library",
+      "name": "gvisor.dev/gvisor",
+      "version": "v0.0.0-20260915211658-a6f909f08a72",
+      "purl": "pkg:golang/gvisor.dev/gvisor@v0.0.0-20260915211658-a6f909f08a72",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:EytKYr5WrVs+Aah/0xDO8ZAZZzS/iTEVC8ln4ipDbL0="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:golang/stdlib@go1.27.2",
+      "type": "library",
+      "name": "stdlib",
+      "version": "go1.27.2",
+      "purl": "pkg:golang/stdlib@go1.27.2"
+    },
+    {
+      "bom-ref": "pkg:golang/tailscale.com@v1.103.0-pre.0.20260929142145-a0e471a35b8f",
+      "type": "library",
+      "name": "tailscale.com",
+      "version": "v1.103.0-pre.0.20260929142145-a0e471a35b8f",
+      "purl": "pkg:golang/tailscale.com@v1.103.0-pre.0.20260929142145-a0e471a35b8f",
+      "properties": [
+        {
+          "name": "tailmouse:go-module-sum",
+          "value": "h1:a9y2RcAkvFGRsyloa8maBtoKmCc+TwwJpxbaWjrrt0I="
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/%40xterm/addon-fit@0.11.0",
+      "type": "library",
+      "name": "@xterm/addon-fit",
+      "version": "0.11.0",
+      "purl": "pkg:npm/%40xterm/addon-fit@0.11.0"
+    },
+    {
+      "bom-ref": "pkg:npm/%40xterm/xterm@6.0.0",
+      "type": "library",
+      "name": "@xterm/xterm",
+      "version": "6.0.0",
+      "purl": "pkg:npm/%40xterm/xterm@6.0.0"
+    },
+    {
+      "bom-ref": "pkg:npm/cborg@6.1.2",
+      "type": "library",
+      "name": "cborg",
+      "version": "6.1.2",
+      "purl": "pkg:npm/cborg@6.1.2"
+    },
+    {
+      "bom-ref": "pkg:npm/preact@10.29.8",
+      "type": "library",
+      "name": "preact",
+      "version": "10.29.8",
+      "purl": "pkg:npm/preact@10.29.8"
+    },
+    {
+      "bom-ref": "pkg:npm/vite@8.2.2",
+      "type": "library",
+      "name": "vite",
+      "version": "8.2.2",
+      "purl": "pkg:npm/vite@8.2.2"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "tailmouse:web",
+      "dependsOn": [
+        "file:tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm",
+        "file:tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm",
+        "pkg:npm/%40xterm/addon-fit@0.11.0",
+        "pkg:npm/%40xterm/xterm@6.0.0",
+        "pkg:npm/cborg@6.1.2",
+        "pkg:npm/preact@10.29.8",
+        "pkg:npm/vite@8.2.2"
+      ]
+    },
+    {
+      "ref": "file:tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm",
+      "dependsOn": [
+        "pkg:golang/github.com/akutz/memconn@v0.1.0",
+        "pkg:golang/github.com/coder/websocket@v1.8.15",
+        "pkg:golang/github.com/fxamacker/cbor/v2@v2.9.3",
+        "pkg:golang/github.com/gaissmai/bart@v0.29.0",
+        "pkg:golang/github.com/go-json-experiment/json@v0.0.0-20260820222146-c27c302e5fc3",
+        "pkg:golang/github.com/golang/groupcache@v0.0.0-20241129210726-2c02b8208cf8",
+        "pkg:golang/github.com/google/btree@v1.1.3",
+        "pkg:golang/github.com/klauspost/compress@v1.20.0",
+        "pkg:golang/github.com/skip2/go-qrcode@v0.0.0-20200617195104-da1b6568686e",
+        "pkg:golang/github.com/tailscale/tailcat@v0.0.0-20261007201807-52fbad323e9d",
+        "pkg:golang/github.com/tailscale/wireguard-go@v0.0.0-20260924224943-0a83b87f7908",
+        "pkg:golang/github.com/x448/float16@v0.8.4",
+        "pkg:golang/go4.org/mem@v0.0.0-20240501181205-ae6ca9944745",
+        "pkg:golang/go4.org/netipx@v0.0.0-20260823151212-3075585bcbeb",
+        "pkg:golang/golang.org/x/crypto@v0.57.0",
+        "pkg:golang/golang.org/x/exp@v0.0.0-20260908205506-85c1c2202aba",
+        "pkg:golang/golang.org/x/net@v0.59.0",
+        "pkg:golang/golang.org/x/sys@v0.48.0",
+        "pkg:golang/golang.org/x/term@v0.46.0",
+        "pkg:golang/golang.org/x/text@v0.42.0",
+        "pkg:golang/golang.org/x/time@v0.16.0",
+        "pkg:golang/gvisor.dev/gvisor@v0.0.0-20260915211658-a6f909f08a72",
+        "pkg:golang/stdlib@go1.27.2",
+        "pkg:golang/tailscale.com@v1.103.0-pre.0.20260929142145-a0e471a35b8f"
+      ]
+    },
+    {
+      "ref": "file:tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm",
+      "dependsOn": [
+        "pkg:golang/github.com/akutz/memconn@v0.1.0",
+        "pkg:golang/github.com/coder/websocket@v1.8.15",
+        "pkg:golang/github.com/fxamacker/cbor/v2@v2.9.3",
+        "pkg:golang/github.com/gaissmai/bart@v0.29.0",
+        "pkg:golang/github.com/go-json-experiment/json@v0.0.0-20260820222146-c27c302e5fc3",
+        "pkg:golang/github.com/golang/groupcache@v0.0.0-20241129210726-2c02b8208cf8",
+        "pkg:golang/github.com/google/btree@v1.1.3",
+        "pkg:golang/github.com/klauspost/compress@v1.20.0",
+        "pkg:golang/github.com/tailscale/tailcat@v0.0.0-20261007201807-52fbad323e9d",
+        "pkg:golang/github.com/tailscale/wireguard-go@v0.0.0-20260924224943-0a83b87f7908",
+        "pkg:golang/github.com/x448/float16@v0.8.4",
+        "pkg:golang/go4.org/mem@v0.0.0-20240501181205-ae6ca9944745",
+        "pkg:golang/go4.org/netipx@v0.0.0-20260823151212-3075585bcbeb",
+        "pkg:golang/golang.org/x/crypto@v0.57.0",
+        "pkg:golang/golang.org/x/exp@v0.0.0-20260908205506-85c1c2202aba",
+        "pkg:golang/golang.org/x/net@v0.59.0",
+        "pkg:golang/golang.org/x/sys@v0.48.0",
+        "pkg:golang/golang.org/x/term@v0.46.0",
+        "pkg:golang/golang.org/x/text@v0.42.0",
+        "pkg:golang/golang.org/x/time@v0.16.0",
+        "pkg:golang/gvisor.dev/gvisor@v0.0.0-20260915211658-a6f909f08a72",
+        "pkg:golang/stdlib@go1.27.2",
+        "pkg:golang/tailscale.com@v1.103.0-pre.0.20260929142145-a0e471a35b8f"
+      ]
+    }
+  ],
+  "compositions": [
+    {
+      "aggregate": "incomplete",
+      "dependencies": [
+        "tailmouse:web"
+      ]
+    }
+  ]
+}

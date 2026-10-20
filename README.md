@@ -4,6 +4,20 @@ Share files, temporary text, a terminal or a local web app through one browser l
 
 [Download v1.0.0](https://github.com/lotosli/tailmouse/releases/tag/v1.0.0) · [Website and guide](https://tailmouse.com/#guide) · [Resource documentation](https://github.com/lotosli/tailmouse/blob/v1.0.0/docs/resource-sharing.md) · [Feedback](https://github.com/lotosli/tailmouse/issues/new)
 
+## Why TailMouse instead of using Tailcat directly?
+
+[Tailcat](https://github.com/tailscale/tailcat) provides the encrypted transport that makes TailMouse possible. Use TailMouse when you want to send someone a link and let them work in their browser: download a file, exchange temporary text, preview a local app or use a terminal you explicitly share.
+
+TailMouse packages those tasks into one interface:
+
+- **Start with a link.** Guests need no client installation or account. For files and text, the host can also start in the browser; sharing a local app or terminal uses the native executable with built-in hosted defaults and no required configuration file.
+- **Share a defined resource.** Choose a file, read-only folder, upload directory, text value, web app or terminal; combine resources in a Dev workspace. Sessions have explicit expiry, visitor limits and host controls. Terminals can be view-only or input-enabled.
+- **Guide both sides through the task.** Local QR codes and device sharing, editable file selection, runtime loading progress, download capability checks, integrity verification and visible session status help people complete a share without learning tunnel commands.
+
+Tailcat already includes an experimental browser file/text demo, as well as CLI port forwarding, SSH, SFTP and other networking tools. Browser access, account-free use and encryption are not exclusive to TailMouse. Choose Tailcat directly for those networking tools, shell pipelines or embedding its Go library; choose TailMouse for the integrated resource-sharing workflow above. TailMouse uses its own application protocol and is not a drop-in client for arbitrary Tailcat services.
+
+Both inherit the transport's network limits: browser traffic uses DERP relays rather than direct peer-to-peer connections. A browser host must keep its page open, and terminal access still has the host process's permissions. See [platform status and boundaries](#platform-status-and-boundaries) before sharing.
+
 ## Share from your browser
 
 Open [browser sharing](https://tailmouse.com/#share), select files or enter text, then privately copy the link, scan its locally generated QR code or use the device sharing sheet. Selection errors identify the affected file before starting; remove, add or clear files to correct them. Neither side needs an installation or account. Keep both pages open; closing the host page ends access. Data uses encrypted Tailcat transport rather than website-server storage. Browser sessions last one hour and allow one visitor at a time. Mobile lock/background suspension can interrupt transfers.
@@ -142,7 +156,7 @@ For a custom deployment or saved preferences, `--config FILE` still accepts TOML
 
 ## Protected legacy terminal access
 
-Legacy `tailmouse leash` provides a separate protected terminal workflow. [Legacy CLI documentation and recordings](https://github.com/lotosli/tailmouse/blob/v1.0.0/docs/legacy-cli.md) describe its protected invitations, terminal controls and options separately from resource sharing.
+Legacy `tailmouse leash` provides a separate protected terminal workflow. Official protected links retain their access-code page at `link.tailmouse.com`; ordinary home and guide navigation uses `tailmouse.com`. [Legacy CLI documentation and recordings](https://github.com/lotosli/tailmouse/blob/v1.0.0/docs/legacy-cli.md) describe its protected invitations, terminal controls and options separately from resource sharing.
 
 ## Platform status and boundaries
 

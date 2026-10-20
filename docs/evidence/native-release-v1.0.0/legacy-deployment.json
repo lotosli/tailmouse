@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-10-20T08:30:06.064445+00:00",
+  "origin": "https://link.tailmouse.com",
+  "worker": "tailmouse-link-edge",
+  "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+  "version": "1.0.0",
+  "workerVersionId": "0b18acd3-0740-49dc-aea4-789dc4ee3003",
+  "deploymentId": "9c8ee798-99c2-4e7a-bcf9-51259b07d99a",
+  "trafficPercentage": 100,
+  "manifestSha256": "7dc5b804b6cacd6c2a67402054e919f9ee889d4cd8d433e013c0448a83bfb0ee",
+  "edgeManifestSha256": "de3afd422c9f0375e54dbf454829c36e21f0d11d5c8b5c80ebceba59dbf1818c",
+  "existingNamespacePreserved": true,
+  "namespaceIdSha256": "22bc6b3d9a2c8ce5f6a76f5b5041a5d517292e38adb3b06eef310a05f0092ff7",
+  "r2BindingPreserved": true,
+  "rateBindingsPreserved": true,
+  "migrationTag": null,
+  "status": "verified"
+}

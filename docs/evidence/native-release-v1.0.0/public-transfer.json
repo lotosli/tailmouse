@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-10-20T08:06:28.942Z",
+  "origin": "https://tailmouse.com",
+  "browser": "Firefox 153.0",
+  "tls": "verified with environment proxy CA",
+  "relay": "default public Tailcat DERP",
+  "syntheticPayloadBytes": 48,
+  "syntheticPayloadSha256": "d98d72cb65c5498c7dce585332b035b87ea62db3cf2bd3890b7b32bc63f89aed",
+  "checks": [
+    "browser host without installation",
+    "second browser connection",
+    "invitation fragment consumed",
+    "download length and SHA-256",
+    "text in both directions",
+    "host end removes access"
+  ],
+  "status": "verified"
+}

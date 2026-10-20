@@ -1,0 +1,132 @@
+{
+  "verifiedAt": "2026-10-20T07:56:21.426372+00:00",
+  "releaseId": 418135518,
+  "tag": "v1.0.0",
+  "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+  "url": "https://github.com/lotosli/tailmouse/releases/tag/v1.0.0",
+  "publishedAt": "2026-10-20T07:56:20Z",
+  "draft": false,
+  "prerelease": false,
+  "latest": true,
+  "assets": [
+    {
+      "id": 658659380,
+      "name": "SHA256SUMS",
+      "size": 1597,
+      "digest": "sha256:7503d2b75df2d82c2b5eb0b2d354151329f07bba7ab9378079c5e5f5d54d1f81",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/SHA256SUMS"
+    },
+    {
+      "id": 658659402,
+      "name": "install.ps1",
+      "size": 3273,
+      "digest": "sha256:a88e4e4186c1fdbf1cf7159f3dc90998248e9b37cc113d4c42f588ccf543714a",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/install.ps1"
+    },
+    {
+      "id": 658659430,
+      "name": "install.sh",
+      "size": 3238,
+      "digest": "sha256:bcb733e4db8d957e314e84b6897228e099e9ee3a43648237ffca181cf4279c55",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/install.sh"
+    },
+    {
+      "id": 658659455,
+      "name": "release-manifest.json",
+      "size": 3885,
+      "digest": "sha256:a7eee63b5c56112256718ae21b009a49c1005e28d6b45e38a3fb4628e161c5a7",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/release-manifest.json"
+    },
+    {
+      "id": 658659500,
+      "name": "tailmouse-config.json",
+      "size": 175,
+      "digest": "sha256:318241bebc934100350a22a54c51cf2aa4ea8535ffd7f27725ed56d50b345e58",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse-config.json"
+    },
+    {
+      "id": 658659554,
+      "name": "tailmouse_1.0.0_darwin_amd64.tar.gz",
+      "size": 8848034,
+      "digest": "sha256:2ed514cd81cc702dc2907f16bcbeff8e23c550a8dd18d039bfd84316840fdc86",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_darwin_amd64.tar.gz"
+    },
+    {
+      "id": 658659651,
+      "name": "tailmouse_1.0.0_darwin_amd64.tar.gz.cdx.json",
+      "size": 23227,
+      "digest": "sha256:cc2b9bad5cb56fded4480a924291d5b451c7e93cf1484ef626cac2c0f471ced8",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_darwin_amd64.tar.gz.cdx.json"
+    },
+    {
+      "id": 658659689,
+      "name": "tailmouse_1.0.0_darwin_arm64.tar.gz",
+      "size": 8231095,
+      "digest": "sha256:f4d27e48bc4c54d5b4cfb2a0aa169480d9cff0c3bf73e7b853175e4e5663010f",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_darwin_arm64.tar.gz"
+    },
+    {
+      "id": 658659761,
+      "name": "tailmouse_1.0.0_darwin_arm64.tar.gz.cdx.json",
+      "size": 23227,
+      "digest": "sha256:3794fa2d8ebde7c61ca5f92a992c637bf14843e6ff572c6c5da40fb1c846ee78",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_darwin_arm64.tar.gz.cdx.json"
+    },
+    {
+      "id": 658659809,
+      "name": "tailmouse_1.0.0_linux_amd64.tar.gz",
+      "size": 8964515,
+      "digest": "sha256:ea4195e1a3fd522e2212448f565b1dd52291017d2fed781f9c88d7f2535e9de3",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_linux_amd64.tar.gz"
+    },
+    {
+      "id": 658659859,
+      "name": "tailmouse_1.0.0_linux_amd64.tar.gz.cdx.json",
+      "size": 25530,
+      "digest": "sha256:285be7bf4633907a1e613580d82eb3e71cf9194003e338cc1879a63156313c9b",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_linux_amd64.tar.gz.cdx.json"
+    },
+    {
+      "id": 658659922,
+      "name": "tailmouse_1.0.0_linux_arm64.tar.gz",
+      "size": 8167648,
+      "digest": "sha256:c8100ce8c44e4f5c4989d611a08cd165c696a6636404d352adf339b5a3d8c278",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_linux_arm64.tar.gz"
+    },
+    {
+      "id": 658659987,
+      "name": "tailmouse_1.0.0_linux_arm64.tar.gz.cdx.json",
+      "size": 25530,
+      "digest": "sha256:6327328c93d4d1ca8a9bf880a8c767d951d6cc6263f3d4e45f92835d2fc354ed",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_linux_arm64.tar.gz.cdx.json"
+    },
+    {
+      "id": 658660020,
+      "name": "tailmouse_1.0.0_windows_amd64.zip",
+      "size": 8964683,
+      "digest": "sha256:83badafb3846ee95057232e60a3b50357ad7eb9cab9f8d3681e17b6f7c475bfe",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_windows_amd64.zip"
+    },
+    {
+      "id": 658660100,
+      "name": "tailmouse_1.0.0_windows_amd64.zip.cdx.json",
+      "size": 24557,
+      "digest": "sha256:bcb02c2a845e7c1189381f1900785db96d59d1cedbfd107545c96392d20772d1",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_windows_amd64.zip.cdx.json"
+    },
+    {
+      "id": 658660140,
+      "name": "tailmouse_1.0.0_windows_arm64.zip",
+      "size": 8060045,
+      "digest": "sha256:944fcf84f285224c25ba3e2554346ec8ff0127648e7f86ce5bddcf75ff615584",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_windows_arm64.zip"
+    },
+    {
+      "id": 658660210,
+      "name": "tailmouse_1.0.0_windows_arm64.zip.cdx.json",
+      "size": 24557,
+      "digest": "sha256:59bed10a4f6e28387dd463493282e20079c2404cc6d1e585cfc63b57d10ae000",
+      "browser_download_url": "https://github.com/lotosli/tailmouse/releases/download/untagged-aa64c81e956d0637f58c/tailmouse_1.0.0_windows_arm64.zip.cdx.json"
+    }
+  ]
+}

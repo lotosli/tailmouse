@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "origin": "https://link.tailmouse.com",
+  "manifest": {
+    "path": "/workspace/tailmouse/apps/web/dist/web-manifest.json",
+    "sha256": "7dc5b804b6cacd6c2a67402054e919f9ee889d4cd8d433e013c0448a83bfb0ee",
+    "objectCount": 35,
+    "objectBytes": 79628698
+  },
+  "dns": {
+    "hostname": "link.tailmouse.com",
+    "addresses": [],
+    "status": "not directly observed in the proxied run"
+  },
+  "tls": {
+    "status": "verified",
+    "protocol": "TLSv1.3",
+    "authorized": true,
+    "serverName": "link.tailmouse.com",
+    "validTo": "Oct 19 16:10:46 2027 GMT"
+  },
+  "routing": {
+    "root": {
+      "requestPath": "/",
+      "objectPath": "index.html",
+      "action": "internal-rewrite",
+      "clearQuery": true
+    },
+    "unknownPathStatus": 404,
+    "staticClientBackendRequired": false,
+    "shortInvitations": {
+      "status": "verified",
+      "entryPath": "/T6wxZ8",
+      "unavailableStatus": 404,
+      "cacheControl": "no-store",
+      "lifecycle": "not-tested"
+    }
+  },
+  "transfer": {
+    "inspectedBytes": 79628698,
+    "coldWasm": {
+      "path": "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm",
+      "bytes": 27277674,
+      "durationMs": 1032.773
+    },
+    "warmWasm": {
+      "path": "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm",
+      "bytes": 27277674,
+      "durationMs": 1205.604
+    }
+  },
+  "executionScope": "Unmodified verifier with standard-library agents configured through proxyEnv; TLS verification and all byte/header/route checks retained. Reported network/TLS observations use the managed HTTPS proxy and CA."
+}

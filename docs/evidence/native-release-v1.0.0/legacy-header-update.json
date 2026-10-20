@@ -1,0 +1,10 @@
+{
+  "ruleId": "67066d90606a48a7917d5cb5af2225eb",
+  "expression": "(http.host eq \"link.tailmouse.com\")",
+  "changedHeader": "Content-Security-Policy",
+  "before": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+  "after": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss:; frame-src https:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+  "otherHeaderParametersUnchanged": true,
+  "reason": "Align the existing zone-level header override with the reviewed release CSP.",
+  "status": "verified"
+}

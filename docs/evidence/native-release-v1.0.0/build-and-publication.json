@@ -1,0 +1,140 @@
+{
+  "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+  "steps": [
+    {
+      "step": "build",
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "exitCode": 0,
+      "seconds": 36.331
+    },
+    {
+      "step": "worker",
+      "command": [
+        "node",
+        "tools/resource-integration.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 4.297
+    },
+    {
+      "step": "goreleaser-check",
+      "command": [
+        "goreleaser",
+        "check",
+        "--config",
+        ".goreleaser.yaml"
+      ],
+      "exitCode": 0,
+      "seconds": 0.053
+    },
+    {
+      "step": "archives",
+      "command": [
+        "goreleaser",
+        "release",
+        "--config",
+        ".goreleaser.yaml",
+        "--skip=publish",
+        "--parallelism=1",
+        "--fail-fast",
+        "--timeout=15m"
+      ],
+      "exitCode": 0,
+      "seconds": 26.358
+    },
+    {
+      "step": "sbom",
+      "command": [
+        "pnpm",
+        "release:sbom"
+      ],
+      "exitCode": 0,
+      "seconds": 8.399
+    },
+    {
+      "step": "verify",
+      "command": [
+        "pnpm",
+        "release:verify"
+      ],
+      "exitCode": 0,
+      "seconds": 7.864
+    },
+    {
+      "step": "checksums",
+      "command": [
+        "sha256sum",
+        "--check",
+        "--strict",
+        "checksums.txt"
+      ],
+      "exitCode": 0,
+      "seconds": 0.091
+    }
+  ],
+  "logs": {
+    "build": {
+      "sha256": "97f3be41517d70cd95f6d3d836992e10e06b0199ca746eaa3defd8eb56a0166e",
+      "exitCode": 0
+    },
+    "worker": {
+      "sha256": "3cdb3ba30b1bca7760d3713e43e655d934772e703ec5b714398d099bc8470c02",
+      "exitCode": 0
+    },
+    "goreleaser-check": {
+      "sha256": "ae01e5017521cb1cda3e60ff9483664f748ee4ba4a69ae0795f62936d036753a",
+      "exitCode": 0
+    },
+    "archives": {
+      "sha256": "98a8058c58ca121ef12603844dc75bf0037bb86256d66408888827143f56b9ec",
+      "exitCode": 0
+    },
+    "sbom": {
+      "sha256": "16efa5fb1ac8130ff73f6793c7f5e0534d72e5b68475fb7d7117130732f157ea",
+      "exitCode": 0
+    },
+    "verify": {
+      "sha256": "3d3b2cfaac5edec8fb9160ebb2710e7d40579cf5dc80e0c2f3d69da7625329a7",
+      "exitCode": 0
+    },
+    "checksums": {
+      "sha256": "8801a0cb38e7188ca8f6bca2989621629f8f0a3f53765fb09801553e22c75fe0",
+      "exitCode": 0
+    }
+  },
+  "stagedValidation": {
+    "normalBuild": "passed",
+    "workerIntegration": "passed",
+    "sixNativeArchives": "verified",
+    "eightSBOMs": "verified",
+    "distributionChecksums": 57,
+    "nativeArchive": {
+      "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+      "archive": "tailmouse_1.0.0_linux_amd64.tar.gz",
+      "archiveSha256": "ea4195e1a3fd522e2212448f565b1dd52291017d2fed781f9c88d7f2535e9de3",
+      "version": "TailMouse 1.0.0\nTMOUSE Leash protocol 2\nTMOUSE Resource protocol 2\nTailcat revision 52fbad323e9d352f1febb623e0975368e9a8cbdd",
+      "commands": [
+        "cli",
+        "web",
+        "receive",
+        "dev",
+        "send",
+        "files",
+        "text"
+      ],
+      "runtime": "linux/amd64",
+      "status": "verified",
+      "retiredGameCommand": "rejected with exit 2; absent from help and protocol identity"
+    }
+  },
+  "publication": {
+    "releaseId": 418135518,
+    "tag": "v1.0.0",
+    "latest": true,
+    "prerelease": false,
+    "assets": 17
+  }
+}

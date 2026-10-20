@@ -1,0 +1,242 @@
+{
+  "$schema": "https://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:e1b8e63d-31ae-497f-b92c-a46257f5e135",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-20T08:20:58.081Z",
+    "component": {
+      "bom-ref": "tailmouse:edge",
+      "type": "application",
+      "name": "TailMouse Link Edge",
+      "version": "1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "components": [
+        {
+          "bom-ref": "file:bundle-meta.json",
+          "type": "file",
+          "name": "bundle-meta.json",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "2841a5cbbcf6e88e01c99ef9b9bd6331b5f030ff6e0e9a0a4a5af7d34f7ee758"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "20528"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:edge-manifest.json",
+          "type": "file",
+          "name": "edge-manifest.json",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "de3afd422c9f0375e54dbf454829c36e21f0d11d5c8b5c80ebceba59dbf1818c"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "6779"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:index.js",
+          "type": "file",
+          "name": "index.js",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "17e319f82207f414b64a7fd1e58e3026999cbe3c96588cb6ce27a0154050277c"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "93848"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:index.js.map",
+          "type": "file",
+          "name": "index.js.map",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "b063d8132dd0aa49722ff0878c33ebab02f6fde3276066681f84a20b78dbc49d"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "197125"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:LICENSE",
+          "type": "file",
+          "name": "LICENSE",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "11358"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:NOTICE",
+          "type": "file",
+          "name": "NOTICE",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "d06acc407b129cf43d516d2571544fa5f0f8d4c5dde5cebc4fe78599790d0272"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "197"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:THIRD_PARTY_NOTICES.txt",
+          "type": "file",
+          "name": "THIRD_PARTY_NOTICES.txt",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "73cc0e25c4cc4b0f83883a1a04dcf2d32d8d0b1f21056d7acb54fc8f72965a72"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "396813"
+            }
+          ]
+        },
+        {
+          "bom-ref": "file:wrangler.jsonc",
+          "type": "file",
+          "name": "wrangler.jsonc",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "2f6bd19ccdd28677988f2bb13a140bdb6b36b436c8b7a06edbb8f769ba1d6d7f"
+            }
+          ],
+          "properties": [
+            {
+              "name": "tailmouse:bytes",
+              "value": "1293"
+            }
+          ]
+        }
+      ],
+      "properties": [
+        {
+          "name": "tailmouse:target",
+          "value": "edge"
+        },
+        {
+          "name": "tailmouse:source-revision",
+          "value": "b99f3b090fbb9dd2f3ce66cc147044f35df41025"
+        },
+        {
+          "name": "tailmouse:tailcat-revision",
+          "value": "52fbad323e9d352f1febb623e0975368e9a8cbdd"
+        },
+        {
+          "name": "tailmouse:protocol-leash",
+          "value": "2"
+        },
+        {
+          "name": "tailmouse:dependency-scope",
+          "value": "Compiled and bundled component inventory; internal library dependency edges are not asserted."
+        },
+        {
+          "name": "tailmouse:platform-import",
+          "value": "cloudflare:workers"
+        }
+      ]
+    },
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "TailMouse release verifier",
+          "version": "1.0.0"
+        },
+        {
+          "type": "application",
+          "name": "node",
+          "version": "26.8.1"
+        },
+        {
+          "type": "application",
+          "name": "wrangler",
+          "version": "4.129.0"
+        },
+        {
+          "type": "application",
+          "name": "esbuild",
+          "version": "0.28.1"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:npm/cborg@6.1.2",
+      "type": "library",
+      "name": "cborg",
+      "version": "6.1.2",
+      "purl": "pkg:npm/cborg@6.1.2"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "tailmouse:edge",
+      "dependsOn": [
+        "file:index.js"
+      ]
+    },
+    {
+      "ref": "file:index.js",
+      "dependsOn": [
+        "pkg:npm/cborg@6.1.2"
+      ]
+    }
+  ],
+  "compositions": [
+    {
+      "aggregate": "incomplete",
+      "dependencies": [
+        "tailmouse:edge"
+      ]
+    }
+  ]
+}

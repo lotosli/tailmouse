@@ -1,27 +1,27 @@
 class Tailmouse < Formula
   desc "Share files, text, terminals and web apps with a browser"
   homepage "https://tailmouse.com"
-  version "0.1.0-alpha.3"
+  version "1.0.0"
   license "Apache-2.0"
 
   on_macos do
     on_intel do
-      url "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz"
-      sha256 "55c4a3bca06f3431dc0bfd18f87b2510fdba0bd12df2702b7425c83eb10012be"
+      url "https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_darwin_amd64.tar.gz"
+      sha256 "2ed514cd81cc702dc2907f16bcbeff8e23c550a8dd18d039bfd84316840fdc86"
     end
     on_arm do
-      url "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz"
-      sha256 "6f06e799de8b5e1e0d3b223f94f70069e010661bb95e6c6fbe16de9b9a638fe9"
+      url "https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_darwin_arm64.tar.gz"
+      sha256 "f4d27e48bc4c54d5b4cfb2a0aa169480d9cff0c3bf73e7b853175e4e5663010f"
     end
   end
   on_linux do
     on_intel do
-      url "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz"
-      sha256 "57a65f3aa3e94c8c4b6583d2d99626a36ffee95a0afed4f4e49d506f55edcf5c"
+      url "https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_linux_amd64.tar.gz"
+      sha256 "ea4195e1a3fd522e2212448f565b1dd52291017d2fed781f9c88d7f2535e9de3"
     end
     on_arm do
-      url "https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz"
-      sha256 "de341193375afb94f1d0517bab70ed413fd4d576109ac4ec945dea2790d6467f"
+      url "https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_linux_arm64.tar.gz"
+      sha256 "c8100ce8c44e4f5c4989d611a08cd165c696a6636404d352adf339b5a3d8c278"
     end
   end
 
@@ -31,6 +31,6 @@ class Tailmouse < Formula
   end
 
   test do
-    assert_match "TailMouse 0.1.0-alpha.3", shell_output("#{bin}/tailmouse version")
+    assert_match "TailMouse 1.0.0", shell_output("#{bin}/tailmouse version")
   end
 end

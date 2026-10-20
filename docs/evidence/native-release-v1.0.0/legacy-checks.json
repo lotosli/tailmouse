@@ -1,0 +1,29 @@
+{
+  "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+  "checks": {
+    "legacyBuild": {
+      "sha256": "4dff775c5732d9e3b2e58e2bed67dbb36bd3fe8cdf94a8e039ac1b5d9b5b5c7f",
+      "outcome": "passed"
+    },
+    "legacyWorkerIntegration": {
+      "sha256": "072eca04490d84b7aa40eeff46b956c066c9865ae6136feb8e94591454b96954",
+      "outcome": "passed"
+    },
+    "legacyDistribution": {
+      "sha256": "3d3b2cfaac5edec8fb9160ebb2710e7d40579cf5dc80e0c2f3d69da7625329a7",
+      "outcome": "passed"
+    },
+    "legacyPublicStatic": {
+      "sha256": "871f628da58a0cde6d1eede7e212aadcd7158ce47c1727a21bbc06f55d3ef7b7",
+      "outcome": "passed"
+    },
+    "legacyPublicBrowser": {
+      "sha256": "cc007332ccdbeeaa1a2c0b1c0c86c17f9d3a8c4b07684a63d1ff8a3e26e754db",
+      "outcome": "passed"
+    }
+  },
+  "existingNamespacePreserved": true,
+  "publishedImmutableObjectsOverwritten": false,
+  "canonicalApplicationBytesPreserved": true,
+  "encodingAdaptation": "Retain the already published immutable gzip representation; its sole difference is the gzip operating-system header byte. Every decoded application/runtime byte remains identical to the fresh tagged build."
+}

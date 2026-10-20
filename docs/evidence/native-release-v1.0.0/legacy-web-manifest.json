@@ -1,0 +1,547 @@
+{
+  "schemaVersion": 2,
+  "version": "1.0.0",
+  "tailcatRevision": "52fbad323e9d352f1febb623e0975368e9a8cbdd",
+  "protocols": {
+    "leash": 2,
+    "resource": 2
+  },
+  "cacheVersion": "2762de809242aeb21d9850cfdb499fb7718e97f84bc1b5a24da9b386fa2b7fb0",
+  "dependencies": {
+    "npm": [
+      {
+        "name": "@xterm/addon-fit",
+        "version": "0.11.0"
+      },
+      {
+        "name": "@xterm/xterm",
+        "version": "6.0.0"
+      },
+      {
+        "name": "cborg",
+        "version": "6.1.2"
+      },
+      {
+        "name": "preact",
+        "version": "10.29.8"
+      },
+      {
+        "name": "vite",
+        "version": "8.2.2"
+      }
+    ],
+    "resourceWasm": {
+      "main": {
+        "name": "tailmouse",
+        "version": "v1.0.0",
+        "revision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025"
+      },
+      "modules": [
+        {
+          "name": "github.com/akutz/memconn",
+          "version": "v0.1.0",
+          "sum": "h1:NawI0TORU4hcOMsMr11g7vwlCdkYeLKXBcxWu2W/P8A="
+        },
+        {
+          "name": "github.com/coder/websocket",
+          "version": "v1.8.15",
+          "sum": "h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA="
+        },
+        {
+          "name": "github.com/fxamacker/cbor/v2",
+          "version": "v2.9.3",
+          "sum": "h1:oQBnFATpNdY8gJHTndDDv5Xl4QqNaz51G5LLEPhng3Q="
+        },
+        {
+          "name": "github.com/gaissmai/bart",
+          "version": "v0.29.0",
+          "sum": "h1:wO6HGE8g9YE0Wm0bCpYxwRzfQ4+fbJKOhL64e5ACGCI="
+        },
+        {
+          "name": "github.com/go-json-experiment/json",
+          "version": "v0.0.0-20260820222146-c27c302e5fc3",
+          "sum": "h1:UADEEmDKgfXbtnGJZ97beY5XLo9ZechG1nlU4KnRrkE="
+        },
+        {
+          "name": "github.com/golang/groupcache",
+          "version": "v0.0.0-20241129210726-2c02b8208cf8",
+          "sum": "h1:f+oWsMOmNPc8JmEHVZIycC7hBoQxHH9pNKQORJNozsQ="
+        },
+        {
+          "name": "github.com/google/btree",
+          "version": "v1.1.3",
+          "sum": "h1:CVpQJjYgC4VbzxeGVHfvZrv1ctoYCAI8vbl07Fcxlyg="
+        },
+        {
+          "name": "github.com/klauspost/compress",
+          "version": "v1.20.0",
+          "sum": "h1:a3C1ke2ohxFymNlb2HWAHjDeKCI90scRskErZkR0ezA="
+        },
+        {
+          "name": "github.com/skip2/go-qrcode",
+          "version": "v0.0.0-20200617195104-da1b6568686e",
+          "sum": "h1:MRM5ITcdelLK2j1vwZ3Je0FKVCfqOLp5zO6trqMLYs0="
+        },
+        {
+          "name": "github.com/tailscale/wireguard-go",
+          "version": "v0.0.0-20260924224943-0a83b87f7908",
+          "sum": "h1:+nNMmeMU/JoRY1Y4iWrCWYHMOMQhFpx9NKBAb+DH7So="
+        },
+        {
+          "name": "github.com/x448/float16",
+          "version": "v0.8.4",
+          "sum": "h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM="
+        },
+        {
+          "name": "go4.org/mem",
+          "version": "v0.0.0-20240501181205-ae6ca9944745",
+          "sum": "h1:Tl++JLUCe4sxGu8cTpDzRLd3tN7US4hOxG5YpKCzkek="
+        },
+        {
+          "name": "go4.org/netipx",
+          "version": "v0.0.0-20260823151212-3075585bcbeb",
+          "sum": "h1:XBM4hvfwGAttkkiTIFfeigdfcL1xIfdKXqFdgiHGtDs="
+        },
+        {
+          "name": "golang.org/x/crypto",
+          "version": "v0.57.0",
+          "sum": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M="
+        },
+        {
+          "name": "golang.org/x/exp",
+          "version": "v0.0.0-20260908205506-85c1c2202aba",
+          "sum": "h1:Ck8QetSgk912qxWLMCKxd0in+aiyBQyDSMae6e/xmpU="
+        },
+        {
+          "name": "golang.org/x/net",
+          "version": "v0.59.0",
+          "sum": "h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues="
+        },
+        {
+          "name": "golang.org/x/sys",
+          "version": "v0.48.0",
+          "sum": "h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo="
+        },
+        {
+          "name": "golang.org/x/term",
+          "version": "v0.46.0",
+          "sum": "h1:3+OXuTbaKDgwk8jTi3aSLHRlmWqHEUDUtxnbFigO4YE="
+        },
+        {
+          "name": "golang.org/x/text",
+          "version": "v0.42.0",
+          "sum": "h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI="
+        },
+        {
+          "name": "golang.org/x/time",
+          "version": "v0.16.0",
+          "sum": "h1:vMb6ptszcQMkcwiRTAuNNU50gom6++Q/6gY2hDM6VDE="
+        },
+        {
+          "name": "gvisor.dev/gvisor",
+          "version": "v0.0.0-20260915211658-a6f909f08a72",
+          "sum": "h1:EytKYr5WrVs+Aah/0xDO8ZAZZzS/iTEVC8ln4ipDbL0="
+        },
+        {
+          "name": "tailscale.com",
+          "version": "v1.103.0-pre.0.20260929142145-a0e471a35b8f",
+          "sum": "h1:a9y2RcAkvFGRsyloa8maBtoKmCc+TwwJpxbaWjrrt0I="
+        }
+      ],
+      "sourceSha256": "f29e356127a091a88f2eecafd5b51bc99c847d692b7fd2a99582c4a624088f8e",
+      "tailcat": {
+        "name": "github.com/tailscale/tailcat",
+        "version": "v0.0.0-20261007201807-52fbad323e9d",
+        "revision": "52fbad323e9d352f1febb623e0975368e9a8cbdd"
+      }
+    },
+    "wasm": {
+      "main": {
+        "name": "github.com/tailscale/tailcat",
+        "version": "v0.0.0-20261007201807-52fbad323e9d",
+        "revision": "52fbad323e9d352f1febb623e0975368e9a8cbdd"
+      },
+      "modules": [
+        {
+          "name": "github.com/akutz/memconn",
+          "version": "v0.1.0",
+          "sum": "h1:NawI0TORU4hcOMsMr11g7vwlCdkYeLKXBcxWu2W/P8A="
+        },
+        {
+          "name": "github.com/coder/websocket",
+          "version": "v1.8.15",
+          "sum": "h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA="
+        },
+        {
+          "name": "github.com/fxamacker/cbor/v2",
+          "version": "v2.9.3",
+          "sum": "h1:oQBnFATpNdY8gJHTndDDv5Xl4QqNaz51G5LLEPhng3Q="
+        },
+        {
+          "name": "github.com/gaissmai/bart",
+          "version": "v0.29.0",
+          "sum": "h1:wO6HGE8g9YE0Wm0bCpYxwRzfQ4+fbJKOhL64e5ACGCI="
+        },
+        {
+          "name": "github.com/go-json-experiment/json",
+          "version": "v0.0.0-20260820222146-c27c302e5fc3",
+          "sum": "h1:UADEEmDKgfXbtnGJZ97beY5XLo9ZechG1nlU4KnRrkE="
+        },
+        {
+          "name": "github.com/golang/groupcache",
+          "version": "v0.0.0-20241129210726-2c02b8208cf8",
+          "sum": "h1:f+oWsMOmNPc8JmEHVZIycC7hBoQxHH9pNKQORJNozsQ="
+        },
+        {
+          "name": "github.com/google/btree",
+          "version": "v1.1.3",
+          "sum": "h1:CVpQJjYgC4VbzxeGVHfvZrv1ctoYCAI8vbl07Fcxlyg="
+        },
+        {
+          "name": "github.com/klauspost/compress",
+          "version": "v1.20.0",
+          "sum": "h1:a3C1ke2ohxFymNlb2HWAHjDeKCI90scRskErZkR0ezA="
+        },
+        {
+          "name": "github.com/tailscale/wireguard-go",
+          "version": "v0.0.0-20260924224943-0a83b87f7908",
+          "sum": "h1:+nNMmeMU/JoRY1Y4iWrCWYHMOMQhFpx9NKBAb+DH7So="
+        },
+        {
+          "name": "github.com/x448/float16",
+          "version": "v0.8.4",
+          "sum": "h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM="
+        },
+        {
+          "name": "go4.org/mem",
+          "version": "v0.0.0-20240501181205-ae6ca9944745",
+          "sum": "h1:Tl++JLUCe4sxGu8cTpDzRLd3tN7US4hOxG5YpKCzkek="
+        },
+        {
+          "name": "go4.org/netipx",
+          "version": "v0.0.0-20260823151212-3075585bcbeb",
+          "sum": "h1:XBM4hvfwGAttkkiTIFfeigdfcL1xIfdKXqFdgiHGtDs="
+        },
+        {
+          "name": "golang.org/x/crypto",
+          "version": "v0.57.0",
+          "sum": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M="
+        },
+        {
+          "name": "golang.org/x/exp",
+          "version": "v0.0.0-20260908205506-85c1c2202aba",
+          "sum": "h1:Ck8QetSgk912qxWLMCKxd0in+aiyBQyDSMae6e/xmpU="
+        },
+        {
+          "name": "golang.org/x/net",
+          "version": "v0.59.0",
+          "sum": "h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues="
+        },
+        {
+          "name": "golang.org/x/sys",
+          "version": "v0.48.0",
+          "sum": "h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo="
+        },
+        {
+          "name": "golang.org/x/term",
+          "version": "v0.46.0",
+          "sum": "h1:3+OXuTbaKDgwk8jTi3aSLHRlmWqHEUDUtxnbFigO4YE="
+        },
+        {
+          "name": "golang.org/x/text",
+          "version": "v0.42.0",
+          "sum": "h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI="
+        },
+        {
+          "name": "golang.org/x/time",
+          "version": "v0.16.0",
+          "sum": "h1:vMb6ptszcQMkcwiRTAuNNU50gom6++Q/6gY2hDM6VDE="
+        },
+        {
+          "name": "gvisor.dev/gvisor",
+          "version": "v0.0.0-20260915211658-a6f909f08a72",
+          "sum": "h1:EytKYr5WrVs+Aah/0xDO8ZAZZzS/iTEVC8ln4ipDbL0="
+        },
+        {
+          "name": "tailscale.com",
+          "version": "v1.103.0-pre.0.20260929142145-a0e471a35b8f",
+          "sum": "h1:a9y2RcAkvFGRsyloa8maBtoKmCc+TwwJpxbaWjrrt0I="
+        }
+      ]
+    }
+  },
+  "toolchains": {
+    "go": "go1.27.2",
+    "vite": "8.2.2",
+    "rolldown": "1.2.6"
+  },
+  "staticHosting": {
+    "applicationBackend": false,
+    "manifestObject": {
+      "path": "web-manifest.json",
+      "metadata": {
+        "contentType": "application/json",
+        "cacheControl": "no-cache"
+      }
+    },
+    "rootRoute": {
+      "requestPath": "/",
+      "objectPath": "index.html",
+      "action": "internal-rewrite",
+      "clearQuery": true
+    },
+    "unknownPathStatus": 404,
+    "requiredHeaders": {
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss:; frame-src https:; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+      "Referrer-Policy": "no-referrer",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(self), gyroscope=(self), magnetometer=()",
+      "X-Content-Type-Options": "nosniff"
+    }
+  },
+  "contentHosting": {
+    "applicationBackend": false,
+    "allowedPrefix": "/.tailmouse/",
+    "unknownPathStatus": 404,
+    "serviceWorker": {
+      "path": "/.tailmouse/sw.js",
+      "scope": "/",
+      "requiredHeaders": {
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    "frameAncestors": "trusted-session-wildcard-from-config",
+    "requiredHeaders": {
+      "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; frame-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "no-store"
+    }
+  },
+  "resourceProtocol": {
+    "frontendMajor": 1,
+    "protocolMajor": 2,
+    "wasm": "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm",
+    "contentBootstrap": ".tailmouse/bridge.html",
+    "serviceWorker": ".tailmouse/sw.js",
+    "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+    "sourceSha256": "f29e356127a091a88f2eecafd5b51bc99c847d692b7fd2a99582c4a624088f8e"
+  },
+  "files": {
+    "manifest.webmanifest": {
+      "bytes": 263,
+      "sha256": "c00dd49351860e0ae33ad013d0c8af3868e58c510a10729294672584dc02f47d",
+      "contentType": "application/manifest+json",
+      "cacheControl": "no-cache"
+    },
+    "social-card.png": {
+      "bytes": 47522,
+      "sha256": "2a32f5bdab613e53f5fe04116a5b30818dd64694e1fb227870f3e9e5cf2f90bc",
+      "contentType": "image/png",
+      "cacheControl": "no-cache"
+    },
+    "install.sh": {
+      "bytes": 3238,
+      "sha256": "bcb733e4db8d957e314e84b6897228e099e9ee3a43648237ffca181cf4279c55",
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "install.ps1": {
+      "bytes": 3273,
+      "sha256": "a88e4e4186c1fdbf1cf7159f3dc90998248e9b37cc113d4c42f588ccf543714a",
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    ".tailmouse/bridge.html": {
+      "bytes": 548,
+      "sha256": "fcfd42d11ebfb7d3b44622610da93d8ea7889d56760c1d5cd5d82081f9a55177",
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    ".tailmouse/bridge.js": {
+      "bytes": 5700,
+      "sha256": "a2afb818106bfc5ac278249bd8249bc73d21f2e620ee7e440565febcc4dedc3f",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    ".tailmouse/content.css": {
+      "bytes": 215,
+      "sha256": "6918fa9fa58de42b2f02be49e3bc49145ea82ba1bea1e3cffd43e80227f2f2a5",
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    ".tailmouse/shim.js": {
+      "bytes": 6476,
+      "sha256": "2c46841986544d50453112df3208b6f2e61d7b37ad8ed773d63798faebac68bc",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    ".tailmouse/sw.js": {
+      "bytes": 6552,
+      "sha256": "719b347f32728d912a3d22cbae87ed7721fe1967de4d8f7ca519443844d70c0e",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "no-store"
+    },
+    "LICENSE": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "NOTICE": {
+      "bytes": 197,
+      "sha256": "d06acc407b129cf43d516d2571544fa5f0f8d4c5dde5cebc4fe78599790d0272",
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "THIRD_PARTY_NOTICES.txt": {
+      "bytes": 396813,
+      "sha256": "73cc0e25c4cc4b0f83883a1a04dcf2d32d8d0b1f21056d7acb54fc8f72965a72",
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "assets/index-Bd4u-7xP.js": {
+      "bytes": 510613,
+      "sha256": "a36151232607d01f7a721c50f9e1217a0703d5241b2d75ee5969c304cd80a6c1",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "assets/index-Bd4u-7xP.js.gz": {
+      "bytes": 138742,
+      "sha256": "a13c8b128553996f739e7fb999b17f2cbfc8c82ca996f6ca333dbfbfa1911ab8",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "assets/index-Bd4u-7xP.js.br": {
+      "bytes": 127401,
+      "sha256": "d6bc1dab0ef57308797326783b62a28c9626accc3fdcd816dc96b9a80cd0f950",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "assets/index-Bd4u-7xP.js.map": {
+      "bytes": 1297834,
+      "sha256": "e3721e6ebfd8c307a0867cbdf6fa8fefc7d623aca68ba79b8cf5b5162de4b594",
+      "contentType": "application/json",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "assets/index-CP0MTyoa.css": {
+      "bytes": 18904,
+      "sha256": "cc6863e1a2f0b41138075c7415ef2ca961018e11baf8611b9f75756cf9bbeb23",
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "assets/index-CP0MTyoa.css.gz": {
+      "bytes": 4813,
+      "sha256": "6f8ac70b51c89288654166a319e843e7879e286f9750ba29884619462ff623ce",
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "assets/index-CP0MTyoa.css.br": {
+      "bytes": 4485,
+      "sha256": "419e55b66edb22c8862755f85ed544a7dc82026e05239df7a4a1e623cee369aa",
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "assets/resource-worker-DwucB-rz.js": {
+      "bytes": 2010,
+      "sha256": "752fff92d275dc81e63734d5791c527c455bdb1cf8a84de9e8d2521e89989edc",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "assets/resource-worker-DwucB-rz.js.gz": {
+      "bytes": 977,
+      "sha256": "75249e65c439f9d855d314f843db6d6de27adff99d515dbf509d744f628c64d0",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "assets/resource-worker-DwucB-rz.js.br": {
+      "bytes": 897,
+      "sha256": "375c6c4dcbb2b06b03b0779ff9c14485ac48ae299ee1e71c15748152793fc557",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "assets/resource-worker-DwucB-rz.js.map": {
+      "bytes": 6917,
+      "sha256": "ee1e9576228982bdcdec42f5d7974f71f4d0fae153c3d8a2ea8cda183c17a1fc",
+      "contentType": "application/json",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "index.html": {
+      "bytes": 1232,
+      "sha256": "761336d00d36c06d8c14802adc03d47495128fbaf434f3448ae56fa82e93b6d8",
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm": {
+      "bytes": 27277674,
+      "sha256": "a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm.gz": {
+      "bytes": 6335541,
+      "sha256": "bd60e59ecc86a0d7860ed5f52d6ea8988122852fd0d3b8dcdf5973d8724464d2",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm.br": {
+      "bytes": 5113977,
+      "sha256": "97d5e58a9e5acf837f21bf2761497517d58ee63e740933f2fda45db2d4680a76",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm": {
+      "bytes": 26955585,
+      "sha256": "277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.gz": {
+      "bytes": 6260341,
+      "sha256": "edfc4381f5ab5460e58f4f87ff08494465e7cd43307bd170ad24ad27d28ed68c",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.br": {
+      "bytes": 5039800,
+      "sha256": "c3c0a5aa849ea4e2c26f2b930b606cd9937bbdf2a8ff1a49acc6828e58cc44ee",
+      "contentType": "application/wasm",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js": {
+      "bytes": 16992,
+      "sha256": "0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable"
+    },
+    "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz": {
+      "bytes": 4348,
+      "sha256": "609ac5c5edbfa3526ccc405624c45049b2d71a39bba786703fa8a6b060cc495d",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "gzip"
+    },
+    "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.br": {
+      "bytes": 4132,
+      "sha256": "08f3ff652247bca159df65b1b9291996f751e35844c21edb8e2eba9cefec12fd",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable, no-transform",
+      "contentEncoding": "br"
+    },
+    "service-worker.js": {
+      "bytes": 2904,
+      "sha256": "b27d00702fec5c15ed53880b5af3329405a7b4e334a16b554449cabc856125e5",
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "no-cache"
+    }
+  }
+}

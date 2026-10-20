@@ -1,15 +1,15 @@
-# Publishing a native preview release
+# Publishing a native release
 
-Use a clean source commit already preserved on `main`. Native archives must contain the updated README and notices from that commit. Keep the existing release checks; skipped Actions are not passing CI. The owner explicitly authorized direct commits and public preview downloads on 2026-10-19 with `[skip ci]` messages.
+Use a clean source commit already preserved on `main`. Native archives must contain the updated README and notices from that commit. Keep the existing release checks; skipped Actions are not passing CI. The owner explicitly authorized direct commits and public downloads, ordinary Latest and owner-directed 1.0 on 2026-10-20 with `[skip ci]` messages.
 
 ## Build a tagged version
 
 Use the exact versions in `tooling/versions.json`, including GoReleaser and CycloneDX CLI. Create an annotated version tag locally and build in a clean, separate checkout of it with the recorded Tailcat submodule initialized. Never move an existing release tag or overwrite a published asset to repair a release; use a new version.
 
-For `v0.1.0-alpha.3`, from that clean checkout:
+For `v1.0.0`, from that clean checkout:
 
 ```sh
-export TAILMOUSE_BUILD_VERSION=0.1.0-alpha.3
+export TAILMOUSE_BUILD_VERSION=1.0.0
 export TAILMOUSE_TAILCAT_REVISION="$(git rev-parse HEAD:third_party/tailcat)"
 pnpm install --frozen-lockfile
 pnpm build
@@ -33,6 +33,12 @@ Check the extracted Linux x64 executable's `version` and resource help commands.
 4. Create a draft GitHub release with `--verify-tag`, a title and the reviewed release notes from `docs/releases/`. Upload the complete staged asset list without `--clobber` and compare GitHub's asset inventory and available SHA-256 digests with the local files.
 5. Publish with `prerelease: false` and `make_latest: true`, following the owner's 2026-10-20 Latest preference. Verify every public download's bytes against `SHA256SUMS`, rerun the extracted Linux package's version/help checks, and record the actual release URL and asset identities in project memory.
 
-Publication is explicitly authorized for this task; a draft is only an upload staging step. Keep alpha version names and precise failed/deferred outcomes until the remaining platform acceptance is complete. GitHub's Latest label does not establish stability, signing, notarization or all-platform execution.
+Publication is explicitly authorized for this task; a draft is only an upload staging step. Use the owner-authorized version and retain precise failed/deferred platform outcomes. GitHub's Latest label does not establish stability, signing, notarization or all-platform execution.
 
 After public download verification, generate the same-repository Homebrew and Scoop recipes with `node tools/install-recipes.mjs PATH/TO/release-manifest.json .`. Commit the recipes and evidence separately from the immutable release tag; generating archive digests before the archives exist creates a source/checksum cycle. Verify the generated recipes against the public manifest.
+
+## Existing immutable compression variants
+
+Before updating the R2-backed legacy entry, inspect existing content-named encodings. The filename hashes raw content; a gzip OS header can differ between producers while every decoded byte is identical. Never overwrite an already published immutable representation. Retain it only after verifying that decoded bytes exactly equal the freshly built tagged runtime, then generate and verify the deployment-specific Web manifest, edge inventory and SBOMs. Keep the canonical release distribution unchanged. Verify the complete public raw/encoded byte inventory after activation. This does not permit reusing unreproduced application code.
+
+A managed environment may require its authenticated HTTPS proxy and CA. Explicit Node agents need the standard `proxyEnv` option; global-agent flags alone may not configure them. Keep TLS and all byte/header checks enabled and label proxy transport/address observations accurately. Credential-aware API transport can decode encoded responses; distinguish provider stored-size/digest/metadata receipts from final raw public SHA-256 verification.

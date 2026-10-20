@@ -1,0 +1,547 @@
+{
+  "sourceRevision": "b99f3b090fbb9dd2f3ce66cc147044f35df41025",
+  "version": "1.0.0",
+  "bucket": "tailmouse-link-production",
+  "priorManifestSha256": "90c287b02d17d9874e56739501a4160527d4d615a242d3828a3bbb8869950ba1",
+  "objects": [
+    {
+      "path": ".tailmouse/bridge.html",
+      "bytes": 548,
+      "sha256": "fcfd42d11ebfb7d3b44622610da93d8ea7889d56760c1d5cd5d82081f9a55177",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 548,
+        "md5": "61add6c46dce1daec65643ef1da64e7a",
+        "httpMetadata": {
+          "cacheControl": "no-store",
+          "contentType": "text/html; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": ".tailmouse/bridge.js",
+      "bytes": 5700,
+      "sha256": "a2afb818106bfc5ac278249bd8249bc73d21f2e620ee7e440565febcc4dedc3f",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 5700,
+        "md5": "4b69f103e7968537a205e67db3b5343d",
+        "httpMetadata": {
+          "cacheControl": "no-store",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": ".tailmouse/content.css",
+      "bytes": 215,
+      "sha256": "6918fa9fa58de42b2f02be49e3bc49145ea82ba1bea1e3cffd43e80227f2f2a5",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 215,
+        "md5": "48361c8b4db7a9d3e7b702ea274fc945",
+        "httpMetadata": {
+          "cacheControl": "no-store",
+          "contentType": "text/css; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": ".tailmouse/shim.js",
+      "bytes": 6476,
+      "sha256": "2c46841986544d50453112df3208b6f2e61d7b37ad8ed773d63798faebac68bc",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 6476,
+        "md5": "52b68e58c9c14d4ec8634fd3ea010f33",
+        "httpMetadata": {
+          "cacheControl": "no-store",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": ".tailmouse/sw.js",
+      "bytes": 6552,
+      "sha256": "719b347f32728d912a3d22cbae87ed7721fe1967de4d8f7ca519443844d70c0e",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 6552,
+        "md5": "028c0ea735b3c73c78e11c14b887ab75",
+        "httpMetadata": {
+          "cacheControl": "no-store",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 11358,
+        "md5": "3b83ef96387f14655fc854ddc3c6bd57",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "NOTICE",
+      "bytes": 197,
+      "sha256": "d06acc407b129cf43d516d2571544fa5f0f8d4c5dde5cebc4fe78599790d0272",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 197,
+        "md5": "13eb7b9322c4a64022b0f4b0fd5ddeed",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.txt",
+      "bytes": 396813,
+      "sha256": "73cc0e25c4cc4b0f83883a1a04dcf2d32d8d0b1f21056d7acb54fc8f72965a72",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 396813,
+        "md5": "cda661d52d2c46ac3340f2b20671df15",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "assets/index-Bd4u-7xP.js",
+      "bytes": 510613,
+      "sha256": "a36151232607d01f7a721c50f9e1217a0703d5241b2d75ee5969c304cd80a6c1",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 510613,
+        "md5": "7e8324f7e405d37bc3c731a0c3096290",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "assets/index-Bd4u-7xP.js.br",
+      "bytes": 127401,
+      "sha256": "d6bc1dab0ef57308797326783b62a28c9626accc3fdcd816dc96b9a80cd0f950",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 127401,
+        "md5": "b2fd1f30b9add3aab88570259b88f26e",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "br",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "assets/index-Bd4u-7xP.js.gz",
+      "bytes": 138742,
+      "sha256": "a13c8b128553996f739e7fb999b17f2cbfc8c82ca996f6ca333dbfbfa1911ab8",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 138742,
+        "md5": "35d3cba9d019136a3fdb7158ee78378d",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "gzip",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "assets/index-Bd4u-7xP.js.map",
+      "bytes": 1297834,
+      "sha256": "e3721e6ebfd8c307a0867cbdf6fa8fefc7d623aca68ba79b8cf5b5162de4b594",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 1297834,
+        "md5": "7c349c8647443c4c749a5ef095599d02",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable",
+          "contentType": "application/json"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "assets/index-CP0MTyoa.css",
+      "bytes": 18904,
+      "sha256": "cc6863e1a2f0b41138075c7415ef2ca961018e11baf8611b9f75756cf9bbeb23",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 18904,
+        "md5": "9d019386cff2bf7f44ef5ff63561e63c",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable",
+          "contentType": "text/css; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "assets/index-CP0MTyoa.css.br",
+      "bytes": 4485,
+      "sha256": "419e55b66edb22c8862755f85ed544a7dc82026e05239df7a4a1e623cee369aa",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 4485,
+        "md5": "278416b57878ec84d656989baea0209d",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "br",
+          "contentType": "text/css; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "assets/index-CP0MTyoa.css.gz",
+      "bytes": 4813,
+      "sha256": "6f8ac70b51c89288654166a319e843e7879e286f9750ba29884619462ff623ce",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 4813,
+        "md5": "c544e842dff0ed13cfd0342666782bdd",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "gzip",
+          "contentType": "text/css; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "assets/resource-worker-DwucB-rz.js",
+      "bytes": 2010,
+      "sha256": "752fff92d275dc81e63734d5791c527c455bdb1cf8a84de9e8d2521e89989edc",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 2010,
+        "md5": "53e601d963a2452e107f45f8e8ca8d68",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "assets/resource-worker-DwucB-rz.js.br",
+      "bytes": 897,
+      "sha256": "375c6c4dcbb2b06b03b0779ff9c14485ac48ae299ee1e71c15748152793fc557",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 897,
+        "md5": "3101a420413980e7eb11807dcf6f219e",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "br",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "assets/resource-worker-DwucB-rz.js.gz",
+      "bytes": 977,
+      "sha256": "75249e65c439f9d855d314f843db6d6de27adff99d515dbf509d744f628c64d0",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 977,
+        "md5": "60994ed35759e1eb110cfa4d9010fc02",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "gzip",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "assets/resource-worker-DwucB-rz.js.map",
+      "bytes": 6917,
+      "sha256": "ee1e9576228982bdcdec42f5d7974f71f4d0fae153c3d8a2ea8cda183c17a1fc",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 6917,
+        "md5": "98aceea23ccf53b86e5c06578d9d757e",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable",
+          "contentType": "application/json"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "install.ps1",
+      "bytes": 3273,
+      "sha256": "a88e4e4186c1fdbf1cf7159f3dc90998248e9b37cc113d4c42f588ccf543714a",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 3273,
+        "md5": "7d3318d7e6673571144ca5ddc3330878",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "install.sh",
+      "bytes": 3238,
+      "sha256": "bcb733e4db8d957e314e84b6897228e099e9ee3a43648237ffca181cf4279c55",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 3238,
+        "md5": "89f1728b2f9a54deaea0b181a1fddcf9",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "text/plain; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "manifest.webmanifest",
+      "bytes": 263,
+      "sha256": "c00dd49351860e0ae33ad013d0c8af3868e58c510a10729294672584dc02f47d",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 263,
+        "md5": "85be209ff9aa77090e9eb8b8da5a8f30",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "application/manifest+json"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "social-card.png",
+      "bytes": 47522,
+      "sha256": "2a32f5bdab613e53f5fe04116a5b30818dd64694e1fb227870f3e9e5cf2f90bc",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 47522,
+        "md5": "8392518146ddceeb01474bf7cd14a88b",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "image/png"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm",
+      "bytes": 27277674,
+      "sha256": "a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 27277674,
+        "md5": "bb88add889ae1eff12aef7d8fef1cb73",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable",
+          "contentType": "application/wasm"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm.br",
+      "bytes": 5113977,
+      "sha256": "97d5e58a9e5acf837f21bf2761497517d58ee63e740933f2fda45db2d4680a76",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 5113977,
+        "md5": "771cfa234104e0aaddbbbe5e190c29ff",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "br",
+          "contentType": "application/wasm"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "tailcat/resource-a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a.wasm.gz",
+      "bytes": 6335541,
+      "sha256": "bd60e59ecc86a0d7860ed5f52d6ea8988122852fd0d3b8dcdf5973d8724464d2",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 6335541,
+        "md5": "0e65d773007ef93a9b27ec07f383f0bc",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "gzip",
+          "contentType": "application/wasm"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm",
+      "bytes": 26955585,
+      "sha256": "277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 26955585,
+        "md5": "cf7962756c0b8077ca536717f8faa4f5",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable",
+          "contentType": "application/wasm"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.br",
+      "bytes": 5039800,
+      "sha256": "c3c0a5aa849ea4e2c26f2b930b606cd9937bbdf2a8ff1a49acc6828e58cc44ee",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 5039800,
+        "md5": "873983524ff30fc6192f3817d178d850",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "br",
+          "contentType": "application/wasm"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "tailcat/tailcat-web-277c66cad3d38043e69fb24a3cbd2cb82d85407aeec0d0883dd26d4bdef6d592.wasm.gz",
+      "bytes": 6260341,
+      "sha256": "edfc4381f5ab5460e58f4f87ff08494465e7cd43307bd170ad24ad27d28ed68c",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 6260341,
+        "md5": "db276e0b0129103aa2480670c81d7de6",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "gzip",
+          "contentType": "application/wasm"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js",
+      "bytes": 16992,
+      "sha256": "0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 16992,
+        "md5": "72b70411a7185c27ee0cc8f4f887e64b",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.br",
+      "bytes": 4132,
+      "sha256": "08f3ff652247bca159df65b1b9291996f751e35844c21edb8e2eba9cefec12fd",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 4132,
+        "md5": "2a8c20c20b4f8a91e595a24f5ba4f3c1",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "br",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "tailcat/wasm_exec-0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14.js.gz",
+      "bytes": 4348,
+      "sha256": "609ac5c5edbfa3526ccc405624c45049b2d71a39bba786703fa8a6b060cc495d",
+      "status": "existing stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 4348,
+        "md5": "200aa7366ea6c64e28f8660117022459",
+        "httpMetadata": {
+          "cacheControl": "public, max-age=31536000, immutable, no-transform",
+          "contentEncoding": "gzip",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "decoded by credential-aware API transport; raw public SHA-256 required after activation"
+    },
+    {
+      "path": "web-manifest.json",
+      "bytes": 20424,
+      "sha256": "7dc5b804b6cacd6c2a67402054e919f9ee889d4cd8d433e013c0448a83bfb0ee",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 20424,
+        "md5": "296ee26b5ef6857e9c583eb19efabc8f",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "application/json"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "service-worker.js",
+      "bytes": 2904,
+      "sha256": "b27d00702fec5c15ed53880b5af3329405a7b4e334a16b554449cabc856125e5",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 2904,
+        "md5": "0d4b72c60a44012e5f6ad053210e330c",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "text/javascript; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    },
+    {
+      "path": "index.html",
+      "bytes": 1232,
+      "sha256": "761336d00d36c06d8c14802adc03d47495128fbaf434f3448ae56fa82e93b6d8",
+      "status": "uploaded stored digest and metadata verified",
+      "providerReceipt": {
+        "bytes": 1232,
+        "md5": "be21e164b9b47b4de33efdb3cf9dd7fb",
+        "httpMetadata": {
+          "cacheControl": "no-cache",
+          "contentType": "text/html; charset=utf-8"
+        }
+      },
+      "apiRepresentation": "raw bytes"
+    }
+  ],
+  "status": "provider-receipts-verified",
+  "requiresPublicRawSha256Verification": true
+}

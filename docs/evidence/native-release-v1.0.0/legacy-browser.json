@@ -1,0 +1,30 @@
+{
+  "verifiedAt": "2026-10-20T08:29:37.200Z",
+  "origin": "https://link.tailmouse.com",
+  "browser": "Firefox 153.0",
+  "tls": "verified with environment proxy CA",
+  "checks": [
+    "ordinary homepage canonicalizes to tailmouse.com",
+    "query parameters not forwarded",
+    "synthetic protected locator resolves without leaving authentication origin",
+    "separate empty access-code prompt before dialing",
+    "no game UI",
+    "synthetic create/read/case/renew/delete lifecycle"
+  ],
+  "lifecycle": {
+    "schemaVersion": 1,
+    "status": "verified",
+    "classification": "lifecycle_verified",
+    "createAttempts": 1,
+    "createdMappings": 1,
+    "requestCount": 8,
+    "durationMs": 1762,
+    "activeLifecycle": "verified",
+    "abandonedLease": "not-verified",
+    "alarmStorageDeletion": "not-independently-verified",
+    "providerRecoveryErasure": "not-verified",
+    "cleanup": "verified"
+  },
+  "limits": "No real Host or user invitation used. Expiry/alarm timing was not rerun; namespace and lifecycle implementation remain unchanged.",
+  "status": "verified"
+}

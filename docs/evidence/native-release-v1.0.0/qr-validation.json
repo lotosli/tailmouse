@@ -1,0 +1,8 @@
+{
+  "status": "verified",
+  "bridgeWasmSha256": "a1cbc63123211777c9fdadde0adf6f697ab351a56f75b38893ca7267053b9b4a",
+  "cases": 2,
+  "input": "Synthetic URL content only; no active invitation",
+  "decoder": "OpenCV 4.12.0 QRCodeDetector (validation tool only)",
+  "rejected": "non-string and >24,000-byte inputs"
+}

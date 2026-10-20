@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "command": "pnpm gate:quick",
+  "sourceRevision": "2bfe132e767d2584e6bb7e61e5bf2848057b7cd0",
+  "note": "Final changes after this revision retire recovery-only tooling/config and archive historical specifications; the full gate reruns on the final clean source.",
+  "logSha256": "2430d8fc379c35b0a8831394e2bf1dfd56a9e44b5792d252e18e8773b4a63e84",
+  "webTests": 290,
+  "edgeTests": 68,
+  "browserCases": {
+    "passed": 146,
+    "existingSkips": 4
+  }
+}
