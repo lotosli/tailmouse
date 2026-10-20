@@ -95,7 +95,7 @@ func (o *FileOffer) open(name string) (*os.File, error) {
 	if err != nil || !info.Mode().IsRegular() {
 		return nil, ErrFile
 	}
-	file, err := o.root.Open(name)
+	file, err := openOfferedFile(o.root, name)
 	if err != nil {
 		return nil, ErrFile
 	}
