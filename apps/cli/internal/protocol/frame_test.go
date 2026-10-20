@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"math"
 	"net"
 	"strings"
 	"testing"
@@ -59,10 +58,10 @@ func TestMessageRegistryNamesRulesAndRoutes(t *testing.T) {
 		state   State
 		payload []byte
 	}{
-		{TypeClientHello, "CLIENT_HELLO", PeerBrowser, StateAwaitClientHello, fixturePayload(t, "valid-client-hello-v1")},
-		{TypeServerWelcome, "SERVER_WELCOME", PeerHost, StateAwaitServerWelcome, fixturePayload(t, "valid-server-welcome-v1")},
+		{TypeClientHello, "CLIENT_HELLO", PeerBrowser, StateAwaitClientHello, fixturePayload(t, "valid-client-hello-v2")},
+		{TypeServerWelcome, "SERVER_WELCOME", PeerHost, StateAwaitServerWelcome, fixturePayload(t, "valid-server-welcome-v2")},
 		{TypeError, "ERROR", PeerHost, StateAwaitServerWelcome, fixturePayload(t, "valid-error-session-busy")},
-		{TypePing, "PING", PeerHost, StateActiveEscape, make([]byte, 16)},
+		{TypePing, "PING", PeerHost, StateActiveLeash, make([]byte, 16)},
 		{TypePong, "PONG", PeerBrowser, StateActiveLeash, make([]byte, 16)},
 		{TypeClose, "CLOSE", PeerHost, StateClosing, fixturePayload(t, "valid-close-normal")},
 		{TypeAuthChallenge, "AUTH_CHALLENGE", PeerHost, StateAwaitServerWelcome, fixturePayload(t, "valid-auth-challenge-v2")},
@@ -74,11 +73,6 @@ func TestMessageRegistryNamesRulesAndRoutes(t *testing.T) {
 		{TypeProcessControl, "PROCESS_CONTROL", PeerBrowser, StateActiveLeash, []byte(`{"action":"interrupt","generation":1}`)},
 		{TypeProcessState, "PROCESS_STATE", PeerHost, StateActiveLeash, []byte(`{"generation":1,"state":"waiting","pid":null,"started_at":null,"exit_code":null,"signal":null}`)},
 		{TypeOutputDropped, "OUTPUT_DROPPED", PeerHost, StateActiveLeash, []byte(`{"generation":1,"dropped_bytes":0}`)},
-		{TypeGameInit, "GAME_INIT", PeerHost, StateActiveEscape, fixturePayload(t, "game-init-canonical")},
-		{TypeGameInput, "GAME_INPUT", PeerBrowser, StateActiveEscape, validGameInput()},
-		{TypeGameSnapshot, "GAME_SNAPSHOT", PeerHost, StateActiveEscape, validGameSnapshot()},
-		{TypeGameEvent, "GAME_EVENT", PeerBrowser, StateActiveEscape, fixturePayload(t, "game-event-exit-requested")},
-		{TypeGameResult, "GAME_RESULT", PeerHost, StateActiveEscape, fixturePayload(t, "game-result-escaped")},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -107,13 +101,13 @@ func TestWriteFrameHandlesShortWritesAndRoundTrips(t *testing.T) {
 	binary.BigEndian.PutUint64(payload[0:8], 7)
 	binary.BigEndian.PutUint64(payload[8:16], 99)
 	written := &shortWriteCloser{maximum: 3}
-	if err := WriteFrame(context.Background(), written, PeerHost, StateActiveEscape, Frame{Type: TypePing, Payload: payload}); err != nil {
+	if err := WriteFrame(context.Background(), written, PeerHost, StateActiveLeash, Frame{Type: TypePing, Payload: payload}); err != nil {
 		t.Fatal(err)
 	}
 	if written.closed {
 		t.Fatal("successful write closed the stream")
 	}
-	frame, err := ReadFrame(context.Background(), io.NopCloser(bytes.NewReader(written.Bytes())), PeerBrowser, StateActiveEscape)
+	frame, err := ReadFrame(context.Background(), io.NopCloser(bytes.NewReader(written.Bytes())), PeerBrowser, StateActiveLeash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,10 +125,10 @@ func TestReadFrameRejectsBeforePayloadAllocation(t *testing.T) {
 		code     ErrorCode
 		state    State
 	}{
-		{name: "global", wire: []byte{0, 0x10, 0, 1}, wantRead: 4, code: CodeFrameTooLarge, state: StateActiveEscape},
+		{name: "global", wire: []byte{0, 0x10, 0, 1}, wantRead: 4, code: CodeFrameTooLarge, state: StateActiveLeash},
 		{name: "terminal", wire: []byte{0, 0, 0x80, 1, byte(TypeTermInput), 0}, wantRead: 6, code: CodeFrameTooLarge, state: StateActiveLeash},
-		{name: "unknown", wire: []byte{0, 0, 0, 10, 0xff, 0}, wantRead: 6, code: CodeBadFrame, state: StateActiveEscape},
-		{name: "wrong mode", wire: []byte{0, 0, 0, 10, byte(TypeTermInput), 0}, wantRead: 6, code: CodeModeMismatch, state: StateActiveEscape},
+		{name: "unknown", wire: []byte{0, 0, 0, 10, 0xff, 0}, wantRead: 6, code: CodeBadFrame, state: StateActiveLeash},
+		{name: "short terminal payload", wire: []byte{0, 0, 0, 10, byte(TypeTermInput), 0}, wantRead: 6, code: CodeBadFrame, state: StateActiveLeash},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -175,7 +169,7 @@ func TestReadAndWriteHonorCancellation(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		result := make(chan error, 1)
 		go func() {
-			result <- WriteFrame(ctx, writer, PeerHost, StateActiveEscape, Frame{Type: TypePing, Payload: make([]byte, 16)})
+			result <- WriteFrame(ctx, writer, PeerHost, StateActiveLeash, Frame{Type: TypePing, Payload: make([]byte, 16)})
 		}()
 		cancel()
 		select {
@@ -191,10 +185,10 @@ func TestReadAndWriteHonorCancellation(t *testing.T) {
 
 func TestFrameBoundaryAndPayloadFailuresAreClassified(t *testing.T) {
 	badWriter := &failingWriteCloser{}
-	if err := WriteFrame(context.Background(), badWriter, PeerHost, StateActiveEscape, Frame{Type: TypePing, Payload: make([]byte, 16)}); !errors.Is(err, ErrStream) || strings.Contains(err.Error(), "credential") {
+	if err := WriteFrame(context.Background(), badWriter, PeerHost, StateActiveLeash, Frame{Type: TypePing, Payload: make([]byte, 16)}); !errors.Is(err, ErrStream) || strings.Contains(err.Error(), "credential") {
 		t.Fatalf("write error = %v", err)
 	}
-	if err := WriteFrame(context.Background(), &shortWriteCloser{maximum: -1}, PeerHost, StateActiveEscape, Frame{Type: TypePing, Payload: make([]byte, 16)}); !errors.Is(err, ErrStream) {
+	if err := WriteFrame(context.Background(), &shortWriteCloser{maximum: -1}, PeerHost, StateActiveLeash, Frame{Type: TypePing, Payload: make([]byte, 16)}); !errors.Is(err, ErrStream) {
 		t.Fatalf("zero write error = %v", err)
 	}
 
@@ -207,21 +201,8 @@ func TestFrameBoundaryAndPayloadFailuresAreClassified(t *testing.T) {
 		{name: "long terminal", message: TypeTermOutput, payload: make([]byte, MaxTerminalPayload+1)},
 		{name: "short resize", message: TypeTermResize, payload: []byte{0}},
 		{name: "invalid resize", message: TypeTermResize, payload: []byte{0, 19, 0, 4}},
-		{name: "zero game sequence", message: TypeGameInput, payload: make([]byte, 24)},
-		{name: "nan game vector", message: TypeGameInput, payload: gameInputWith(1, math.Float32frombits(0x7fc00000), 0, 0)},
-		{name: "long game vector", message: TypeGameInput, payload: gameInputWith(1, 1, 1, 0)},
-		{name: "game flags", message: TypeGameInput, payload: gameInputWith(1, 0, 0, 2)},
-		{name: "snapshot sequence", message: TypeGameSnapshot, payload: make([]byte, 44)},
-		{name: "snapshot remaining", message: TypeGameSnapshot, payload: snapshotWith(func(value []byte) { binary.BigEndian.PutUint32(value[32:36], 45_001) })},
-		{name: "snapshot cooldown", message: TypeGameSnapshot, payload: snapshotWith(func(value []byte) { binary.BigEndian.PutUint32(value[36:40], 5_001) })},
-		{name: "snapshot mask", message: TypeGameSnapshot, payload: snapshotWith(func(value []byte) { value[40] = 4 })},
-		{name: "snapshot phase", message: TypeGameSnapshot, payload: snapshotWith(func(value []byte) { value[41] = 3 })},
-		{name: "snapshot exit", message: TypeGameSnapshot, payload: snapshotWith(func(value []byte) { value[42] = 1 })},
-		{name: "snapshot reserved", message: TypeGameSnapshot, payload: snapshotWith(func(value []byte) { value[43] = 1 })},
-		{name: "snapshot coordinate", message: TypeGameSnapshot, payload: snapshotWith(func(value []byte) { binary.BigEndian.PutUint32(value[16:20], math.Float32bits(48)) })},
 		{name: "json scalar", message: TypeError, payload: []byte(`1`)},
 		{name: "json trailing", message: TypeClose, payload: []byte(`{} {}`)},
-		{name: "json duplicate nested", message: TypeGameInit, payload: []byte(`{"x":{"a":1,"a":2}}`)},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -233,12 +214,12 @@ func TestFrameBoundaryAndPayloadFailuresAreClassified(t *testing.T) {
 }
 
 func TestHandshakeValidationRejectsInvalidFields(t *testing.T) {
-	validHello := `{"protocol_min":1,"protocol_max":1,"session_id":"000102030405060708090a0b0c0d0e0f","mode":"escape","client":{"name":"tailmouse-web","version":"0.1.0","platform":"test","user_agent":""}}`
+	validHello := `{"protocol_min":2,"protocol_max":2,"session_id":"000102030405060708090a0b0c0d0e0f","mode":"leash","client":{"name":"tailmouse-web","version":"0.1.0","platform":"test","user_agent":""}}`
 	helloCases := []string{
 		`{}`,
-		strings.Replace(validHello, `"protocol_min":1`, `"protocol_min":0`, 1),
-		strings.Replace(validHello, `"protocol_max":1`, `"protocol_max":0`, 1),
-		strings.Replace(validHello, `"mode":"escape"`, `"mode":"admin"`, 1),
+		strings.Replace(validHello, `"protocol_min":2`, `"protocol_min":0`, 1),
+		strings.Replace(validHello, `"protocol_max":2`, `"protocol_max":0`, 1),
+		strings.Replace(validHello, `"mode":"leash"`, `"mode":"admin"`, 1),
 		strings.Replace(validHello, `000102030405060708090a0b0c0d0e0f`, `000102030405060708090A0B0C0D0E0F`, 1),
 		strings.Replace(validHello, `"name":"tailmouse-web"`, `"name":""`, 1),
 		strings.Replace(validHello, `"platform":"test"`, `"platform":""`, 1),
@@ -274,37 +255,31 @@ func TestHandshakeValidationRejectsInvalidFields(t *testing.T) {
 }
 
 func TestJSONNumberNullAndNestingInteroperability(t *testing.T) {
-	hello := string(fixturePayload(t, "valid-client-hello-v1"))
-	numericHello := strings.ReplaceAll(strings.ReplaceAll(hello, `"protocol_min":1`, `"protocol_min":1e0`), `"protocol_max":1`, `"protocol_max":1.0`)
-	if selected, err := validateClientHello([]byte(numericHello)); err != nil || selected != 1 {
+	hello := string(fixturePayload(t, "valid-client-hello-v2"))
+	numericHello := strings.ReplaceAll(strings.ReplaceAll(hello, `"protocol_min":2`, `"protocol_min":2e0`), `"protocol_max":2`, `"protocol_max":2.0`)
+	if selected, err := validateClientHello([]byte(numericHello)); err != nil || selected != 2 {
 		t.Fatalf("integral JSON number spelling: selected %d, error %v", selected, err)
 	}
 	nullTerminal := strings.TrimSuffix(hello, "}") + `,"terminal":null}`
 	if _, err := validateClientHello([]byte(nullTerminal)); err == nil {
 		t.Fatal("null terminal was accepted")
 	}
-	nullUserAgent := strings.Replace(hello, `"user_agent":"synthetic-test-agent"`, `"user_agent":null`, 1)
+	nullUserAgent := strings.Replace(hello, `"user_agent":""`, `"user_agent":null`, 1)
 	if _, err := validateClientHello([]byte(nullUserAgent)); err == nil {
 		t.Fatal("null user agent was accepted")
 	}
-	welcome := string(fixturePayload(t, "valid-server-welcome-v1"))
-	nullExpiry := strings.Replace(welcome, `"expires_at":1788252800`, `"expires_at":null`, 1)
+	welcome := string(fixturePayload(t, "valid-server-welcome-v2"))
+	nullExpiry := strings.Replace(welcome, `"expires_at":0`, `"expires_at":null`, 1)
 	if _, err := validateServerWelcome([]byte(nullExpiry)); err == nil {
 		t.Fatal("null expiration was accepted")
 	}
-	unsafeInteger := strings.Replace(welcome, `"expires_at":1788252800`, `"expires_at":9007199254740992`, 1)
+	unsafeInteger := strings.Replace(welcome, `"expires_at":0`, `"expires_at":9007199254740992`, 1)
 	if _, err := validateServerWelcome([]byte(unsafeInteger)); err == nil {
 		t.Fatal("unsafe JSON integer was accepted")
 	}
 	deep := `{"x":` + strings.Repeat("[", 32) + "0" + strings.Repeat("]", 32) + "}"
 	if _, err := strictJSONObject([]byte(deep)); err == nil {
 		t.Fatal("over-depth JSON was accepted")
-	}
-}
-
-func TestGameVectorFloat32RoundingInteroperability(t *testing.T) {
-	if _, err := validatePayload(TypeGameInput, gameInputWith(1, 0.6, 0.8, 0), PeerBrowser); err != nil {
-		t.Fatalf("normalized f32 vector was rejected: %v", err)
 	}
 }
 
@@ -391,7 +366,7 @@ func fixtureState(t *testing.T, value string) State {
 		"await-client-hello":   StateAwaitClientHello,
 		"await-server-welcome": StateAwaitServerWelcome,
 		"await-auth-proof":     StateAwaitAuthProof,
-		"active-escape":        StateActiveEscape,
+		"active-escape":        StateActiveLeash,
 		"active-leash":         StateActiveLeash,
 	}
 	state, ok := states[value]
@@ -414,37 +389,8 @@ func fixturePayload(t *testing.T, identifier string) []byte {
 	return nil
 }
 
-func validGameInput() []byte {
-	return gameInputWith(1, 0.75, -0.25, 1)
-}
-
-func gameInputWith(sequence uint32, velocityX, velocityY float32, flags byte) []byte {
-	payload := make([]byte, 24)
-	binary.BigEndian.PutUint32(payload[0:4], sequence)
-	binary.BigEndian.PutUint32(payload[12:16], math.Float32bits(velocityX))
-	binary.BigEndian.PutUint32(payload[16:20], math.Float32bits(velocityY))
-	payload[20] = flags
-	return payload
-}
-
-func validGameSnapshot() []byte {
-	payload := make([]byte, 44)
-	binary.BigEndian.PutUint32(payload[0:4], 1)
-	for offset, coordinate := range map[int]float32{16: 4.5, 20: 3.5, 24: 10.5, 28: 7.5} {
-		binary.BigEndian.PutUint32(payload[offset:offset+4], math.Float32bits(coordinate))
-	}
-	payload[41] = 1
-	return payload
-}
-
-func snapshotWith(change func([]byte)) []byte {
-	payload := validGameSnapshot()
-	change(payload)
-	return payload
-}
-
 func senderFor(message MessageType) Peer {
-	if message == TypeAuthProof || message == TypeTermInput || message == TypeTermResize || message == TypeProcessControl || message == TypeGameInput || message == TypeGameEvent {
+	if message == TypeAuthProof || message == TypeTermInput || message == TypeTermResize || message == TypeProcessControl {
 		return PeerBrowser
 	}
 	return PeerHost
@@ -460,8 +406,6 @@ func stateFor(message MessageType) State {
 	if isTerminalMessage(message) {
 		return StateActiveLeash
 	}
-	if isEscapeMessageType(message) {
-		return StateActiveEscape
-	}
-	return StateActiveEscape
+
+	return StateActiveLeash
 }

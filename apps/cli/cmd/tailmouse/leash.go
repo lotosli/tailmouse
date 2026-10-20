@@ -30,7 +30,7 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 	}
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
-	log.terminal(console.state != nil, false)
+	log.terminal(console.state != nil)
 	var process *pty.Process
 	var pump *leash.Pump
 	var pumpCancel context.CancelFunc
@@ -124,7 +124,7 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 				}
 			}
 		}
-		log.terminal(false, false)
+		log.terminal(false)
 	}()
 
 	publish := func() error {
@@ -299,7 +299,7 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 					return exitInternal, session.InternalFailure
 				}
 				console = nil
-				log.terminal(false, false)
+				log.terminal(false)
 				if err := log.processState(state); err != nil {
 					return exitInternal, session.InternalFailure
 				}
@@ -313,7 +313,7 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 				return exitInternal, session.InternalFailure
 			}
 			console = nil
-			log.terminal(false, false)
+			log.terminal(false)
 			if err := log.processState(state); err != nil {
 				return exitInternal, session.InternalFailure
 			}
@@ -583,7 +583,7 @@ func watchLeash(parent context.Context, host *session.Host, options config.Optio
 				if err != nil {
 					return config.ExitPTY, session.InternalFailure
 				}
-				log.terminal(console.state != nil, false)
+				log.terminal(console.state != nil)
 			}
 			if err := start(); err != nil {
 				return startFailure(err)

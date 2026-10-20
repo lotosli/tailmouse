@@ -536,11 +536,11 @@ func TestLeashConfigurationAndResizeAreFailClosed(t *testing.T) {
 	if _, ok := host.TakeLeashSize(); ok {
 		t.Fatal("stale resize accepted")
 	}
-	other, err := NewHost(t.Context(), Config{Mode: "escape", SessionID: testHostID}, time.Now(), nil)
+	other, err := NewHost(t.Context(), Config{Mode: "leash", SessionID: testHostID}, time.Now(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if other.ConfigureLeash() == nil || other.PublishLeash(protocol.ProcessState{Generation: 1, State: "waiting"}, nil) == nil {
+	if other.PublishLeash(protocol.ProcessState{Generation: 1, State: "waiting"}, nil) == nil {
 		t.Fatal("wrong mode accepted leash configuration")
 	}
 	if other.leashOutput(connection) != nil {

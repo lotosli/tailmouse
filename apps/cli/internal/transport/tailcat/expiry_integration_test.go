@@ -22,7 +22,7 @@ import (
 func TestHermeticTailcatExpiredHost(t *testing.T) {
 	starter := LocalTestStarter(t)
 	host, err := session.NewHost(t.Context(), session.Config{
-		Mode: "escape", TTL: 5 * time.Second, ReconnectGrace: 30 * time.Second,
+		Mode: "leash", NoPassword: true, TTL: 5 * time.Second, ReconnectGrace: 30 * time.Second,
 		SessionID: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 	}, time.Now(), nil)
 	if err != nil {
@@ -76,7 +76,7 @@ func TestHermeticTailcatExpiredHost(t *testing.T) {
 	request := struct {
 		BaseURL  string `json:"baseURL"`
 		Fragment string `json:"fragment"`
-	}{static.URL, mouseCardFragment(t, string(address), invitation.ModeEscape)}
+	}{static.URL, mouseCardFragment(t, string(address), invitation.ModeLeash)}
 	payload, err := json.Marshal(request)
 	request.Fragment = ""
 	if err != nil {

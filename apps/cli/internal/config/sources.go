@@ -69,6 +69,7 @@ func applyFile(options *Options, path string, required bool) error {
 	}
 
 	var input fileConfig
+	input.Session.LeashTTL = "0"
 	input.Web.BaseURL = options.WebBaseURL
 	input.DERP.Mode = "official"
 	input.DERP.DERPPort, input.DERP.STUNPort = options.Relay.DERPPort, options.Relay.STUNPort

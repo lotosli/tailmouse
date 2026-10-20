@@ -35,7 +35,7 @@ func TestMouseCardModeProtocolCorpus(t *testing.T) {
 			Hex         string `json:"hex"`
 		} `json:"cases"`
 	}
-	if err := json.Unmarshal(data, &corpus); err != nil || len(corpus.Cases) != 10 {
+	if err := json.Unmarshal(data, &corpus); err != nil || len(corpus.Cases) != 6 {
 		t.Fatal("invalid shared MouseCard corpus")
 	}
 	for _, fixture := range corpus.Cases {
@@ -62,7 +62,7 @@ func TestMouseCardModeProtocolCorpus(t *testing.T) {
 }
 
 func TestDecodeCanonicalMouseCardAndFragment(t *testing.T) {
-	card := validTestCard(t, ModeEscape)
+	card := validTestCard(t, ModeLeash)
 	payload, err := Encode(card)
 	if err != nil {
 		t.Fatal(err)
@@ -83,7 +83,7 @@ func TestDecodeCanonicalMouseCardAndFragment(t *testing.T) {
 }
 
 func TestDecodeRejectsMalformedAndNonCanonicalCards(t *testing.T) {
-	card := validTestCard(t, ModeEscape)
+	card := validTestCard(t, ModeLeash)
 	canonical := mustEncodeCard(t, card)
 	nonMinimalInteger := append([]byte{}, canonical[:3]...)
 	nonMinimalInteger = append(nonMinimalInteger, 0x18, 0x01)
@@ -104,7 +104,7 @@ func TestDecodeRejectsMalformedAndNonCanonicalCards(t *testing.T) {
 		encodeCardFields(t, card, func(fields map[string]any) { fields["e"] = 1.5 }),
 		encodeCardFields(t, card, func(fields map[string]any) { fields["e"] = uint64(MaxExpiryUnixSeconds + 1) }),
 		encodeCardFields(t, card, func(fields map[string]any) { fields["p"] = 80 }),
-		encodeCardFields(t, card, func(fields map[string]any) { fields["a"] = 2 }),
+		encodeCardFields(t, card, func(fields map[string]any) { fields["a"] = 1 }),
 		encodeCardFields(t, card, func(fields map[string]any) { fields["m"] = "admin" }),
 		encodeCardFields(t, card, func(fields map[string]any) { fields["s"] = make([]byte, 16) }),
 	}
@@ -120,7 +120,7 @@ func TestDecodeRejectsMalformedAndNonCanonicalCards(t *testing.T) {
 }
 
 func TestDecodeExpirationAndUnlimitedHostLifetime(t *testing.T) {
-	card := validTestCard(t, ModeEscape)
+	card := validTestCard(t, ModeLeash)
 	if _, err := Decode(mustEncodeCard(t, card), time.Unix(card.ExpiresAt, 0)); !errors.Is(err, ErrExpired) {
 		t.Fatalf("expiration boundary error = %v", err)
 	}
@@ -145,7 +145,7 @@ func FuzzDecodeMouseCard(f *testing.F) {
 	f.Add([]byte{0xa8})
 	f.Add([]byte{0xa1, 0x61, 0x76, 0x01})
 	canonical, err := Encode(MouseCard{
-		Version: CardVersion, Mode: ModeEscape, TailcatAddr: syntheticAddress,
+		Version: CardVersion, Mode: ModeLeash, TailcatAddr: syntheticAddress,
 		Port: VirtualPort, SessionID: [16]byte{1}, ExpiresAt: 1_700_000_600,
 		ProtocolMin: ProtocolVersion, ProtocolMax: ProtocolVersion,
 	})

@@ -174,6 +174,8 @@ function isMouseCard(value: unknown): value is CardRecord & {
     typeof card.e === 'number' &&
     Number.isSafeInteger(card.e) &&
     card.e >= 0 &&
-    (card.m === 'leash' && card.a === 2 && card.z === 2)
+    card.m === 'leash' &&
+    card.a === 2 &&
+    card.z === 2
   );
 }

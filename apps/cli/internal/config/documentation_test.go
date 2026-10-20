@@ -98,7 +98,7 @@ func TestDocumentedTOML(t *testing.T) {
 	}
 	dir := t.TempDir()
 	path := writeConfig(t, dir, contents)
-	for _, command := range []string{"escape", "leash"} {
+	for _, command := range []string{"leash"} {
 		args := []string{command, "--config", path}
 		if command == "leash" {
 			args = append(args, "--", "example-command")

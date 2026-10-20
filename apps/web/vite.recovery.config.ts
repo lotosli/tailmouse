@@ -22,7 +22,7 @@ if (digest(raw) !== baselineSHA)
   throw new Error('Recovery manifest integrity mismatch.');
 const baseline = JSON.parse(raw.toString()) as {
   tailcatRevision: string;
-  protocols: { escape: 1; leash: 2; resource: 2 };
+  protocols: { leash: 2; resource: 2 };
   files: Record<
     string,
     {

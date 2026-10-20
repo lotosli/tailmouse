@@ -45,6 +45,9 @@ vi.mock('./browser-host.ts', () => ({
       };
       this.change(this.view);
     }
+    async qr() {
+      return ('0'.repeat(21) + '\n').repeat(21);
+    }
     invitation() {
       return 'https://example.invalid/.tailmouse/workspace/#synthetic';
     }
@@ -117,19 +120,19 @@ it('shows start failures and clipboard fallback without losing the sharing contr
   render(<BrowserShare />, root);
   await page.getByRole('button', { name: 'Start browser sharing' }).click();
   await expect
-    .element(page.getByRole('status'))
+    .element(page.getByRole('status', { name: 'Session status' }))
     .toHaveTextContent('Connection failed.');
   state.failure = false;
   await page.getByRole('button', { name: 'Start browser sharing' }).click();
   copy.mockRejectedValue(new Error('Denied.'));
   await page.getByRole('button', { name: 'Copy sharing link' }).click();
   await expect
-    .element(page.getByRole('status'))
+    .element(page.getByRole('status', { name: 'Action notice' }))
     .toHaveTextContent('Select and copy');
   await act(() => state.current?.text('reply'));
   await page.getByRole('button', { name: 'Copy received text' }).click();
   await expect
-    .element(page.getByRole('status'))
+    .element(page.getByRole('status', { name: 'Action notice' }))
     .toHaveTextContent('Select and copy the text');
   window.dispatchEvent(new PageTransitionEvent('pagehide'));
   await expect
@@ -141,14 +144,14 @@ it('rejects invalid public configuration before creating an invitation', async (
   render(<BrowserShare />, root);
   await page.getByRole('button', { name: 'Start browser sharing' }).click();
   await expect
-    .element(page.getByRole('status'))
+    .element(page.getByRole('status', { name: 'Session status' }))
     .toHaveTextContent('configuration unavailable');
   vi.mocked(fetch).mockResolvedValueOnce(
     new Response(JSON.stringify({ derpMap: 42 })),
   );
   await page.getByRole('button', { name: 'Start browser sharing' }).click();
   await expect
-    .element(page.getByRole('status'))
+    .element(page.getByRole('status', { name: 'Session status' }))
     .toHaveTextContent('Invalid relay');
 });
 it('browses shared folders, downloads and verifies a file, and reports failures', async () => {
@@ -241,9 +244,13 @@ it('reads and deliberately sends text and handles copy/send failures', async () 
     .toBeVisible();
   await page.getByRole('button', { name: 'Copy text', exact: true }).click();
   expect(copy).toHaveBeenCalledWith('host text');
-  await page.getByLabelText('Text to send').fill('reply');
-  await page.getByRole('button', { name: 'Send text', exact: true }).click();
-  await expect.element(page.getByRole('status')).toHaveTextContent('Text sent');
+  await page.getByLabelText('Shared text draft').fill('reply');
+  await page
+    .getByRole('button', { name: 'Update shared text', exact: true })
+    .click();
+  await expect
+    .element(page.getByRole('status'))
+    .toHaveTextContent('Shared text updated');
   copy.mockRejectedValueOnce(new Error('Denied.'));
   await page.getByRole('button', { name: 'Copy text', exact: true }).click();
   await expect
@@ -259,8 +266,135 @@ it('reads and deliberately sends text and handles copy/send failures', async () 
   vi.mocked(transfers.exchangeText).mockRejectedValueOnce(
     new Error('Disconnected.'),
   );
-  await page.getByRole('button', { name: 'Send text', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Update shared text', exact: true })
+    .click();
   await expect
     .element(page.getByRole('status'))
     .toHaveTextContent('not confirmed');
+});
+
+it('corrects duplicate file selections before creating a session', async () => {
+  render(<BrowserShare />, root);
+  const input = page
+    .getByLabelText('Files to share')
+    .element() as HTMLInputElement;
+  const selected = new DataTransfer();
+  selected.items.add(new File(['a'], 'same.txt'));
+  selected.items.add(new File(['b'], 'same.txt'));
+  await act(() => {
+    input.files = selected.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await expect
+    .element(page.getByRole('button', { name: 'Start browser sharing' }))
+    .toBeDisabled();
+  await page
+    .getByRole('button', { name: 'Remove same.txt, item 1', exact: true })
+    .click();
+  await expect
+    .element(page.getByRole('button', { name: 'Start browser sharing' }))
+    .toBeEnabled();
+  await page.getByRole('button', { name: 'Clear files', exact: true }).click();
+  await expect
+    .element(page.getByRole('button', { name: 'Clear files', exact: true }))
+    .not.toBeInTheDocument();
+});
+
+it('keeps server closure visible even while a copied-link notice is present', async () => {
+  render(<BrowserShare />, root);
+  await page.getByRole('button', { name: 'Start browser sharing' }).click();
+  await page.getByRole('button', { name: 'Copy sharing link' }).click();
+  await act(() => state.current?.end());
+  await expect
+    .element(page.getByRole('status', { name: 'Session status' }))
+    .toHaveTextContent('Sharing ended.');
+  await expect
+    .element(page.getByLabelText('Private sharing link'))
+    .not.toBeInTheDocument();
+});
+
+it('shares through the native sheet and handles cancellation and failure without ending access', async () => {
+  const share = vi.fn().mockResolvedValue(undefined);
+  const original = Object.getOwnPropertyDescriptor(navigator, 'share');
+  Object.defineProperty(navigator, 'share', {
+    configurable: true,
+    value: share,
+  });
+  try {
+    render(<BrowserShare />, root);
+    await page.getByRole('button', { name: 'Start browser sharing' }).click();
+    await page.getByRole('button', { name: 'Share link…' }).click();
+    await expect
+      .element(page.getByRole('status', { name: 'Action notice' }))
+      .toHaveTextContent('sharing sheet');
+    share.mockRejectedValueOnce(new DOMException('Canceled', 'AbortError'));
+    await page.getByRole('button', { name: 'Share link…' }).click();
+    await expect
+      .element(page.getByRole('status', { name: 'Action notice' }))
+      .toHaveTextContent('session is still open');
+    share.mockRejectedValueOnce(new Error('Not supported'));
+    await page.getByRole('button', { name: 'Share link…' }).click();
+    await expect
+      .element(page.getByRole('status', { name: 'Action notice' }))
+      .toHaveTextContent('Copy the private link');
+    await expect
+      .element(page.getByRole('button', { name: 'End browser sharing' }))
+      .toBeVisible();
+    expect(share).toHaveBeenCalledWith({
+      title: 'TailMouse private sharing',
+      url: 'https://example.invalid/.tailmouse/workspace/#synthetic',
+    });
+  } finally {
+    if (original) Object.defineProperty(navigator, 'share', original);
+    else Reflect.deleteProperty(navigator, 'share');
+  }
+});
+
+it('explains a browser download limit before attempting an unsupported file', async () => {
+  vi.spyOn(transfers, 'listFiles').mockResolvedValue({
+    type: 'files.list',
+    path: '',
+    entries: [
+      {
+        name: 'large.bin',
+        path: 'large.bin',
+        dir: false,
+        size: 65 * 1024 * 1024,
+      },
+    ],
+    next: 1,
+    more: false,
+  });
+  vi.stubGlobal('showSaveFilePicker', undefined);
+  render(<FilesPanel session={{} as ResourceSession} enabled />, root);
+  await expect
+    .element(page.getByRole('button', { name: 'Download large.bin' }))
+    .toBeDisabled();
+  await expect
+    .element(page.getByText(/This browser can download files up to/))
+    .toHaveTextContent('64.0 MiB');
+});
+
+it('preserves a newer shared-text draft while an earlier update is in flight', async () => {
+  const pending = Promise.withResolvers<string>();
+  vi.spyOn(transfers, 'exchangeText')
+    .mockResolvedValueOnce('initial')
+    .mockReturnValueOnce(pending.promise);
+  render(<TextPanel session={{} as ResourceSession} enabled />, root);
+  await expect
+    .element(page.getByText('initial', { exact: true }))
+    .toBeVisible();
+  await page.getByLabelText('Shared text draft').fill('first update');
+  await page
+    .getByRole('button', { name: 'Update shared text', exact: true })
+    .click();
+  await page.getByLabelText('Shared text draft').fill('new unsent draft');
+  pending.resolve('first update');
+  await expect
+    .element(page.getByLabelText('Shared text draft'))
+    .toHaveValue('new unsent draft');
+  await expect
+    .element(page.getByRole('status'))
+    .toHaveTextContent('Shared text updated');
 });

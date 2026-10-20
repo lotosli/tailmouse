@@ -1,6 +1,6 @@
 # TailMouse configuration
 
-Resource commands (`cli`, `web`, `receive`, `dev`) use built-in tailmouse.com settings in v0.1.0-alpha.2 and newer; they do not require a local file. See [resource configuration](resource-sharing.md#native-configuration) for their optional `[share]` TOML/deployment JSON and flags. The schema and mode-specific settings below describe Escape and legacy Leash.
+Resource commands (`cli`, `web`, `receive`, `dev`, `send`, `files`, `text`) use built-in tailmouse.com settings in v0.1.0-alpha.2 and newer; they do not require a local file. See [resource configuration](resource-sharing.md#native-configuration) for their optional `[share]` TOML/deployment JSON and flags. The schema and mode-specific settings below describe legacy protected Leash.
 
 Use `tailmouse config path` to locate the file. Defaults are the OS user configuration directory plus `tailmouse/config.toml`: `$HOME/Library/Application Support/tailmouse/config.toml` on macOS, `$XDG_CONFIG_HOME/tailmouse/config.toml` (otherwise `$HOME/.config/tailmouse/config.toml`) on Linux, and `%AppData%\tailmouse\config.toml` on Windows.
 
@@ -27,7 +27,6 @@ region_code = "mouse"
 region_name = "TailMouse Custom DERP"
 
 [session]
-escape_ttl = "10m"
 leash_ttl = "0"
 
 [leash]
@@ -50,15 +49,12 @@ For custom-host mode, set `mode = "custom-host"` and a nonempty `hosts` list; le
 | `TAILMOUSE_TTL`             | `--ttl`: session lifetime, overriding the selected mode's default |
 | `TAILMOUSE_NO_QR`           | `--no-qr`: boolean, retaining the explicit invitation URL         |
 | `TAILMOUSE_LOG`             | `info`, `quiet`, `verbose`, `debug` (verbose alias), or `json`    |
-| `TAILMOUSE_RECONNECT_GRACE` | Escape reconnect migration only; rejected for Leash               |
 
 `--squeak` aliases `--verbose`. Quiet conflicts with verbose and JSON; verbose plus JSON is supported. JSON events go to stderr, with stdout retained for invitation/command output. Do not capture stdout into a shareable log: it can contain the invitation and child output. Additional diagnostics remain redacted, but are not permission to disclose terminal contents.
 
-Use `tailmouse escape --help` or `tailmouse leash --help` for the flag inventory. A boolean can be explicitly disabled with `--flag=false`. CLI `--derp-host=` or `--derp-map-url=` can clear a lower-precedence source. The Web URL must be HTTPS except for local loopback HTTP; no credentials, query or fragment are accepted in the base URL. A public DERP map must always use HTTPS.
+Use `tailmouse leash --help` for the flag inventory. A boolean can be explicitly disabled with `--flag=false`. CLI `--derp-host=` or `--derp-map-url=` can clear a lower-precedence source. The Web URL must be HTTPS except for local loopback HTTP; no credentials, query or fragment are accepted in the base URL. A public DERP map must always use HTTPS.
 
-Durations use Go duration syntax such as `30s`, `10m` and `4h`. Escape rounds are 30-45 seconds. Session TTL zero means until host exit or mode completion; it is not an expiring invitation. Leash defaults to that Host-lived total lifetime. Post-exit retention accepts `host`, literal `0`, or a positive finite duration; `host` is the default and zero ends retention immediately. Scrollback is 65,536-16,777,216 bytes; terminal size is bounded to 20x5-500x200. Custom region IDs are 900-999. Invalid values fail, rather than being silently clamped.
 
-Leash no longer uses reconnect grace as a share deadline. A nonempty legacy `session.reconnect_grace`, any `TAILMOUSE_RECONNECT_GRACE`, or `--reconnect-grace` fails a Leash launch with migration guidance. Remove the setting; after a browser disconnect, the live Leash share returns to listening. Escape retains its reconnect behavior.
 
 Leash is password-protected by default. Each launch generates a separate access code and writes it only to its controlling terminal (`/dev/tty` on macOS/Linux or the local console on Windows), never to stdout, stderr, JSON, the invitation URL, or the QR code. A protected launch without a usable controlling terminal exits with code 2 before creating an invitation, starting Tailcat, or starting the command. Noninteractive automation must provide a controlling terminal or explicitly pass the CLI-only `--no-password` exception. Link-only mode emits an unsuppressible warning before the invitation, including with `--quiet`; anyone with that full invitation receives the configured permissions, including shell-level access when the selected process is a shell, while `--readonly` remains view-only.
 

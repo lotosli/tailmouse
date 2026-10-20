@@ -1,12 +1,12 @@
 # TailMouse
 
-Share files, temporary text, a terminal or a local web app through one browser link. Guests need only a browser. For files and text, the host can also use the website without installing anything. No account is required. The Escape minigame remains available.
+Share files, temporary text, a terminal or a local web app through one browser link. Guests need only a browser. For files and text, the host can also use the website without installing anything. No account is required.
 
-[Download v0.1.0-alpha.3](https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.3) · [Website and guide](https://tailmouse.com/#guide) · [Resource documentation](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.3/docs/resource-sharing.md) · [Feedback](https://github.com/lotosli/tailmouse/issues/new)
+[Download v1.0.0](https://github.com/lotosli/tailmouse/releases/tag/v1.0.0) · [Website and guide](https://tailmouse.com/#guide) · [Resource documentation](https://github.com/lotosli/tailmouse/blob/v1.0.0/docs/resource-sharing.md) · [Feedback](https://github.com/lotosli/tailmouse/issues/new)
 
 ## Share from your browser
 
-Open [browser sharing](https://tailmouse.com/#share), select files or enter text, then copy the private link to the other device. Neither side needs an installation or account. Keep both pages open; closing the host page ends access. Data uses encrypted Tailcat transport rather than website-server storage. Browser sessions last one hour and allow one visitor at a time. Mobile lock/background suspension can interrupt transfers.
+Open [browser sharing](https://tailmouse.com/#share), select files or enter text, then privately copy the link, scan its locally generated QR code or use the device sharing sheet. Selection errors identify the affected file before starting; remove, add or clear files to correct them. Neither side needs an installation or account. Keep both pages open; closing the host page ends access. Data uses encrypted Tailcat transport rather than website-server storage. Browser sessions last one hour and allow one visitor at a time. Mobile lock/background suspension can interrupt transfers.
 
 ## Install or upgrade
 
@@ -24,7 +24,7 @@ irm https://tailmouse.com/install.ps1 | iex
 
 The [shell installer](https://tailmouse.com/install.sh) and [PowerShell installer](https://tailmouse.com/install.ps1) can be reviewed before execution. They select x64/ARM64 automatically, verify the release archive against `SHA256SUMS` and set up a user-local executable. The shell installer may add the default directory to your shell profile; open a new terminal afterward. A custom shell destination can be selected with `TAILMOUSE_INSTALL_DIR`.
 
-Run `tailmouse` for guided startup, or use a command below. For alpha.2 or earlier, run the installer once or replace the extracted executable. From alpha.3 onward, upgrade standalone installations with `tailmouse update`; `tailmouse update --check` only checks the current Latest release. Failed downloads or checksum verification preserve the existing executable. On Windows the running updater may retain its previous executable in the reported recovery location until it exits.
+Run `tailmouse` for guided startup, or use a command below. The wizard retries invalid menu choices, offers view-only or input-enabled terminals, and omits Receive on Windows. For alpha.2 or earlier, run the installer once or replace the extracted executable. From alpha.3 onward, upgrade standalone installations with `tailmouse update`; `tailmouse update --check` only checks the current Latest release. Failed downloads or checksum verification preserve the existing executable. On Windows the running updater may retain its previous executable in the reported recovery location until it exits.
 
 Homebrew (macOS/Linux) and Scoop (Windows) use this repository as their tap/bucket:
 
@@ -44,29 +44,37 @@ Package-manager recipes pin the published archive digests. Use the relevant pack
 
 ## Download and run
 
-**v0.1.0-alpha.3 is a preview release.** Choose the archive for the machine that will host the session. Guests do not download anything.
+**v1.0.0** Choose the archive for the machine that will host the session. Guests do not download anything.
 
 | Host platform | Processor                    | Download                                                                                                                                 |
 | ------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| macOS         | Apple Silicon (M1 and newer) | [darwin_arm64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_darwin_arm64.tar.gz) |
-| macOS         | Intel x64                    | [darwin_amd64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_darwin_amd64.tar.gz) |
-| Linux         | x64 / AMD64                  | [linux_amd64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz)   |
-| Linux         | ARM64 / AArch64              | [linux_arm64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_linux_arm64.tar.gz)   |
-| Windows       | x64                          | [windows_amd64.zip](https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_windows_amd64.zip)     |
-| Windows       | ARM64                        | [windows_arm64.zip](https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/tailmouse_0.1.0-alpha.3_windows_arm64.zip)     |
+| macOS         | Apple Silicon (M1 and newer) | [darwin_arm64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_darwin_arm64.tar.gz) |
+| macOS         | Intel x64                    | [darwin_amd64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_darwin_amd64.tar.gz) |
+| Linux         | x64 / AMD64                  | [linux_amd64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_linux_amd64.tar.gz)   |
+| Linux         | ARM64 / AArch64              | [linux_arm64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_linux_arm64.tar.gz)   |
+| Windows       | x64                          | [windows_amd64.zip](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_windows_amd64.zip)     |
+| Windows       | ARM64                        | [windows_arm64.zip](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_windows_arm64.zip)     |
 
 Each archive contains one executable, this README, the license and dependency notices. No Go, Node.js or Tailcat installation is needed to run it. Windows packages are experimental: **Receive, including Dev with Receive, is unsupported**. On macOS, Receive requires an APFS destination. The archives are unsigned; macOS and Windows may require approval through their normal application security controls.
 
-Download [SHA256SUMS](https://github.com/lotosli/tailmouse/releases/download/v0.1.0-alpha.3/SHA256SUMS) and compare the archive's SHA-256 before extracting. The release also includes a CycloneDX SBOM for each archive and a source/asset manifest.
+Download [SHA256SUMS](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/SHA256SUMS) and compare the archive's SHA-256 before extracting. The release also includes a CycloneDX SBOM for each archive and a source/asset manifest.
 
 ```sh
 # Linux example; use the corresponding filename for your platform.
-sha256sum tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz
-tar -xzf tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz
+sha256sum tailmouse_1.0.0_linux_amd64.tar.gz
+tar -xzf tailmouse_1.0.0_linux_amd64.tar.gz
 ./tailmouse version
 ```
 
-On macOS, calculate the hash with `shasum -a 256 ARCHIVE`. On Windows, use `Get-FileHash .\ARCHIVE.zip -Algorithm SHA256`, extract the ZIP, and run `.\tailmouse.exe version` in PowerShell. The output should report `TailMouse 0.1.0-alpha.3` and `TMOUSE Resource protocol 2`. Put the executable in a directory on your `PATH`, or replace `tailmouse` below with `./tailmouse` or `.\tailmouse.exe`.
+On macOS, calculate the hash with `shasum -a 256 ARCHIVE`. On Windows, use `Get-FileHash .\ARCHIVE.zip -Algorithm SHA256`, extract the ZIP, and run `.\tailmouse.exe version` in PowerShell. The output should report `TailMouse 1.0.0` and `TMOUSE Resource protocol 2`. Put the executable in a directory on your `PATH`, or replace `tailmouse` below with `./tailmouse` or `.\tailmouse.exe`.
+
+## Uninstall and recover
+
+Standalone macOS/Linux: remove the installed executable with `rm "$HOME/.local/bin/tailmouse"` (or the custom `TAILMOUSE_INSTALL_DIR` path you selected). The default installer adds `export PATH="$HOME/.local/bin:$PATH"` only when needed; remove that exact line from the indicated shell profile only if you no longer use that directory for other tools. Open a new terminal after PATH changes. Run `command -v tailmouse` to check the executable your shell finds.
+
+Standalone Windows: close TailMouse, remove `%LOCALAPPDATA%\TailMouse\bin`, and remove that exact entry from your user PATH through Windows environment settings. `Get-Command tailmouse` identifies an unexpected older installation. Homebrew: `brew uninstall tailmouse`; optionally `brew untap lotosli/tailmouse`. Scoop: `scoop uninstall tailmouse`; optionally `scoop bucket rm tailmouse`.
+
+A failed archive download or checksum check preserves the existing executable. Retry the official installer after fixing the reported error, or download the required version and replace only your standalone executable. A Windows updater may report a retained recovery executable; stop both processes before restoring/removing that reported file. Do not copy configuration files or unrelated binaries over an installation. Package-manager installations should recover and upgrade through their manager.
 
 ## First share: preview a local app
 
@@ -118,25 +126,25 @@ Sessions expire after one hour by default. Ending or expiring a resource session
 
 `send` exposes only its selected file; `files` offers a read-only browser rooted at the selected directory. Hidden entries, symlinks and special files are omitted; traversal is rejected. Names are limited to 180 UTF-8 bytes and paths relative to the shared root to 512 bytes. Each directory can show up to 10,000 entries in pages of 40. Downloads use the same one-hour/one-visitor defaults and configurable transfer budgets as other resources: 256 MiB per file, 1 GiB cumulative downloads, 100 attempts and two simultaneous downloads. Failed/canceled attempts consume their reserved budget. File changes during a transfer fail verification instead of reporting success.
 
-Downloads stream to an explicitly selected save file where supported. Other browsers use a bounded in-memory download up to 64 MiB; larger files require a browser with a streaming save picker. Every completed download verifies its length and SHA-256. Ending sharing stops further access; already downloaded files remain on the receiving device.
+Downloads stream to an explicitly selected save file where supported. The receiving page reports its actual browser capability before a download. Other browsers use a bounded in-memory download up to 64 MiB; larger files require a browser with a streaming save picker. Every completed download verifies its length and SHA-256. Ending sharing stops further access; already downloaded files remain on the receiving device.
 
-`text "message"` shares a bounded UTF-8 text value; `printf 'message' | tailmouse text` reads it from stdin. With a terminal, bare `tailmouse text` starts an empty text session; type a line and press Enter to update it without changing the link. Use piped stdin or the browser for multiline text. Both sides can deliberately replace the shared value, up to 16 KiB. Visitors copy explicitly; received text is never executed, inserted into a shell or written to the clipboard automatically. Native text sessions display visitor replies on their deliberate sharing surface, while JSON diagnostics omit text. Browser text refreshes every five seconds or on request. Text and browser-host keys are cleared when their session ends; no browser-host session survives closing its page.
+`text "message"` shares a bounded UTF-8 text value; `printf 'message' | tailmouse text` reads it from stdin. With a terminal, bare `tailmouse text` starts an empty text session; type a line and press Enter to update it without changing the link. Use piped stdin or the browser for multiline text. Both sides can deliberately replace the shared value, up to 16 KiB. Visitors copy explicitly; received text is never executed, inserted into a shell or written to the clipboard automatically. Native text sessions display visitor replies on their deliberate sharing surface, while JSON diagnostics omit text. Browser text refreshes every five seconds or on request, without replacing an unsent draft. The interface shows UTF-8 capacity and the last refresh time. Text and browser-host keys are cleared when their session ends; no browser-host session survives closing its page.
 
 ## Optional configuration
 
 Use flags for everyday changes, such as `tailmouse web 8080 --ttl 30m` or `--approval manual`. The defaults are a one-hour session, one visitor and automatic approval.
 
-For a custom deployment or saved preferences, `--config FILE` still accepts TOML or deployment JSON. Flags override environment variables, which override configuration files, which override defaults. Supplying either deployment origin selects custom deployment validation; Web then requires the corresponding content origin. See [resource configuration](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.3/docs/resource-sharing.md#native-configuration). The optional `tailmouse-config.json` asset is for explicit configuration and older clients; normal hosted use does not need it.
+For a custom deployment or saved preferences, `--config FILE` still accepts TOML or deployment JSON. Flags override environment variables, which override configuration files, which override defaults. Supplying either deployment origin selects custom deployment validation; Web then requires the corresponding content origin. See [resource configuration](https://github.com/lotosli/tailmouse/blob/v1.0.0/docs/resource-sharing.md#native-configuration). The optional `tailmouse-config.json` asset is for explicit configuration and older clients; normal hosted use does not need it.
 
-## Escape and legacy Leash
+## Protected legacy terminal access
 
-Run `tailmouse escape` and open its invitation to play. Legacy `tailmouse leash` is also retained. [Legacy CLI documentation and recordings](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.3/docs/legacy-cli.md) describe its protected invitations, terminal controls and options separately from resource sharing.
+Legacy `tailmouse leash` provides a separate protected terminal workflow. [Legacy CLI documentation and recordings](https://github.com/lotosli/tailmouse/blob/v1.0.0/docs/legacy-cli.md) describe its protected invitations, terminal controls and options separately from resource sharing.
 
-## Preview status and boundaries
+## Platform status and boundaries
 
-- The resource implementation has recorded Linux/macOS full-gate and native Windows x64/ARM64 Go evidence. This update validates the new defaults on Linux; the earlier platform results are not claimed as reruns of this release. The final Windows Worker fixture correction still lacks native confirmation because GitHub Actions was blocked by billing; the owner authorized direct publication with Actions skipped.
-- All six archive targets have build metadata, contents, licenses and checksums verified. The extracted Linux x64 executable is run locally. Cross-compilation does not establish that every archive has run on its target OS or device. See the [release notes](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.3/docs/releases/v0.1.0-alpha.3.md) and [acceptance evidence](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.3/docs/evidence/resource-release-2026-10-19/README.md).
-- Native Windows Receive is unsupported; macOS Receive requires APFS. Browser-to-ConPTY end-to-end acceptance, physical mobile devices and arbitrary frontend frameworks remain unverified. HTTP/WebSocket preview has documented policy and compatibility limits in the [resource guide](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.3/docs/resource-sharing.md).
+- The resource implementation has recorded Linux/macOS full-gate and native Windows x64/ARM64 Go evidence. Current release evidence distinguishes Linux acceptance from earlier native-platform checks; the earlier platform results are not claimed as reruns of this release. The final Windows Worker fixture correction still lacks native confirmation because GitHub Actions was blocked by billing; the owner authorized direct publication with Actions skipped.
+- All six archive targets have build metadata, contents, licenses and checksums verified. The extracted Linux x64 executable is run locally. Cross-compilation does not establish that every archive has run on its target OS or device. See the [release notes](https://github.com/lotosli/tailmouse/blob/v1.0.0/docs/releases/v1.0.0.md) and [acceptance evidence](https://github.com/lotosli/tailmouse/blob/main/docs/evidence/native-release-v1.0.0/README.md).
+- Native Windows Receive is unsupported; macOS Receive requires APFS. Browser-to-ConPTY end-to-end acceptance, physical mobile devices and arbitrary frontend frameworks remain unverified. HTTP/WebSocket preview has documented policy and compatibility limits in the [resource guide](https://github.com/lotosli/tailmouse/blob/v1.0.0/docs/resource-sharing.md).
 - Terminal access carries the selected process's user permissions. It is not an OS sandbox. Treat invitation links as credentials. The current same-origin test deployment does not isolate hostile preview scripts; self-hosted untrusted previews require the documented separate-origin configuration.
 
 The browser's **Help & feedback** panel prepares an inspectable, manually copied report with build, protocol, browser family and coarse stage. Nothing is sent automatically. Do not include invitations, terminal contents, private addresses or file names in public issues.
@@ -154,6 +162,8 @@ pnpm build
 
 The normal build produces `.artifacts/native/tailmouse` (`tailmouse.exe` on Windows), both source-built Wasm transports, the preview bootstrap and the browser assets in `apps/web/dist`. Tailcat is pinned to `52fbad323e9d352f1febb623e0975368e9a8cbdd`. Recovery archives are historical provenance and are not build inputs.
 
-For development validation, run `pnpm gate:quick`, `pnpm gate` and `pnpm fuzz:smoke`. Escape and Leash each use four representative network profiles. Local `pnpm release:snapshot`, `pnpm release:sbom` and `pnpm release:verify` generate and verify artifacts without publishing them. [Tagged release instructions](https://github.com/lotosli/tailmouse/blob/v0.1.0-alpha.3/docs/development/releases.md) describe the pinned release tools and public asset publication.
+For development validation, run `pnpm gate:quick`, `pnpm gate` and `pnpm fuzz:smoke`. Leash uses four representative network profiles. Local `pnpm release:snapshot`, `pnpm release:sbom` and `pnpm release:verify` generate and verify artifacts without publishing them. [Tagged release instructions](https://github.com/lotosli/tailmouse/blob/v1.0.0/docs/development/releases.md) describe the pinned release tools and public asset publication.
 
 TailMouse is an unofficial application built on [Tailcat](https://github.com/tailscale/tailcat), not affiliated with or endorsed by Tailscale. The host embeds Tailcat and the browser uses its Wasm transport; guests do not install the Tailcat CLI.
+
+The minigame was removed in 1.0 at the owner’s request. Older release artifacts remain immutable historical versions.

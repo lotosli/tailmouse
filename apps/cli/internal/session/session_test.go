@@ -13,11 +13,11 @@ import (
 
 func TestSessionTransitionsAndReconnectDropsOldAuthority(t *testing.T) {
 	now := time.Unix(1_788_400_000, 0)
-	session := newTestSession(t, "escape", now)
+	session := newTestSession(t, "leash", now)
 	if session.Inspect(now).State != Creating {
 		t.Fatal("missing Creating state")
 	}
-	if _, err := session.Acquire([16]byte{7}, "escape", now); !errors.Is(err, ErrInvalidTransition) {
+	if _, err := session.Acquire([16]byte{7}, "leash", now); !errors.Is(err, ErrInvalidTransition) {
 		t.Fatal("acquired before listening")
 	}
 	if err := session.BeginConnect(now); !errors.Is(err, ErrInvalidTransition) {
@@ -42,7 +42,7 @@ func TestSessionTransitionsAndReconnectDropsOldAuthority(t *testing.T) {
 	if session.Inspect(now).State != Listening {
 		t.Fatal("failed HELLO retained Connecting state")
 	}
-	first, err := session.Acquire([16]byte{7}, "escape", now)
+	first, err := session.Acquire([16]byte{7}, "leash", now)
 	if err != nil || first == 0 {
 		t.Fatalf("acquire: %v", err)
 	}
@@ -51,29 +51,29 @@ func TestSessionTransitionsAndReconnectDropsOldAuthority(t *testing.T) {
 		t.Fatal("unrelated handshake failure removed the owner")
 	}
 	assertCode(t, session.BeginConnect(now), protocol.CodeSessionBusy)
-	if err := session.Authorize(first, "game_input", now); err != nil {
+	if err := session.Authorize(first, "terminal_input", now); err != nil {
 		t.Fatal(err)
 	}
-	assertCode(t, session.Authorize(0, "game_input", now), protocol.CodeUnauthorized)
+	assertCode(t, session.Authorize(0, "terminal_input", now), protocol.CodeUnauthorized)
 	if !session.Disconnect(first, now) || session.Disconnect(first, now) {
 		t.Fatal("disconnect was not generation-specific and idempotent")
 	}
-	assertCode(t, session.Authorize(first, "game_input", now), protocol.CodeUnauthorized)
-	if session.Inspect(now).State != ReconnectGrace {
+	assertCode(t, session.Authorize(first, "terminal_input", now), protocol.CodeUnauthorized)
+	if session.Inspect(now).State != Listening {
 		t.Fatal("missing grace state")
 	}
 	if err := session.BeginConnect(now); err != nil {
 		t.Fatal(err)
 	}
-	second, err := session.Acquire([16]byte{7}, "escape", now.Add(29*time.Second))
+	second, err := session.Acquire([16]byte{7}, "leash", now.Add(29*time.Second))
 	if err != nil || second == first {
 		t.Fatalf("replacement: %v", err)
 	}
 	if session.Disconnect(first, now.Add(29*time.Second)) {
 		t.Fatal("old stream disconnected replacement")
 	}
-	assertCode(t, session.Authorize(first, "game_input", now.Add(29*time.Second)), protocol.CodeUnauthorized)
-	if err := session.Authorize(second, "game_input", now.Add(29*time.Second)); err != nil {
+	assertCode(t, session.Authorize(first, "terminal_input", now.Add(29*time.Second)), protocol.CodeUnauthorized)
+	if err := session.Authorize(second, "terminal_input", now.Add(29*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	state := session.Inspect(now.Add(29 * time.Second))
@@ -132,8 +132,7 @@ func TestHostIdentityAndCapabilitiesAreAuthoritative(t *testing.T) {
 		allowed []string
 		denied  map[string]protocol.ErrorCode
 	}{
-		{"escape", Config{Mode: "escape"}, []string{"dash", "game_input", "game_view"}, map[string]protocol.ErrorCode{"terminal_input": protocol.CodeUnauthorized}},
-		{"full leash", Config{Mode: "leash"}, []string{"interrupt", "resize", "restart", "terminal_input", "terminal_output", "terminate"}, map[string]protocol.ErrorCode{"game_input": protocol.CodeUnauthorized}},
+		{"full leash", Config{Mode: "leash"}, []string{"interrupt", "resize", "restart", "terminal_input", "terminal_output", "terminate"}, map[string]protocol.ErrorCode{"unknown": protocol.CodeUnauthorized}},
 		{"readonly", Config{Mode: "leash", Readonly: true}, []string{"terminal_output"}, map[string]protocol.ErrorCode{"interrupt": protocol.CodeReadonly, "resize": protocol.CodeReadonly, "restart": protocol.CodeReadonly, "terminal_input": protocol.CodeReadonly, "terminate": protocol.CodeReadonly, "unknown": protocol.CodeUnauthorized}},
 		{"disabled controls", Config{Mode: "leash", NoRestart: true, NoTerminate: true}, []string{"interrupt", "resize", "terminal_input", "terminal_output"}, map[string]protocol.ErrorCode{"restart": protocol.CodeRestartDisabled, "terminate": protocol.CodeTerminateDisabled}},
 	} {
@@ -178,7 +177,7 @@ func TestExpiryAndGraceBoundariesPreserveFirstOutcome(t *testing.T) {
 	now := time.Unix(1_788_400_000, 0)
 	for _, setup := range []string{"creating", "listening", "active", "grace"} {
 		t.Run(setup, func(t *testing.T) {
-			session := newTestSession(t, "escape", now)
+			session := newTestSession(t, "leash", now)
 			var lease Lease
 			if setup != "creating" {
 				if err := session.Listen(now); err != nil {
@@ -187,7 +186,7 @@ func TestExpiryAndGraceBoundariesPreserveFirstOutcome(t *testing.T) {
 			}
 			if setup == "active" || setup == "grace" {
 				var err error
-				lease, err = session.Acquire([16]byte{7}, "escape", now)
+				lease, err = session.Acquire([16]byte{7}, "leash", now)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -202,8 +201,8 @@ func TestExpiryAndGraceBoundariesPreserveFirstOutcome(t *testing.T) {
 			if state.State != Expired || state.Outcome != TTLExpired || state.Owner != 0 {
 				t.Fatal("did not expire at TTL boundary")
 			}
-			assertCode(t, session.Authorize(lease, "game_input", now.Add(600*time.Second)), protocol.CodeExpired)
-			_, err := session.Acquire([16]byte{7}, "escape", now.Add(600*time.Second))
+			assertCode(t, session.Authorize(lease, "terminal_input", now.Add(600*time.Second)), protocol.CodeExpired)
+			_, err := session.Acquire([16]byte{7}, "leash", now.Add(600*time.Second))
 			assertCode(t, err, protocol.CodeExpired)
 			assertCode(t, session.BeginConnect(now.Add(600*time.Second)), protocol.CodeExpired)
 			if changed, err := session.Finish(ProtocolFailure); err != nil || changed {
@@ -216,20 +215,6 @@ func TestExpiryAndGraceBoundariesPreserveFirstOutcome(t *testing.T) {
 				t.Fatal("expiry cleanup did not have exactly one owner")
 			}
 		})
-	}
-	session := newTestSession(t, "escape", now)
-	if err := session.Listen(now); err != nil {
-		t.Fatal(err)
-	}
-	lease, err := session.Acquire([16]byte{7}, "escape", now)
-	if err != nil {
-		t.Fatal(err)
-	}
-	session.Disconnect(lease, now)
-	_, err = session.Acquire([16]byte{7}, "escape", now.Add(30*time.Second))
-	assertCode(t, err, protocol.CodeExpired)
-	if session.Inspect(now.Add(30*time.Second)).Outcome != GraceExpired {
-		t.Fatal("grace boundary outcome mismatch")
 	}
 }
 
@@ -270,12 +255,12 @@ func TestHostLifetimeAndIdempotentTerminalTransitions(t *testing.T) {
 
 func TestInvalidConfigurationAndZeroGrace(t *testing.T) {
 	now := time.Unix(1_788_400_000, 0)
-	for _, config := range []Config{{}, {Mode: "other", SessionID: [16]byte{7}}, {Mode: "escape"}, {Mode: "escape", SessionID: [16]byte{7}, TTL: -1}, {Mode: "leash", SessionID: [16]byte{7}, ReconnectGrace: -1}} {
+	for _, config := range []Config{{}, {Mode: "other", SessionID: [16]byte{7}}, {Mode: "leash"}, {Mode: "leash", SessionID: [16]byte{7}, TTL: -1}, {Mode: "leash", SessionID: [16]byte{7}, ReconnectGrace: -1}} {
 		if _, err := New(config, now); !errors.Is(err, ErrInvalidConfig) {
 			t.Fatal("invalid configuration accepted")
 		}
 	}
-	session, err := New(Config{Mode: "escape", SessionID: [16]byte{7}}, now)
+	session, err := New(Config{Mode: "leash", SessionID: [16]byte{7}}, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,13 +270,13 @@ func TestInvalidConfigurationAndZeroGrace(t *testing.T) {
 	if err := session.Listen(now); err != nil {
 		t.Fatal(err)
 	}
-	lease, err := session.Acquire([16]byte{7}, "escape", now)
+	lease, err := session.Acquire([16]byte{7}, "leash", now)
 	if err != nil {
 		t.Fatal(err)
 	}
 	session.Disconnect(lease, now)
-	if session.Inspect(now).State != Closed || session.Inspect(now).Outcome != GraceExpired {
-		t.Fatal("zero grace did not close immediately")
+	if session.Inspect(now).State != Listening || !session.Inspect(now).GraceDeadline.IsZero() {
+		t.Fatal("terminal disconnect did not return to listening")
 	}
 }
 

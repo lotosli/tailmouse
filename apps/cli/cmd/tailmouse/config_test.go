@@ -37,7 +37,7 @@ region_name = "Private DERP"
 		actual = value
 		return nil, tailcattransport.ErrStart
 	}
-	code := run(context.Background(), nil, []string{"escape", "--derp-host", "flag.example.com"},
+	code := run(context.Background(), nil, []string{"leash", "--no-password", "--derp-host", "flag.example.com", "--", "unused"},
 		[]string{"TAILMOUSE_CONFIG=" + path, "TAILMOUSE_DERP_HOST=env.example.com"}, directory, io.Discard, io.Discard, starter)
 	if code != exitTransport || len(actual.DERPHosts) != 1 || actual.DERPHosts[0] != "flag.example.com" ||
 		actual.DERPPort != 8443 || actual.STUNPort != 5349 || actual.DERPRegion != 999 ||
@@ -58,7 +58,7 @@ region_name = "Private DERP"
 func TestRunZeroTTLAndCanceledStartup(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	code := run(ctx, nil, []string{"escape", "--ttl", "0"}, nil, t.TempDir(), io.Discard, io.Discard,
+	code := run(ctx, nil, []string{"leash", "--no-password", "--ttl", "0", "--", "unused"}, nil, t.TempDir(), io.Discard, io.Discard,
 		func(ctx context.Context, _ tailcattransport.Config) (transportServer, error) {
 			if _, exists := ctx.Deadline(); exists {
 				t.Fatal("zero TTL installed a deadline")
@@ -72,7 +72,7 @@ func TestRunZeroTTLAndCanceledStartup(t *testing.T) {
 }
 
 func TestRunInformationalCommandsHaveNoSideEffects(t *testing.T) {
-	for _, args := range [][]string{{"--help"}, {"escape", "--help"}, {"leash", "--help"}, {"version"}, {"config", "path"}} {
+	for _, args := range [][]string{{"--help"}, {"leash", "--help"}, {"leash", "--help"}, {"version"}, {"config", "path"}} {
 		var stdout, stderr bytes.Buffer
 		called := false
 		code := run(context.Background(), nil, args, []string{"TAILMOUSE_TTL=invalid"}, t.TempDir(), &stdout, &stderr,
@@ -165,10 +165,10 @@ func TestCLIProcessConfigurationBoundary(t *testing.T) {
 		{"version bypasses invalid config", []string{"version"}, 0, "TMOUSE Leash protocol 2", ""},
 		{"path environment", []string{"config", "path"}, 0, path, ""},
 		{"path flag precedence", []string{"config", "path", "--config", missing}, 0, missing, ""},
-		{"invalid file before transport", []string{"escape"}, 2, "", "version (expected 1)"},
-		{"JSON invalid file before transport", []string{"--json", "escape"}, 2, "", "terminal_failure"},
-		{"JSON invalid flags", []string{"--json", "escape", "--unknown=secret-test-value"}, 2, "", "terminal_failure"},
-		{"missing explicit config", []string{"escape", "--config", missing}, 2, "", "unreadable"},
+		{"invalid file before transport", []string{"leash", "--no-password", "--", "unused"}, 2, "", "version (expected 1)"},
+		{"JSON invalid file before transport", []string{"--json", "leash", "--no-password", "--", "unused"}, 2, "", "terminal_failure"},
+		{"JSON invalid flags", []string{"--json", "leash", "--unknown=secret-test-value"}, 2, "", "terminal_failure"},
+		{"missing explicit config", []string{"leash", "--no-password", "--config", missing, "--", "unused"}, 2, "", "unreadable"},
 		{"invalid leash before process", []string{"leash", "--scrollback-bytes", "65535", "--", "must-not-run"}, 2, "", "invalid"},
 		{"unknown command", []string{"unknown"}, 2, "", "Usage:"},
 		{"missing leash command", []string{"leash", "--"}, 2, "", "invalid"},

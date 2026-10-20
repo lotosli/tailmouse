@@ -6,6 +6,8 @@
 
 - **Observed/WIP checkpoint:** Task entry pages, editable file selection, capability-aware download cards, shared-text draft handling, runtime progress/local QR bridge and wizard changes are underway. Owner-directed game removal has deleted the engine/UI and is reconciling shared legacy protocol, tests and build identity. This checkpoint is not a passing build or release; alpha.3 stays live until complete acceptance.
 
+- **Observed/WIP update:** Native configuration/protocol/invitation/session and CLI unit tests now pass after removing game paths and migrating common tests to protected Leash. The Web suite passes 274 cases before additional first-share recovery tests. Complete integration-tag test compilation and typecheck pass. Web coverage currently fails its unchanged 80% branch/function floors after deleting highly covered game code; meaningful system-share, capability, platform and draft-recovery tests are being added. No release/deployment has occurred; alpha.3 remains live.
+
 ## Complete simple sharing — 2026-10-20
 
 - **Owner-directed/in progress:** Implement all six reviewed suggestions: native send/files/text, browser-host transfer, no-argument startup and install/update distribution; commit and deploy. Accepted change `complete-simple-sharing` and decision `2026-008` record scope and boundaries. Baseline main is `0b83f54`; alpha.2 remains the published release until new acceptance completes. Keep the Tailcat pin, Escape, four network profiles and owner-authorized direct `[skip ci]` publication.

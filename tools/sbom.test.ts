@@ -181,10 +181,7 @@ await test('Web SBOM separates npm and Wasm libraries and includes every supplie
     bom.metadata.component.properties.filter(({ name }) =>
       name.startsWith('tailmouse:protocol-'),
     ),
-    [
-      { name: 'tailmouse:protocol-escape', value: '1' },
-      { name: 'tailmouse:protocol-leash', value: '2' },
-    ],
+    [{ name: 'tailmouse:protocol-leash', value: '2' }],
   );
   assert.ok(!JSON.stringify(bom).includes('/Users/'));
   const win = nativeSBOM(

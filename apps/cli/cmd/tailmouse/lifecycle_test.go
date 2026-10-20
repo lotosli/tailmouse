@@ -10,7 +10,7 @@ import (
 	tailcattransport "tailmouse/apps/cli/internal/transport/tailcat"
 )
 
-func TestRunEscapeCleansUpAfterInvitationAndProtocolFailures(t *testing.T) {
+func TestRunLeashCleansUpAfterInvitationAndProtocolFailures(t *testing.T) {
 	for _, test := range []struct {
 		name    string
 		address string
@@ -28,7 +28,7 @@ func TestRunEscapeCleansUpAfterInvitationAndProtocolFailures(t *testing.T) {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			if code := run(ctx, nil, []string{"escape", "--no-qr"}, nil, t.TempDir(), test.output, io.Discard, starter); code != test.code {
+			if code := run(ctx, nil, []string{"leash", "--no-password", "--no-qr", "--", "unused"}, nil, t.TempDir(), test.output, io.Discard, starter); code != test.code {
 				t.Fatalf("failure code = %d, want %d", code, test.code)
 			}
 			if fake.closeCalls != 1 {
@@ -38,7 +38,7 @@ func TestRunEscapeCleansUpAfterInvitationAndProtocolFailures(t *testing.T) {
 	}
 }
 
-func TestRunEscapeLifetimeExpiresAndClosesTransport(t *testing.T) {
+func TestRunLeashLifetimeExpiresAndClosesTransport(t *testing.T) {
 	fake := newFakeTransport()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -46,7 +46,7 @@ func TestRunEscapeLifetimeExpiresAndClosesTransport(t *testing.T) {
 	// Revocation after the invitation is visible proves the initialized cleanup
 	// path, not only validation of an already-canceled invocation.
 	output := cancelOnWrite{cancel: cancel}
-	code := run(ctx, nil, []string{"escape", "--ttl", "0", "--no-qr"}, nil, t.TempDir(), output, io.Discard, starter)
+	code := run(ctx, nil, []string{"leash", "--no-password", "--ttl", "0", "--no-qr", "--", "unused"}, nil, t.TempDir(), output, io.Discard, starter)
 	if code != exitExpired || fake.closeCalls != 1 {
 		t.Fatal("revocation failed to close the unlimited-lifetime session")
 	}

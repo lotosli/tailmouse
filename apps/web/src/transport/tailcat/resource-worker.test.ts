@@ -28,12 +28,19 @@ async function worker(ready = true) {
   );
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => new Response(new Uint8Array(0))),
+    vi.fn(
+      async () => new Response(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0])),
+    ),
   );
-  vi.spyOn(WebAssembly, 'instantiateStreaming').mockResolvedValue({
-    instance: {} as WebAssembly.Instance,
-    module: {} as WebAssembly.Module,
-  });
+  vi.spyOn(WebAssembly, 'instantiateStreaming').mockImplementation(
+    async (response) => {
+      await (await response).arrayBuffer();
+      return {
+        instance: {} as WebAssembly.Instance,
+        module: {} as WebAssembly.Module,
+      };
+    },
+  );
   vi.resetModules();
   const module = './resource-worker.ts';
   await import(module);
@@ -45,7 +52,7 @@ async function worker(ready = true) {
       op: 'load',
       stream: 0,
       value: null,
-      assets: { runtime, wasm: '/resource.wasm' },
+      assets: { runtime, wasm: '/resource.wasm', bytes: 8 },
     });
   return { send, load, post, call };
 }
@@ -83,7 +90,11 @@ it('loads local assets once, transfers byte results and redacts bridge errors', 
   w.load();
   await vi.waitFor(() =>
     expect(
-      w.post.mock.calls.filter((c) => (c[0] as { id: number }).id === 1),
+      w.post.mock.calls.filter(
+        (c) =>
+          (c[0] as { id: number; ok?: boolean }).id === 1 &&
+          (c[0] as { ok?: boolean }).ok === true,
+      ),
     ).toHaveLength(2),
   );
   expect(WebAssembly.instantiateStreaming).toHaveBeenCalledOnce();

@@ -17,7 +17,7 @@ const categories = [
 ] as const;
 const receivers = ['browser', 'host'];
 const states = [
-  'active-escape',
+  'active-leash',
   'active-leash',
   'await-auth-proof',
   'await-client-hello',

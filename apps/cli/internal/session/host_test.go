@@ -22,14 +22,14 @@ var testHostID = [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 func TestHostMeasuresOneHertzLatencyAndClosesWithInFlightTraffic(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		host := newTestHost(t, "escape", false)
+		host := newTestHost(t, "leash", false)
 		events := make(chan Event, 3)
 		host.observe = func(event Event) error { events <- event; return nil }
-		browser, _ := connectTestHost(t, host, "escape", testHostID, 1)
+		browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
 		synctest.Wait()
 		started := time.Now()
 		for index := 1; index <= 2; index++ {
-			ping, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveEscape)
+			ping, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveLeash)
 			if err != nil || ping.Type != protocol.TypePing {
 				t.Fatal("one-hertz ping missing", err)
 			}
@@ -37,24 +37,24 @@ func TestHostMeasuresOneHertzLatencyAndClosesWithInFlightTraffic(t *testing.T) {
 				t.Fatal("PING cadence is not one hertz")
 			}
 			time.Sleep(40 * time.Millisecond)
-			if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveEscape,
+			if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveLeash,
 				protocol.Frame{Type: protocol.TypePong, Payload: ping.Payload}); err != nil {
 				t.Fatal(err)
 			}
 			synctest.Wait()
 		}
 		metrics := host.InspectMetrics()
-		if metrics.Samples != 2 || metrics.RTTMS != 40 || metrics.JitterMS != 0 || metrics.FramesTX != 3 || metrics.FramesRX != 3 || metrics.BytesTX == 0 || metrics.BytesRX == 0 || !metrics.ActiveConnection {
+		if metrics.Samples != 2 || metrics.RTTMS != 40 || metrics.JitterMS != 0 || metrics.FramesTX != 4 || metrics.FramesRX != 4 || metrics.BytesTX == 0 || metrics.BytesRX == 0 || !metrics.ActiveConnection {
 			t.Fatalf("metrics = %#v", metrics)
 		}
 		closed := make(chan error, 1)
 		go func() { closed <- host.Close("local_revoke") }()
-		frame, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveEscape)
+		frame, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveLeash)
 		if err != nil || frame.Type != protocol.TypeClose {
 			t.Fatal("host close missing", err)
 		}
 		// A write accepted by the peer before it saw CLOSE may cross ours.
-		if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveEscape,
+		if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveLeash,
 			protocol.Frame{Type: protocol.TypePong, Payload: make([]byte, 16)}); err != nil {
 			t.Fatal(err)
 		}
@@ -295,7 +295,7 @@ func TestFirstHelloRequiresValidUnexpiredAuthority(t *testing.T) {
 		expired    bool
 	}{
 		{"wrong identity", "leash", [16]byte{8}, 2, false},
-		{"wrong mode", "escape", testHostID, 1, false},
+		{"wrong mode", "leash", testHostID, 1, false},
 		{"wrong protocol", "leash", testHostID, 1, false},
 		{"expired", "leash", testHostID, 2, true},
 	} {
@@ -354,9 +354,9 @@ func waitHostState(t *testing.T, host *Host, state State) Snapshot {
 }
 
 func TestHostNegotiatesAuthorityAndNormalClose(t *testing.T) {
-	host := newTestHost(t, "escape", false)
-	browser, welcome := connectTestHost(t, host, "escape", testHostID, 1)
-	if welcome.Type != protocol.TypeServerWelcome || welcome.SelectedProtocol != 1 {
+	host := newTestHost(t, "leash", false)
+	browser, welcome := connectTestHost(t, host, "leash", testHostID, 2)
+	if welcome.Type != protocol.TypeServerWelcome || welcome.SelectedProtocol != 2 {
 		t.Fatal("missing negotiated welcome")
 	}
 	var value struct {
@@ -367,20 +367,20 @@ func TestHostNegotiatesAuthorityAndNormalClose(t *testing.T) {
 	if err := json.Unmarshal(welcome.Payload, &value); err != nil {
 		t.Fatal(err)
 	}
-	if value.Mode != "escape" || len(value.Capabilities) != 3 || value.ExpiresAt != 0 {
+	if value.Mode != "leash" || len(value.Capabilities) != 6 || value.ExpiresAt != 0 {
 		t.Fatal("welcome authority is incorrect")
 	}
 	ping := protocol.Frame{Type: protocol.TypePing, Payload: make([]byte, 16)}
 	ping.Payload[15] = 7
-	if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveEscape, ping); err != nil {
+	if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveLeash, ping); err != nil {
 		t.Fatal(err)
 	}
-	pong, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveEscape)
+	pong, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveLeash)
 	if err != nil || pong.Type != protocol.TypePong || !bytes.Equal(pong.Payload, ping.Payload) {
 		t.Fatal("PING did not echo byte-for-byte as PONG")
 	}
 	closeFrame, _ := protocol.CloseFrame("normal")
-	if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveEscape, closeFrame); err != nil {
+	if err := protocol.WriteFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveLeash, closeFrame); err != nil {
 		t.Fatal(err)
 	}
 	closed, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateClosing)
@@ -390,7 +390,7 @@ func TestHostNegotiatesAuthorityAndNormalClose(t *testing.T) {
 	_ = browser.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if outcome := host.Wait(ctx); outcome != ModeComplete {
+	if outcome := host.Wait(ctx); outcome != LocalRevoke {
 		t.Fatalf("outcome = %s", outcome)
 	}
 	if err := host.Close("mode_complete"); err != nil {
@@ -416,7 +416,7 @@ func TestHostRejectsPeersWithoutChangingTheOwner(t *testing.T) {
 			code    protocol.ErrorCode
 		}{
 			{"leash", testHostID, 2, protocol.CodeSessionBusy},
-			{"escape", testHostID, 1, protocol.CodeModeMismatch},
+			{"unsupported", testHostID, 2, protocol.CodeBadFrame},
 			{"leash", [16]byte{8}, 2, protocol.CodeBadMouseCard},
 			{"leash", testHostID, 1, protocol.CodeProtocolMismatch},
 		} {
@@ -458,11 +458,11 @@ func TestHostRejectsPeersWithoutChangingTheOwner(t *testing.T) {
 }
 
 func TestHostBoundsPendingWorkersAndJoinsOnClose(t *testing.T) {
-	host, err := NewHost(context.Background(), Config{Mode: "escape", SessionID: testHostID}, time.Now(), nil)
+	host, err := NewHost(context.Background(), Config{Mode: "leash", NoPassword: true, SessionID: testHostID}, time.Now(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for index := 0; index < MaxConnections; index++ {
+	for index := 0; index < MaxPendingAuthentication; index++ {
 		server, browser := net.Pipe()
 		defer browser.Close()
 		if !host.Accept(server) {
@@ -508,14 +508,14 @@ func TestHostShutdownTimeoutStillJoinsAndRevokes(t *testing.T) {
 		}
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				host := newTestHost(t, "escape", false)
-				browser, _ := connectTestHost(t, host, "escape", testHostID, 1)
+				host := newTestHost(t, "leash", false)
+				browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
 				host.finish(ModeComplete)
 				started := time.Now()
 				done := make(chan error, 1)
 				go func() { done <- host.Close("normal") }()
 				if receiveClose {
-					frame, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveEscape)
+					frame, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveLeash)
 					if err != nil || frame.Type != protocol.TypeClose {
 						t.Fatal("host close notification missing")
 					}
@@ -566,7 +566,7 @@ func TestHostTimersAndCancellationSelectTerminalOutcomes(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			host, err := NewHost(ctx, Config{Mode: "escape", SessionID: testHostID, TTL: test.ttl}, time.Now(), nil)
+			host, err := NewHost(ctx, Config{Mode: "leash", NoPassword: true, SessionID: testHostID, TTL: test.ttl}, time.Now(), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -621,7 +621,7 @@ func TestHostTimersAndCancellationSelectTerminalOutcomes(t *testing.T) {
 
 func TestActiveHostExpiryRevokesAuthorityBeforeGracefulClose(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		host, err := NewHost(context.Background(), Config{Mode: "escape", SessionID: testHostID, TTL: 100 * time.Millisecond}, time.Now(), nil)
+		host, err := NewHost(context.Background(), Config{Mode: "leash", NoPassword: true, SessionID: testHostID, TTL: 100 * time.Millisecond}, time.Now(), nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -629,7 +629,7 @@ func TestActiveHostExpiryRevokesAuthorityBeforeGracefulClose(t *testing.T) {
 		if err := host.Listen("official", "relay.example.com", time.Now()); err != nil {
 			t.Fatal(err)
 		}
-		browser, _ := connectTestHost(t, host, "escape", testHostID, 1)
+		browser, _ := connectTestHost(t, host, "leash", testHostID, 2)
 		done := make(chan error, 1)
 		go func() {
 			if host.Wait(context.Background()) != TTLExpired {
@@ -638,7 +638,7 @@ func TestActiveHostExpiryRevokesAuthorityBeforeGracefulClose(t *testing.T) {
 			}
 			done <- host.Close("expired")
 		}()
-		frame, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveEscape)
+		frame, err := protocol.ReadFrame(context.Background(), browser, protocol.PeerBrowser, protocol.StateActiveLeash)
 		reason, decodeErr := protocol.DecodeClose(frame)
 		if err != nil || decodeErr != nil || frame.Type != protocol.TypeClose || reason != "expired" {
 			t.Fatal("active peer did not receive the expiry notification")

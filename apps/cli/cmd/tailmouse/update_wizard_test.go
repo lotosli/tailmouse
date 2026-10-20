@@ -202,7 +202,7 @@ func TestWizardChoosesExplicitResources(t *testing.T) {
 		input string
 		want  []string
 	}{
-		{"1\r\r", []string{"web", "8080"}}, {"3\rmy file.zip\r", []string{"send", "my file.zip"}}, {"4\r\r", []string{"files", "."}}, {"5\rhello world\r", []string{"text", "hello world"}}, {"2\r\ry\r", []string{"cli", "--", program}}, {"7\r5173\r\ry\r", []string{"dev", "--web", "5173", "--", program}}, {"1\r8081\b0\r", []string{"web", "8080"}},
+		{"1\r\r", []string{"web", "8080"}}, {"3\rmy file.zip\r", []string{"send", "my file.zip"}}, {"4\r\r", []string{"files", "."}}, {"5\rhello world\r", []string{"text", "hello world"}}, {"2\r\r2\ry\r", []string{"cli", "--", program}}, {"7\r5173\r\r2\ry\r", []string{"dev", "--web", "5173", "--", program}}, {"1\r8081\b0\r", []string{"web", "8080"}},
 	} {
 		console := &wizardConsole{input: tc.input}
 		args, err := wizardArgs(context.Background(), console)
@@ -210,7 +210,7 @@ func TestWizardChoosesExplicitResources(t *testing.T) {
 			t.Fatal(args, err)
 		}
 	}
-	for _, input := range []string{"q\r", "2\r\rn\r", "\x03", ""} {
+	for _, input := range []string{"q\r", "2\r\r2\rn\r", "\x03", ""} {
 		if _, err := wizardArgs(context.Background(), &wizardConsole{input: input}); !errors.Is(err, io.EOF) {
 			t.Fatal(err)
 		}
@@ -224,14 +224,14 @@ func TestWizardChoosesExplicitResources(t *testing.T) {
 		t.Fatal("output failure ignored")
 	}
 	dir := filepath.Join(t.TempDir(), "inbox")
-	if _, err := wizardArgs(context.Background(), &wizardConsole{input: "6\r" + dir + "\ry\r"}); err != nil {
+	if _, err := wizardArgsForPlatform(context.Background(), &wizardConsole{input: "6\r" + dir + "\ry\r"}, "linux"); err != nil {
 		t.Fatal(err)
 	}
 	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
 		t.Fatal("upload directory not created")
 	}
 	missing := filepath.Join(t.TempDir(), "inbox")
-	if _, err := wizardArgs(context.Background(), &wizardConsole{input: "6\r" + missing + "\rn\r"}); !errors.Is(err, io.EOF) {
+	if _, err := wizardArgsForPlatform(context.Background(), &wizardConsole{input: "6\r" + missing + "\rn\r"}, "linux"); !errors.Is(err, io.EOF) {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(missing); !errors.Is(err, os.ErrNotExist) {

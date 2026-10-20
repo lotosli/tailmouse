@@ -1,6 +1,6 @@
 param([string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'TailMouse\bin'))
 $ErrorActionPreference = 'Stop'
-$Version = '0.1.0-alpha.3'
+$Version = '1.0.0'
 if (-not $IsWindows -and $env:OS -ne 'Windows_NT') { throw 'This installer is for Windows. Use https://tailmouse.com/install.sh on macOS or Linux.' }
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $Architecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }

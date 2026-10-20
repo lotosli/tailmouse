@@ -40,7 +40,6 @@ const phases = [
         'tools/resource-deploy.test.ts',
         'tools/install-recipes.test.ts',
         'tools/installer.test.ts',
-        'tools/m0-acceptance.test.ts',
         'tools/go-gate.test.ts',
         'tools/check-architecture.test.ts',
         'tools/link-edge-release.test.ts',

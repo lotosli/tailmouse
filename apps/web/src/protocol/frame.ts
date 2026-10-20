@@ -350,8 +350,6 @@ function isTerminal(type: MessageType): boolean {
   return type >= Message.TERM_RESET && type <= Message.OUTPUT_DROPPED;
 }
 
-
-
 function isTerminalForSender(type: MessageType, sender: Peer): boolean {
   const fromHost: readonly MessageType[] = [
     Message.TERM_RESET,
@@ -372,8 +370,6 @@ function isTerminalForSender(type: MessageType, sender: Peer): boolean {
   }
   return false;
 }
-
-
 
 function validatePayload(
   type: MessageType,
@@ -495,29 +491,26 @@ function validateServerWelcome(payload: Uint8Array): number {
   }
   if (
     !exactKeys(value, ['access_mode', ...commonKeys]) ||
-        value.protocol !== 2 ||
-        (value.access_mode !== 'code' && value.access_mode !== 'link')
+    value.protocol !== 2 ||
+    (value.access_mode !== 'code' && value.access_mode !== 'link')
   ) {
     throw new ProtocolError('BAD_FRAME');
   }
   return value.protocol as 1 | 2;
 }
 
-function validCapabilities(
-  mode: 'leash',
-  value: unknown[],
-): boolean {
-  const allowed =
-    [
-          'interrupt',
-          'resize',
-          'restart',
-          'terminal_input',
-          'terminal_output',
-          'terminate',
-        ];
+function validCapabilities(mode: 'leash', value: unknown[]): boolean {
+  const allowed = [
+    'interrupt',
+    'resize',
+    'restart',
+    'terminal_input',
+    'terminal_output',
+    'terminate',
+  ];
   return (
-    mode === 'leash' && value.length > 0 &&
+    mode === 'leash' &&
+    value.length > 0 &&
     value.every(
       (capability, index) =>
         typeof capability === 'string' &&
@@ -539,10 +532,7 @@ export interface Welcome {
   readonly accessMode?: 'code' | 'link';
 }
 
-export function decodeWelcome(
-  frame: Frame,
-  expectedMode: 'leash',
-): Welcome {
+export function decodeWelcome(frame: Frame, expectedMode: 'leash'): Welcome {
   if (
     frame.type !== Message.SERVER_WELCOME ||
     frame.payload.byteLength > 4096
@@ -569,10 +559,7 @@ export function decodeWelcome(
   return Object.freeze(welcome);
 }
 
-export function helloFrame(
-  sessionID: Uint8Array,
-  mode: 'leash',
-): Frame {
+export function helloFrame(sessionID: Uint8Array, mode: 'leash'): Frame {
   if (sessionID.byteLength !== 16 || sessionID.every((value) => value === 0)) {
     throw new ProtocolError('BAD_MOUSE_CARD');
   }

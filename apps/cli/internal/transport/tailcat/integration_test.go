@@ -80,17 +80,25 @@ func TestHermeticTailcatChromeStable(t *testing.T) {
 
 func testRelayBrowserWasm(t *testing.T, mode RelayMode, engine string) {
 	region := runLocalDERP(t)
+	browserLeft := make(chan struct{}, 1)
 	host, err := session.NewHost(t.Context(), session.Config{
-		Mode: "escape", TTL: 5 * time.Minute, ReconnectGrace: 30 * time.Second,
+		Mode: "leash", NoPassword: true, Readonly: true, TTL: 5 * time.Minute, ReconnectGrace: 30 * time.Second,
 		SessionID: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-	}, time.Now(), nil)
+	}, time.Now(), func(event session.Event) error {
+		if event.Kind == session.BrowserDisconnected {
+			select {
+			case browserLeft <- struct{}{}:
+			default:
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := host.ConfigureEscape(session.EscapeConfig{Map: "courtyard", Seed: 42, Round: 45 * time.Second, Control: "touch", PhoneRender: true, ShowNet: true}); err != nil {
+	if err := host.ConfigureLeash(); err != nil {
 		t.Fatal(err)
 	}
-	sessionDone := make(chan session.Outcome, 1)
 	config := Config{
 		DERPHosts:  []string{"localhost"},
 		DERPRegion: 900,
@@ -178,7 +186,7 @@ func testRelayBrowserWasm(t *testing.T, mode RelayMode, engine string) {
 	if err := host.Listen(string(relay.Mode), relay.Host, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	go func() { sessionDone <- host.Wait(t.Context()) }()
+
 	if relay.Mode != mode || relay.Host != "localhost" {
 		t.Fatalf("adapter changed safe local relay metadata: %#v", relay)
 	}
@@ -208,8 +216,8 @@ func testRelayBrowserWasm(t *testing.T, mode RelayMode, engine string) {
 	request := browserRequest{
 		Engine:             engine,
 		BaseURL:            staticServer.URL,
-		ValidFragment:      mouseCardFragment(t, string(address), invitation.ModeEscape),
-		InvalidFragment:    mouseCardFragment(t, string(incorrectAddress), invitation.ModeEscape),
+		ValidFragment:      mouseCardFragment(t, string(address), invitation.ModeLeash),
+		InvalidFragment:    mouseCardFragment(t, string(incorrectAddress), invitation.ModeLeash),
 		MismatchedFragment: mouseCardFragment(t, string(address), invitation.ModeLeash),
 		IncorrectAddress:   string(incorrectAddress),
 	}
@@ -239,14 +247,7 @@ func testRelayBrowserWasm(t *testing.T, mode RelayMode, engine string) {
 		}
 	}()
 	select {
-	case outcome := <-sessionDone:
-		if outcome != session.ModeComplete {
-			t.Fatalf("session outcome = %v", outcome)
-		}
-		game, ok := host.InspectEscape()
-		if !ok || game.AcceptedSequence < 2 || game.Tick < 2 {
-			t.Fatal("real browser did not initialize, decode snapshots and send game intent")
-		}
+	case <-browserLeft:
 		if err := host.Close("normal"); err != nil {
 			t.Fatal(err)
 		}
@@ -254,7 +255,7 @@ func testRelayBrowserWasm(t *testing.T, mode RelayMode, engine string) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Fatal("browser probe ended before native session completion")
+		t.Fatal("browser probe ended before visitor disconnection")
 	case <-time.After(30 * time.Second):
 		t.Fatal("native session handler did not finish")
 	}
@@ -323,13 +324,13 @@ func assertPSKInvitation(t *testing.T, address []byte) {
 	now := time.Now().Round(time.Second)
 	card := invitation.MouseCard{
 		Version:     invitation.CardVersion,
-		Mode:        invitation.ModeEscape,
+		Mode:        invitation.ModeLeash,
 		TailcatAddr: string(address),
 		Port:        invitation.VirtualPort,
 		SessionID:   [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 		ExpiresAt:   now.Add(5 * time.Minute).Unix(),
-		ProtocolMin: invitation.EscapeProtocol,
-		ProtocolMax: invitation.EscapeProtocol,
+		ProtocolMin: invitation.LeashProtocol,
+		ProtocolMax: invitation.LeashProtocol,
 	}
 	encoded, err := invitation.Encode(card)
 	if err != nil {
@@ -405,7 +406,7 @@ type browserRequest struct {
 func mouseCardFragment(t *testing.T, address string, mode invitation.Mode) string {
 	t.Helper()
 	identifier := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
-	protocolIdentifier := invitation.EscapeProtocol
+	protocolIdentifier := invitation.LeashProtocol
 	if mode == invitation.ModeLeash {
 		protocolIdentifier = invitation.LeashProtocol
 	}

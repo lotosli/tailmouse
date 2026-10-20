@@ -146,11 +146,9 @@ await test('CI keeps the complete fail-fast matrix ahead of packaging and fuzzin
   for (const phase of [
     'hermetic transport integration',
     'Unix Leash native/browser acceptance',
-    'Escape impairment smoke',
     'browser end-to-end tests',
     'Firefox and WebKit real transport acceptance',
     'Go race and vulnerability checks',
-    'Escape representative network profiles and outages',
     'Unix Leash representative network profiles',
   ]) {
     assert.match(gate, new RegExp(`'${phase.replace('/', '\\/')}'`, 'u'));

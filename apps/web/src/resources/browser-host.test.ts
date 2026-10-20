@@ -347,3 +347,21 @@ it('uses a streaming save picker and bounds the Blob fallback', async () => {
   await expect(tooMuch.write(new Uint8Array([1, 2]))).rejects.toThrow();
   await tooMuch.abort();
 });
+
+it('renders local invitation QR data and rejects malformed matrices without exposing the invitation', async () => {
+  const { host, transport } = await fixture();
+  const matrix = ('0'.repeat(21) + '\n').repeat(21);
+  const call = vi.spyOn(transport, 'call');
+  call.mockResolvedValueOnce(matrix);
+  expect(await host.qr('http://localhost')).toBe(matrix);
+  for (const bad of [
+    null,
+    'secret',
+    '01\n',
+    ('0'.repeat(22) + '\n').repeat(21),
+  ]) {
+    call.mockResolvedValueOnce(bad);
+    await expect(host.qr('http://localhost')).rejects.toThrow('QR unavailable');
+  }
+  expect(host.view.expiresAt).toBeGreaterThan(Date.now());
+});

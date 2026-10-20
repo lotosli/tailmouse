@@ -215,12 +215,7 @@ summary {
   border-top: 1px solid #45533e;
   padding: 1.5rem 0 2rem;
 }
-.escape-section {
-  padding: 2rem 0;
-}
-.escape-section .command-block {
-  max-width: 460px;
-}
+
 .resource-shell :focus-visible {
   outline: 2px solid #d8ff62;
   outline-offset: 4px;

@@ -11,7 +11,7 @@ import (
 )
 
 func TestModeDefaults(t *testing.T) {
-	for _, command := range []string{"escape", "leash"} {
+	for _, command := range []string{"leash"} {
 		t.Run(command, func(t *testing.T) {
 			args := []string{command}
 			if command == "leash" {
@@ -27,11 +27,7 @@ func TestModeDefaults(t *testing.T) {
 			if options.Relay.DERPPort != 443 || options.Relay.STUNPort != 3478 || options.Relay.RegionID != 900 || len(options.Relay.Hosts) != 0 {
 				t.Fatal("incorrect relay defaults")
 			}
-			if command == "escape" {
-				if options.TTL != 10*time.Minute || !options.Once || options.Escape.Round != 45*time.Second || options.Escape.Map != "random" || options.Escape.Control != "touch" || !options.Escape.PhoneRender || !options.Escape.TerminalRender || !options.Escape.ShowNet {
-					t.Fatal("incorrect Escape defaults")
-				}
-			} else {
+			{
 				if options.TTL != 0 || options.Once || options.Leash.PostExitTTL != 0 || !options.Leash.PostExitHost || options.Leash.NoPassword || options.Leash.ReconnectGrace != 30*time.Second || options.Leash.ScrollbackBytes != 1<<20 || options.Leash.StartOn != "connect-or-enter" || !options.Leash.LocalInput || options.Leash.KillOnExpire || options.Leash.KillOnDisconnect {
 					t.Fatal("incorrect Leash defaults")
 				}
@@ -42,7 +38,7 @@ func TestModeDefaults(t *testing.T) {
 
 func TestPerFieldPrecedence(t *testing.T) {
 	dir := t.TempDir()
-	path := writeConfig(t, dir, "version=1\n[web]\nbase_url='https://file.example/'\n[session]\nescape_ttl='7m'\n")
+	path := writeConfig(t, dir, "version=1\n[web]\nbase_url='https://file.example/'\n[session]\nleash_ttl='7m'\n")
 	for _, test := range []struct {
 		name       string
 		env, flags []string
@@ -56,8 +52,8 @@ func TestPerFieldPrecedence(t *testing.T) {
 		{"independent fields", []string{"TAILMOUSE_TTL=6m"}, []string{"--web-base-url", "https://flag.example/"}, "https://flag.example/", Flag, 6 * time.Minute},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			args := append([]string{"--config", path, "escape"}, test.flags...)
-			options, _, err := Resolve(args, test.env, dir)
+			args := append([]string{"--config", path, "leash"}, test.flags...)
+			options, _, err := Resolve(append(args, "--", "example-command"), test.env, dir)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -66,8 +62,8 @@ func TestPerFieldPrecedence(t *testing.T) {
 			}
 		})
 	}
-	options, _, err := Resolve([]string{"escape", "--no-qr=false", "--once=false", "--phone-render=false"}, []string{"TAILMOUSE_NO_QR=true"}, t.TempDir())
-	if err != nil || options.NoQR || options.Once || options.Escape.PhoneRender || options.SourceOf("no-qr") != Flag {
+	options, _, err := Resolve([]string{"leash", "--no-qr=false", "--once=false", "--", "example-command"}, []string{"TAILMOUSE_NO_QR=true"}, t.TempDir())
+	if err != nil || options.NoQR || options.Once || options.SourceOf("no-qr") != Flag {
 		t.Fatalf("explicit false did not override: %v", err)
 	}
 }
@@ -132,8 +128,8 @@ func TestPhaseTwoLeashLifetimeAndAccessConfiguration(t *testing.T) {
 	if _, _, err := Resolve([]string{"leash", "--config", unknownNoPassword, "--", "echo"}, nil, dir); ExitCode(err) != ExitConfig {
 		t.Fatal("configuration-file no-password setting was accepted")
 	}
-	if _, _, err := Resolve([]string{"escape", "--no-password"}, nil, dir); ExitCode(err) != ExitConfig {
-		t.Fatal("Escape accepted the Leash-only no-password flag")
+	if _, _, err := Resolve([]string{"removed-mode", "--no-password"}, nil, dir); ExitCode(err) != ExitConfig {
+		t.Fatal("Unknown mode accepted terminal flags")
 	}
 }
 
@@ -157,10 +153,7 @@ func TestLeashReconnectGraceMigration(t *testing.T) {
 			}
 		})
 	}
-	options, _, err := Resolve([]string{"escape", "--config", path}, []string{"TAILMOUSE_RECONNECT_GRACE=20s"}, dir)
-	if err != nil || options.Leash.ReconnectGrace != 20*time.Second || options.SourceOf("reconnect-grace") != Environment {
-		t.Fatalf("Escape reconnect configuration changed: %v", err)
-	}
+
 	emptyPath := writeConfig(t, t.TempDir(), "version=1\n[session]\nreconnect_grace=''\n")
 	if _, _, err := Resolve([]string{"leash", "--config", emptyPath, "--", "echo"}, nil, dir); err != nil {
 		t.Fatalf("empty legacy file field should not configure a deadline: %v", err)
@@ -208,30 +201,8 @@ func TestLeashSeparatorDoesNotConsumeFlagValues(t *testing.T) {
 	}
 }
 
-func TestEscapeFlagsAndLogging(t *testing.T) {
-	options, _, err := Resolve([]string{"escape", "--seed", "-9223372036854775808", "--map", "pantry", "--control", "tilt", "--round", "30s", "--terminal-render=false", "--show-net=false", "--ttl", "0", "--squeak", "--json"}, []string{"TAILMOUSE_LOG=quiet"}, t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !options.Escape.SeedSet || options.Escape.Seed != -9223372036854775808 || options.Escape.Map != "pantry" || options.Escape.Control != "tilt" || options.Escape.Round != 30*time.Second || options.Escape.TerminalRender || options.Escape.ShowNet || options.TTL != 0 || !options.Verbose || !options.JSON || options.Quiet {
-		t.Fatal("Escape or logging flags were lost")
-	}
-	for _, log := range []string{"info", "quiet", "verbose", "debug", "json"} {
-		options, _, err := Resolve([]string{"escape"}, []string{"TAILMOUSE_LOG=" + log}, t.TempDir())
-		if err != nil {
-			t.Fatal(err)
-		}
-		if options.Quiet != (log == "quiet") || options.JSON != (log == "json") || options.Verbose != (log == "verbose" || log == "debug") {
-			t.Fatal("environment logging mode mismatch")
-		}
-		if options.SourceOf("verbose") != Environment || options.SourceOf("logging") != Environment {
-			t.Fatal("logging environment source was lost")
-		}
-	}
-}
-
 func TestHelpVersionAndConfigPathDoNotReadConfigOrStartCommands(t *testing.T) {
-	for _, args := range [][]string{{"--help"}, {"escape", "--help"}, {"leash", "-h"}} {
+	for _, args := range [][]string{{"--help"}, {"leash", "--help"}, {"leash", "-h"}} {
 		_, help, err := Resolve(args, []string{"TAILMOUSE_CONFIG=/nonexistent/config.toml"}, "")
 		if err != nil || !help {
 			t.Fatalf("help failed: %v", err)
@@ -311,20 +282,20 @@ func TestEnvironmentValidationAndRelayPrecedence(t *testing.T) {
 		{"TAILMOUSE_DERP_MAP_URL=http://bad.example/"},
 		{"TAILMOUSE_DERP_HOST=a.example", "TAILMOUSE_DERP_MAP_URL=https://map.example/"}, {"TAILMOUSE_DERP_HOST=a.example,"},
 	} {
-		_, _, err := Resolve([]string{"escape"}, env, t.TempDir())
+		_, _, err := Resolve([]string{"leash", "--", "example-command"}, env, t.TempDir())
 		if ExitCode(err) != ExitConfig {
 			t.Fatalf("invalid environment error: %v", err)
 		}
 	}
-	options, _, err := Resolve([]string{"escape", "--derp-host", "flag.example"}, []string{"TAILMOUSE_DERP_HOST=env.example", "OTHER=ignored"}, t.TempDir())
+	options, _, err := Resolve([]string{"leash", "--derp-host", "flag.example", "--", "example-command"}, []string{"TAILMOUSE_DERP_HOST=env.example", "OTHER=ignored"}, t.TempDir())
 	if err != nil || !reflect.DeepEqual(options.Relay.Hosts, []string{"flag.example"}) || options.SourceOf("derp-host") != Flag {
 		t.Fatalf("host precedence: %v", err)
 	}
-	options, _, err = Resolve([]string{"escape"}, []string{"TAILMOUSE_DERP_MAP_URL=https://map.example/derp.json"}, t.TempDir())
+	options, _, err = Resolve([]string{"leash", "--", "example-command"}, []string{"TAILMOUSE_DERP_MAP_URL=https://map.example/derp.json"}, t.TempDir())
 	if err != nil || options.Relay.MapURL != "https://map.example/derp.json" {
 		t.Fatalf("map environment: %v", err)
 	}
-	_, _, err = Resolve([]string{"escape"}, nil, "")
+	_, _, err = Resolve([]string{"leash", "--", "example-command"}, nil, "")
 	if ExitCode(err) != ExitConfig {
 		t.Fatal("missing platform config directory accepted")
 	}
@@ -333,16 +304,16 @@ func TestEnvironmentValidationAndRelayPrecedence(t *testing.T) {
 func TestFlagsCanResolveCrossSourceRelayConflictByClearingOneField(t *testing.T) {
 	dir := t.TempDir()
 	path := writeConfig(t, dir, "version=1\n[derp]\nmap_url='https://map.example/'")
-	options, _, err := Resolve([]string{"escape", "--config", path, "--derp-map-url="}, []string{"TAILMOUSE_DERP_HOST=host.example"}, dir)
+	options, _, err := Resolve([]string{"leash", "--config", path, "--derp-map-url=", "--", "example-command"}, []string{"TAILMOUSE_DERP_HOST=host.example"}, dir)
 	if err != nil || len(options.Relay.Hosts) != 1 || options.Relay.MapURL != "" {
 		t.Fatalf("explicit clearing failed: %v", err)
 	}
-	_, _, err = Resolve([]string{"escape", "--config", path}, []string{"TAILMOUSE_DERP_HOST=host.example"}, dir)
+	_, _, err = Resolve([]string{"leash", "--config", path, "--", "example-command"}, []string{"TAILMOUSE_DERP_HOST=host.example"}, dir)
 	if ExitCode(err) != ExitConfig {
 		t.Fatal("effective cross-source relay conflict was accepted")
 	}
 	for _, url := range []string{"http://localhost:4173/", "http://127.0.0.1:4173/", "http://[::1]:4173/", "https://[2001:db8::1]/"} {
-		options, _, err := Resolve([]string{"escape", "--web-base-url", url}, nil, t.TempDir())
+		options, _, err := Resolve([]string{"leash", "--web-base-url", url, "--", "example-command"}, nil, t.TempDir())
 		if err != nil || options.WebBaseURL != url {
 			t.Fatalf("valid loopback/HTTPS URL: %v", err)
 		}
@@ -363,7 +334,6 @@ region_id=901
 region_code="local"
 region_name="Local relay"
 [session]
-escape_ttl="8m"
 leash_ttl="3h"
 [leash]
 scrollback_bytes=16777216
@@ -387,17 +357,17 @@ local_input=false
 		"version=1\n[derp]\nmode='official'\nhosts=['derp.example']", "version=1\n[derp]\nhosts=['derp.example']\nmap_url='https://map.example/'",
 		"version=1\n[derp]\nderp_port=0", "version=1\n[derp]\nstun_port=65536", "version=1\n[derp]\nregion_id=899",
 		"version=1\n[derp]\nregion_code=''", "version=1\n[derp]\nregion_name='bad\tlabel'", "version=1\n[session]\nleash_ttl='-1s'",
-		"version=1\n[session]\nescape_ttl='bad'", "version=1\n[leash]\nscrollback_bytes=1", "version=1\n[leash]\nstart_on='bad'",
+		"version=1\n[session]\nleash_ttl='bad'", "version=1\n[leash]\nscrollback_bytes=1", "version=1\n[leash]\nstart_on='bad'",
 	} {
 		path := writeConfig(t, t.TempDir(), contents)
-		_, _, err := Resolve([]string{"escape", "--config", path}, nil, dir)
+		_, _, err := Resolve([]string{"leash", "--config", path, "--", "example-command"}, nil, dir)
 		if ExitCode(err) != ExitConfig {
 			t.Fatalf("invalid file returned %v", err)
 		}
 	}
 	for _, derp := range []string{"hosts=['derp.example']", "map_url='https://map.example/'", "mode='custom-map'\nmap_url='https://map.example/'"} {
 		path := writeConfig(t, t.TempDir(), "version=1\n[derp]\n"+derp)
-		if _, _, err := Resolve([]string{"escape", "--config", path}, nil, dir); err != nil {
+		if _, _, err := Resolve([]string{"leash", "--config", path, "--", "example-command"}, nil, dir); err != nil {
 			t.Fatalf("valid relay TOML: %v", err)
 		}
 	}
@@ -407,7 +377,7 @@ func TestFileFailuresAndExitClassification(t *testing.T) {
 	dir := t.TempDir()
 	oversized := writeConfig(t, dir, strings.Repeat("a", maxConfigBytes+1))
 	for _, path := range []string{oversized, dir, filepath.Join(dir, "missing.toml"), "bad\x00path"} {
-		_, _, err := Resolve([]string{"escape", "--config", path}, nil, dir)
+		_, _, err := Resolve([]string{"leash", "--config", path, "--", "example-command"}, nil, dir)
 		if ExitCode(err) != ExitConfig {
 			t.Fatalf("file failure: %v", err)
 		}

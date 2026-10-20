@@ -18,7 +18,7 @@ import (
 const syntheticAddress = "tcSyntheticFullConnBlobCredential"
 
 func TestEncodeMouseCardRoundTrip(t *testing.T) {
-	card := validTestCard(t, ModeEscape)
+	card := validTestCard(t, ModeLeash)
 	encoded, err := Encode(card)
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestNewSessionIDUses128Bits(t *testing.T) {
 }
 
 func TestInvitationUsesFragmentAndContainsFullConnBlob(t *testing.T) {
-	card := validTestCard(t, ModeEscape)
+	card := validTestCard(t, ModeLeash)
 	invitation, err := New("https://mouse.example/app", card)
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +102,7 @@ func TestInvitationUsesFragmentAndContainsFullConnBlob(t *testing.T) {
 }
 
 func TestInvitationRejectsInvalidAndOversizedInputWithoutSecretErrors(t *testing.T) {
-	card := validTestCard(t, ModeEscape)
+	card := validTestCard(t, ModeLeash)
 	tests := []struct {
 		name string
 		base string
@@ -117,8 +117,8 @@ func TestInvitationRejectsInvalidAndOversizedInputWithoutSecretErrors(t *testing
 		{name: "bad port", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.Port = 80 }), want: ErrInvalidCard},
 		{name: "zero session", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.SessionID = [16]byte{} }), want: ErrInvalidCard},
 		{name: "bad expiry", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ExpiresAt = -1 }), want: ErrInvalidCard},
-		{name: "wrong mode protocol", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ProtocolMin, value.ProtocolMax = 2, 2 }), want: ErrInvalidCard},
-		{name: "wide protocol range", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ProtocolMax = 2 }), want: ErrInvalidCard},
+		{name: "wrong mode protocol", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ProtocolMin, value.ProtocolMax = 1, 1 }), want: ErrInvalidCard},
+		{name: "wide protocol range", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.ProtocolMax = 3 }), want: ErrInvalidCard},
 		{name: "oversized", base: "https://mouse.example/", card: withCard(card, func(value *MouseCard) { value.TailcatAddr = syntheticAddress + strings.Repeat("x", 1400) }), want: ErrInvitationSize},
 	}
 	for _, test := range tests {
@@ -135,7 +135,7 @@ func TestInvitationRejectsInvalidAndOversizedInputWithoutSecretErrors(t *testing
 }
 
 func TestQRUsesLevelMMinimumDimensionAndQuietZone(t *testing.T) {
-	invitation := testInvitation(t, ModeEscape)
+	invitation := testInvitation(t, ModeLeash)
 	bitmap, err := qrBitmap(invitation.url)
 	if err != nil {
 		t.Fatal(err)
@@ -208,7 +208,6 @@ func TestRenderShowsOnlyDeliberateURLAndRedactsFormatting(t *testing.T) {
 		readonly                      bool
 		warning                       string
 	}{
-		{name: "escape", mode: ModeEscape, sensitivity: "Anyone with this link can access this session until it expires.\nTreat it like a password.\n"},
 		{name: "protected leash control", mode: ModeLeash, accessMode: "code", sensitivity: "Keep this invitation private.\nThe separate access code is also required.\n", warning: "This browser can type into the selected terminal process.\nRunning a shell grants shell-level access.\n"},
 		{name: "protected leash readonly", mode: ModeLeash, accessMode: "code", readonly: true, sensitivity: "Keep this invitation private.\nThe separate access code is also required.\n", warning: "Browser access is view-only.\n"},
 		{name: "link-only leash", mode: ModeLeash, accessMode: "link", sensitivity: "Anyone with this link can access this session until it expires.\nTreat it like a password.\n", warning: "This browser can type into the selected terminal process.\nRunning a shell grants shell-level access.\n"},
@@ -261,10 +260,10 @@ func TestRenderShowsOnlyDeliberateURLAndRedactsFormatting(t *testing.T) {
 }
 
 func TestRenderQRAndLifecycleFailuresAreSafe(t *testing.T) {
-	invitation := testInvitation(t, ModeEscape)
+	invitation := testInvitation(t, ModeLeash)
 	var output bytes.Buffer
 	if err := invitation.Render(&output, time.Unix(1_700_000_000, 0), DisplayOptions{
-		Relay: "relay.example.com",
+		Relay: "relay.example.com", AccessMode: "link",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -298,7 +297,7 @@ func validTestCard(t *testing.T, mode Mode) MouseCard {
 	if err != nil {
 		t.Fatal(err)
 	}
-	protocolIdentifier := EscapeProtocol
+	protocolIdentifier := LeashProtocol
 	if mode == ModeLeash {
 		protocolIdentifier = LeashProtocol
 	}

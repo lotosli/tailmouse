@@ -26,7 +26,7 @@ func TestQRBrowserDecode(t *testing.T) {
 	}{}
 	for _, value := range []string{
 		"https://link.tailmouse.com/T6wxZ8",
-		string(testInvitation(t, ModeEscape).url),
+		string(testInvitation(t, ModeLeash).url),
 		string(testInvitation(t, ModeLeash).url),
 		"https://example.invalid/#/v1/" + strings.Repeat("a", MaxInvitationBytes-1-len("https://example.invalid/#/v1/")),
 	} {

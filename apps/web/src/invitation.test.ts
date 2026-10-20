@@ -13,10 +13,10 @@ const now = 1_700_000_000;
 const expectedCard = {
   address,
   expiresAt: now + 600,
-  mode: 'escape',
+  mode: 'leash',
   port: 44321,
-  protocolMax: 1,
-  protocolMin: 1,
+  protocolMax: 2,
+  protocolMin: 2,
   sessionID: new Uint8Array(16).fill(7),
   version: 1,
 };
@@ -46,7 +46,7 @@ describe('invitation', () => {
         hex: string;
       }>;
     };
-    expect(corpus.cases).toHaveLength(10);
+    expect(corpus.cases).toHaveLength(6);
     for (const fixture of corpus.cases) {
       const encoded =
         '#/v1/' + Buffer.from(fixture.hex, 'hex').toString('base64url');
@@ -237,14 +237,14 @@ describe('invitation', () => {
 
 function fragment(overrides: Record<string, unknown> = {}): string {
   const card = {
-    a: 1,
+    a: 2,
     e: 1_700_000_600,
-    m: 'escape',
+    m: 'leash',
     p: 44321,
     s: new Uint8Array(16).fill(7),
     t: address,
     v: 1,
-    z: 1,
+    z: 2,
     ...overrides,
   };
   return `#/v1/${Buffer.from(encode(card)).toString('base64url')}`;

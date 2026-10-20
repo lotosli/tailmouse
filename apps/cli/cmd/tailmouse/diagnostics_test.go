@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"tailmouse/apps/cli/internal/config"
-	"tailmouse/apps/cli/internal/invitation"
 	"tailmouse/apps/cli/internal/protocol"
 	"tailmouse/apps/cli/internal/session"
 	tailcattransport "tailmouse/apps/cli/internal/transport/tailcat"
@@ -40,7 +39,7 @@ func TestDiagnosticsHumanJSONQuietAndVerbose(t *testing.T) {
 				t.Fatal(err)
 			}
 			metrics := session.Metrics{LatencySnapshot: session.LatencySnapshot{Samples: 2, RTTMS: 42, JitterMS: 3, P50MS: 40, P95MS: 50}, BytesTX: 100, FramesTX: 2,
-				OutputRingUsed: 65536, OutputDroppedBytes: 23, ProcessGeneration: 4, EscapeInputRate: 20, EscapeSnapshotRate: 10}
+				OutputRingUsed: 65536, OutputDroppedBytes: 23, ProcessGeneration: 4}
 			for _, kind := range []session.EventKind{session.BrowserConnected, session.RTTMeasured, session.TerminalOutputDropped, session.BrowserDisconnected} {
 				if err := log.observe(session.Event{Kind: kind, Metrics: metrics, Dropped: protocol.OutputDropped{Generation: 4, Bytes: 23}}); err != nil {
 					t.Fatal(err)
@@ -92,7 +91,7 @@ func TestDiagnosticsHumanJSONQuietAndVerbose(t *testing.T) {
 				if strings.Contains(output.String(), "network    bytes") != options.Verbose || strings.Contains(output.String(), "sources    ") != options.Verbose {
 					t.Fatal("human verbosity not applied")
 				}
-				if strings.Contains(output.String(), "mode       ring 65536 bytes; dropped 23 bytes; generation 4; Escape input/snapshots 20.0/10.0 per second") != options.Verbose {
+				if strings.Contains(output.String(), "mode       ring 65536 bytes; dropped 23 bytes; generation 4") != options.Verbose {
 					t.Fatal("human mode metrics do not match values or verbosity")
 				}
 			}
@@ -105,11 +104,11 @@ func TestJSONConfigurationErrorsStayJSONAndPreserveOutputSelection(t *testing.T)
 		args []string
 		env  []string
 	}{
-		{args: []string{"--json", "escape", "--ttl=-1s"}},
-		{args: []string{"escape", "--json", "--config", "/synthetic-private-path/missing.toml"}},
+		{args: []string{"--json", "leash", "--ttl=-1s"}},
+		{args: []string{"leash", "--json", "--config", "/synthetic-private-path/missing.toml"}},
 		{args: []string{"--json", "--unknown=tcSyntheticSecret"}},
-		{args: []string{"escape", "--json", "--quiet"}},
-		{args: []string{"escape"}, env: []string{"TAILMOUSE_LOG=json", "TAILMOUSE_TTL=tcSyntheticSecret"}},
+		{args: []string{"leash", "--json", "--quiet"}},
+		{args: []string{"leash"}, env: []string{"TAILMOUSE_LOG=json", "TAILMOUSE_TTL=tcSyntheticSecret"}},
 		{args: []string{"leash", "--json", "--", "not-started"}, env: []string{"TAILMOUSE_WEB_BASE_URL=tcSyntheticSecret"}},
 	} {
 		var output bytes.Buffer
@@ -131,9 +130,9 @@ func TestJSONConfigurationErrorsStayJSONAndPreserveOutputSelection(t *testing.T)
 }
 
 func TestDiagnosticSqueakAliasAndStartupFailureRedaction(t *testing.T) {
-	for _, args := range [][]string{{"escape"}, {"escape", "--quiet"}, {"escape", "--verbose"}, {"escape", "--squeak"}, {"escape", "--json", "--squeak"}} {
+	for _, args := range [][]string{{"leash"}, {"leash", "--quiet"}, {"leash", "--verbose"}, {"leash", "--squeak"}, {"leash", "--json", "--squeak"}} {
 		var output bytes.Buffer
-		code := run(context.Background(), nil, args, []string{"TAILMOUSE_WEB_BASE_URL=https://private.example.com/"}, t.TempDir(), io.Discard, &output,
+		code := run(context.Background(), nil, append(args, "--no-password", "--", "unused"), []string{"TAILMOUSE_WEB_BASE_URL=https://private.example.com/"}, t.TempDir(), io.Discard, &output,
 			func(context.Context, tailcattransport.Config) (transportServer, error) {
 				return nil, errors.New("upstream tcSyntheticSecret https://private.example.com/#/v1/SYNTHETIC")
 			})
@@ -147,36 +146,6 @@ func TestDiagnosticSqueakAliasAndStartupFailureRedaction(t *testing.T) {
 		}
 		if strings.Contains(strings.Join(args, " "), "--json") {
 			decodeDiagnostics(t, output.String())
-		}
-	}
-}
-
-func TestRunJSONLifecycleKeepsInvitationOutOfDiagnostics(t *testing.T) {
-	fake := newFakeTransport()
-	output := &cardCapture{card: make(chan invitation.MouseCard, 1)}
-	peerDone := make(chan error, 1)
-	go func() { peerDone <- exerciseCLIConnection(output.card, fake, false) }()
-	var stderr bytes.Buffer
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	code := run(ctx, nil, []string{"escape", "--json", "--squeak", "--no-qr"}, nil, t.TempDir(), output, &stderr, fake.start)
-	if code != exitOK || <-peerDone != nil {
-		t.Fatal("JSON CLI session did not finish successfully")
-	}
-	events := decodeDiagnostics(t, stderr.String())
-	connected, selected := false, false
-	for _, event := range events {
-		connected = connected || event.Event == "browser_connected"
-		selected = selected || event.Event == "relay_selected"
-	}
-	if !connected || !selected || events[len(events)-1].Event != "session_closed" {
-		t.Fatal("short CLI session lost a state transition")
-	}
-	assertSafeDiagnostics(t, stderr.String())
-	// The one Open line is the authorized bearer surface, not a diagnostic.
-	for _, line := range strings.Split(output.String(), "\n") {
-		if !strings.HasPrefix(line, "Open: ") {
-			assertSafeDiagnostics(t, line)
 		}
 	}
 }
@@ -205,81 +174,6 @@ func TestDiagnosticSinkFirstFailureAndConcurrentJSON(t *testing.T) {
 	}
 	if log.observe(session.Event{}) == nil {
 		t.Fatal("unknown diagnostic event accepted")
-	}
-}
-
-func TestSpectatorDiagnosticsRemainSafeAndRestoreLineEndings(t *testing.T) {
-	for _, mode := range []string{"human", "verbose", "json"} {
-		var output bytes.Buffer
-		options := config.Options{JSON: mode == "json", Verbose: mode == "verbose"}
-		log := newDiagnostics(options, &output)
-		log.terminal(true, true)
-		for _, kind := range []session.EventKind{session.BrowserConnected, session.RTTMeasured, session.BrowserDisconnected} {
-			if err := log.observe(session.Event{Kind: kind}); err != nil {
-				t.Fatal(err)
-			}
-		}
-		if mode == "human" {
-			if output.Len() != 0 {
-				t.Fatal("live HUD duplicated human connection diagnostics")
-			}
-		} else if !strings.Contains(output.String(), "\r\n") || strings.Contains(strings.ReplaceAll(output.String(), "\r\n", ""), "\n") {
-			t.Fatal("raw terminal diagnostics contain unpaired newlines")
-		}
-		if mode == "json" && len(decodeDiagnostics(t, output.String())) != 3 {
-			t.Fatal("spectator suppressed structured state events")
-		}
-		output.Reset()
-		result := spectatorResult("caught")
-		result.Message = "tcSyntheticPrivateResult"
-		if log.gameResult(result) == nil || output.Len() != 0 {
-			t.Fatal("invalid result crossed the diagnostic boundary")
-		}
-		log.terminal(false, false)
-		if err := log.closed(exitOK, "mode_complete"); err != nil || strings.Contains(output.String(), "\r") || !strings.HasSuffix(output.String(), "\n") {
-			t.Fatal("normal diagnostic line endings were not restored")
-		}
-		assertSafeDiagnostics(t, output.String(), "tcSyntheticPrivateResult")
-	}
-}
-
-func TestDiagnosticFailureStopsStartupAndClosesOwnedTransport(t *testing.T) {
-	for _, failAt := range []int{1, 2, 3, 4, 5} {
-		fake := newFakeTransport()
-		writer := &failDiagnosticAt{at: failAt}
-		started := false
-		code := run(context.Background(), nil, []string{"escape", "--json", "--no-qr"}, nil, t.TempDir(), io.Discard, writer,
-			func(ctx context.Context, options tailcattransport.Config) (transportServer, error) {
-				started = true
-				return fake.start(ctx, options)
-			})
-		if code != exitInternal || (failAt == 1 && started) || (started && fake.closeCalls != 1) || writer.calls != failAt {
-			t.Fatal("sink failure did not stop immediately and clean owned resources")
-		}
-	}
-	for _, failAt := range []int{6, 7} {
-		fake := newFakeTransport()
-		output := &cardCapture{card: make(chan invitation.MouseCard, 1)}
-		peerDone := make(chan error, 1)
-		go func() { peerDone <- exerciseCLIConnection(output.card, fake, false) }()
-		writer := &failDiagnosticAt{at: failAt}
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		code := run(ctx, nil, []string{"escape", "--json", "--no-qr"}, nil, t.TempDir(), output, writer, fake.start)
-		select {
-		case err := <-peerDone:
-			if failAt == 7 && err != nil {
-				t.Fatal("session did not finish before the final sink failure")
-			}
-		case <-ctx.Done():
-			t.Fatal("failed diagnostic left a browser worker running")
-		}
-		cancel()
-		if code != exitInternal || fake.closeCalls != 1 || writer.calls != failAt {
-			t.Fatal("connected/final diagnostic failure lost its outcome or leaked transport")
-		}
-	}
-	if code := run(context.Background(), nil, []string{"--json", "unknown"}, nil, t.TempDir(), io.Discard, failingWriter{}, startTailcat); code != exitConfig {
-		t.Fatal("sink failure replaced an earlier configuration failure")
 	}
 }
 

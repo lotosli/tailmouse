@@ -66,13 +66,7 @@ async function main() {
         .querySelector('[data-testid="latency"]')
         ?.textContent?.includes('ms /'),
     );
-    enterStage('game-view');
-    await validPage
-      .getByRole('img', { name: /courtyard map:/ })
-      .waitFor({ state: 'visible', timeout: 5000 });
-    await validPage
-      .getByRole('group', { name: 'Movement controls' })
-      .waitFor({ state: 'visible', timeout: 5000 });
+    await validPage.getByText('Read only', { exact: true }).waitFor({ timeout: 5000 });
     enterStage('busy');
     const busyPage = await context.newPage();
     await busyPage.goto(invitationURL(request.baseURL, request.validFragment));
@@ -93,29 +87,6 @@ async function main() {
     }
     assertCleanURL(busyPage.url(), request.baseURL);
     await busyPage.close();
-
-    enterStage('mode-mismatch');
-    const mismatchedPage = await context.newPage();
-    await mismatchedPage.goto(
-      invitationURL(request.baseURL, request.mismatchedFragment),
-    );
-    await mismatchedPage.getByRole('alert').waitFor();
-    if (
-      !(await mismatchedPage.getByRole('alert').textContent())?.includes(
-        'does not match the session mode',
-      )
-    ) {
-      throw new ProbeError('MODE_MISMATCH_OUTCOME');
-    }
-    if (
-      await mismatchedPage
-        .getByRole('button', { name: 'Retry connection' })
-        .count()
-    ) {
-      throw new ProbeError('MODE_MISMATCH_RETRY');
-    }
-    assertCleanURL(mismatchedPage.url(), request.baseURL);
-    await mismatchedPage.close();
 
     enterStage('session-close');
     await validPage.getByRole('button', { name: 'Exit session' }).click();

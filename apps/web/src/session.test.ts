@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { MouseCard } from './invitation.ts';
@@ -18,11 +17,6 @@ import {
   negotiateSession,
 } from './session.ts';
 import type { ByteStream, LoadOptions } from './transport/tailcat/adapter.ts';
-import {
-  decodeGameInit,
-  decodeGameInput,
-  encodeGameSnapshot,
-} from './protocol/game.ts';
 
 const adapter = vi.hoisted(() => ({
   dialTailcat: vi.fn(),
@@ -36,10 +30,10 @@ vi.mock('./transport/tailcat/adapter.ts', async (original) => ({
 const card: MouseCard = {
   address: 'tcSyntheticSessionCredential',
   expiresAt: 0,
-  mode: 'escape',
+  mode: 'leash',
   port: 44321,
-  protocolMax: 1,
-  protocolMin: 1,
+  protocolMax: 2,
+  protocolMin: 2,
   sessionID: new Uint8Array(16).fill(7),
   version: 1,
 };
@@ -238,7 +232,7 @@ describe('Access proof', () => {
 
 describe('Browser session ownership', () => {
   it.each([2, 65_535])(
-    'advertises only implemented version 1 when an invitation maximum is %i',
+    'advertises only implemented version 2 when an invitation maximum is %i',
     async (protocolMax) => {
       const peer = fakePeer();
       const session = await negotiateSession(
@@ -249,8 +243,8 @@ describe('Browser session ownership', () => {
       const hello = JSON.parse(
         new TextDecoder().decode(peer.writes[0]!.slice(6)),
       ) as Record<string, unknown>;
-      expect(hello.protocol_min).toBe(1);
-      expect(hello.protocol_max).toBe(1);
+      expect(hello.protocol_min).toBe(2);
+      expect(hello.protocol_max).toBe(2);
       await expect(session.close()).resolves.toBe('normal');
       expect(peer.pendingRead()).toBe(false);
     },
@@ -277,7 +271,7 @@ describe('Browser session ownership', () => {
     peer.push(
       encodeFrame(
         'host',
-        'active-escape',
+        'active-leash',
         jsonFrame(Message.ERROR, {
           code: 'BAD_FRAME',
           message: 'transport ended within a frame',
@@ -292,15 +286,13 @@ describe('Browser session ownership', () => {
   });
 
   it('allows only an explicit new session after established frame truncation', async () => {
-    const ping = encodeFrame('host', 'active-escape', {
+    const ping = encodeFrame('host', 'active-leash', {
       type: Message.PING,
       payload: new Uint8Array(16),
     });
-    for (const mode of ['escape', 'leash'] as const) {
+    for (const mode of ['leash'] as const) {
       for (const length of [1, 4, 5, 6, ping.length - 1]) {
-        const peer = fakePeer(
-          welcome(mode, mode === 'leash' ? ['terminal_output'] : ['game_view']),
-        );
+        const peer = fakePeer(welcome(mode, ['terminal_output']));
         const session = await negotiateSession(
           peer.stream,
           { ...card, mode },
@@ -326,13 +318,10 @@ describe('Browser session ownership', () => {
 
   it('notifies oversized input before closing without reading its body', async () => {
     for (const [mode, prefix] of [
-      ['escape', new Uint8Array([0, 0x10, 0, 1])],
       ['leash', new Uint8Array([0, 0x10, 0, 1])],
       ['leash', new Uint8Array([0, 0, 0x80, 1, Message.TERM_OUTPUT, 0])],
     ] as const) {
-      const peer = fakePeer(
-        welcome(mode, mode === 'leash' ? ['terminal_output'] : ['game_view']),
-      );
+      const peer = fakePeer(welcome(mode, ['terminal_output']));
       const session = await negotiateSession(
         peer.stream,
         { ...card, mode },
@@ -488,7 +477,7 @@ describe('Browser session ownership', () => {
     peer.push(
       encodeFrame(
         'host',
-        'active-escape',
+        'active-leash',
         jsonFrame(Message.ERROR, {
           code: 'FRAME_TOO_LARGE',
           message: 'tcSyntheticPeerSecret',
@@ -517,7 +506,6 @@ describe('Browser session ownership', () => {
       new AbortController().signal,
     );
     const terminal = session.terminal!;
-    expect(session.game).toBeUndefined();
     let parsed!: () => void;
     const display = {
       reset: vi.fn(),
@@ -749,97 +737,6 @@ describe('Browser session ownership', () => {
     });
   });
 
-  it('routes game state and latest input through the existing reader/writer alongside one-hertz ping', async () => {
-    vi.useFakeTimers();
-    const peer = fakePeer();
-    const write = peer.stream.write;
-    let release: (() => void) | undefined;
-    let concurrent = 0,
-      maximum = 0;
-    let block = true;
-    peer.stream.write = async (bytes) => {
-      maximum = Math.max(maximum, ++concurrent);
-      try {
-        await write(bytes);
-        if (block && bytes[4] === Message.GAME_INPUT) {
-          block = false;
-          await new Promise<void>((resolve) => {
-            release = resolve;
-          });
-        }
-      } finally {
-        concurrent--;
-      }
-    };
-    const session = await negotiateSession(
-      peer.stream,
-      card,
-      new AbortController().signal,
-    );
-    const frames = gameFrames();
-    for (const frame of frames)
-      peer.push(encodeFrame('host', 'active-escape', frame));
-    await vi.advanceTimersByTimeAsync(0);
-    expect(session.game?.inspect().snapshot?.sequence).toBe(1);
-    session.game!.move(1, 0);
-    await vi.advanceTimersByTimeAsync(50);
-    session.game!.move(0, -1);
-    session.game!.dash();
-    await vi.advanceTimersByTimeAsync(950);
-    expect(
-      peer.writes.filter((bytes) => bytes[4] === Message.GAME_INPUT),
-    ).toHaveLength(1);
-    expect(session.game?.inspect()).toMatchObject({
-      queued: 2,
-      inFlight: true,
-    });
-    release!();
-    await vi.advanceTimersByTimeAsync(50);
-    expect(maximum).toBe(1);
-    expect(
-      peer.writes.filter((bytes) => bytes[4] === Message.PING),
-    ).toHaveLength(1);
-    const inputs = peer.writes
-      .filter((bytes) => bytes[4] === Message.GAME_INPUT)
-      .map((bytes) => decodeGameInput(bytes.slice(6)));
-    expect(inputs).toHaveLength(2);
-    expect(inputs[1]).toMatchObject({
-      sequence: 2,
-      dash: true,
-      velocityX: 0,
-      velocityY: -1,
-    });
-    await session.close();
-    expect(session.game?.inspect()).toMatchObject({ stopped: true, queued: 0 });
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it('propagates game write failure through session teardown without a surviving sender', async () => {
-    vi.useFakeTimers();
-    const peer = fakePeer();
-    const write = peer.stream.write;
-    peer.stream.write = async (bytes) => {
-      if (bytes[4] === Message.GAME_INPUT)
-        throw new Error('private transport failure');
-      await write(bytes);
-    };
-    const session = await negotiateSession(
-      peer.stream,
-      card,
-      new AbortController().signal,
-    );
-    const done = expect(session.done).rejects.toMatchObject({
-      code: 'DISCONNECTED',
-    });
-    for (const frame of gameFrames())
-      peer.push(encodeFrame('host', 'active-escape', frame));
-    await vi.advanceTimersByTimeAsync(50);
-    await done;
-    expect(session.game?.inspect()).toMatchObject({ stopped: true, queued: 0 });
-    expect(peer.stream.close).toHaveBeenCalledTimes(1);
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
   it('sends one ping per second, measures local RTT, and stops all timers on close', async () => {
     vi.useFakeTimers();
     let monotonic = 1000;
@@ -857,7 +754,7 @@ describe('Browser session ownership', () => {
     expect(peer.writes.at(-1)?.[4]).toBe(Message.PING);
     monotonic = 1040;
     peer.push(
-      encodeFrame('host', 'active-escape', {
+      encodeFrame('host', 'active-leash', {
         type: Message.PONG,
         payload: peer.writes.at(-1)!.slice(6),
       }),
@@ -890,18 +787,18 @@ describe('Browser session ownership', () => {
     );
     const closing = session.close();
     peer.push(
-      encodeFrame('host', 'active-escape', {
+      encodeFrame('host', 'active-leash', {
         type: Message.PING,
         payload: new Uint8Array(16),
       }),
     );
     peer.push(
-      encodeFrame('host', 'active-escape', {
+      encodeFrame('host', 'active-leash', {
         type: Message.PONG,
         payload: new Uint8Array(16),
       }),
     );
-    peer.push(encodeFrame('host', 'active-escape', closeFrame('normal')));
+    peer.push(encodeFrame('host', 'active-leash', closeFrame('normal')));
     await expect(closing).resolves.toBe('normal');
     expect(peer.writes.map((bytes) => bytes[4])).toEqual([
       Message.CLIENT_HELLO,
@@ -934,11 +831,7 @@ describe('Browser session ownership', () => {
       card.address,
       expect.anything(),
     );
-    expect(session.welcome.capabilities).toEqual([
-      'dash',
-      'game_input',
-      'game_view',
-    ]);
+    expect(session.welcome.capabilities).toEqual(['terminal_output']);
     expect(Object.isFrozen(session.welcome)).toBe(true);
     const hello = JSON.parse(
       new TextDecoder().decode(peer.writes[0]!.slice(6)),
@@ -946,7 +839,7 @@ describe('Browser session ownership', () => {
     expect(hello.session_id).toBe('07'.repeat(16));
     const ping = new Uint8Array(16).fill(3);
     peer.push(
-      encodeFrame('host', 'active-escape', {
+      encodeFrame('host', 'active-leash', {
         type: Message.PING,
         payload: ping,
       }),
@@ -1000,8 +893,8 @@ describe('Browser session ownership', () => {
     });
     const mismatch = fakePeer(welcome('leash', ['terminal_output']));
     await expect(
-      negotiateSession(mismatch.stream, card, new AbortController().signal),
-    ).rejects.toMatchObject({ code: 'MODE_MISMATCH' });
+      negotiateSession(mismatch.stream, { ...card, mode: 'unsupported' as typeof card.mode }, new AbortController().signal),
+    ).rejects.toMatchObject({ code: 'BAD_FRAME' });
     expect(mismatch.stream.close).toHaveBeenCalledExactlyOnceWith({
       graceful: false,
     });
@@ -1113,17 +1006,7 @@ describe('Browser session ownership', () => {
       card,
       new AbortController().signal,
     );
-    invalid.push(
-      encodeFrame(
-        'host',
-        'active-escape',
-        jsonFrame(Message.GAME_EVENT, {
-          sequence: 1,
-          event: 'countdown',
-          value: 3,
-        }),
-      ),
-    );
+    invalid.push(new Uint8Array([0, 0, 0, 2, 0x24, 0]));
     await expect(other.done).rejects.toMatchObject({ code: 'BAD_FRAME' });
     expect(invalid.stream.close).toHaveBeenCalledExactlyOnceWith({
       graceful: false,
@@ -1137,7 +1020,7 @@ describe('Browser session ownership', () => {
       card,
       new AbortController().signal,
     );
-    const encoded = encodeFrame('host', 'active-escape', closeFrame('normal'));
+    const encoded = encodeFrame('host', 'active-leash', closeFrame('normal'));
     const extra = new Uint8Array(encoded.length + 1);
     extra.set(encoded);
     peer.push(extra);
@@ -1154,7 +1037,7 @@ describe('Browser session ownership', () => {
     rejected.push(
       encodeFrame(
         'host',
-        'active-escape',
+        'active-leash',
         jsonFrame(Message.ERROR, {
           code: 'EXPIRED',
           message: 'tcSyntheticPeerText',
@@ -1221,7 +1104,7 @@ describe('Browser session ownership', () => {
       new AbortController().signal,
     );
     failedWrite.push(
-      encodeFrame('host', 'active-escape', {
+      encodeFrame('host', 'active-leash', {
         type: Message.PING,
         payload: new Uint8Array(16),
       }),
@@ -1260,7 +1143,7 @@ describe('Browser session ownership', () => {
       release?.();
     });
     peer.push(
-      encodeFrame('host', 'active-escape', {
+      encodeFrame('host', 'active-leash', {
         type: Message.PING,
         payload: new Uint8Array(16),
       }),
@@ -1276,52 +1159,15 @@ describe('Browser session ownership', () => {
   });
 });
 
-function gameFrames(): Frame[] {
-  const corpus = JSON.parse(
-    readFileSync(
-      new URL('../../../protocol/fixtures/v1/frames.json', import.meta.url),
-      'utf8',
-    ),
-  ) as {
-    cases: Array<{ id: string; wire: { hex: string } }>;
-  };
-  const payload = Uint8Array.from(
-    Buffer.from(
-      corpus.cases.find((entry) => entry.id === 'game-init-canonical')!.wire
-        .hex,
-      'hex',
-    ),
-  ).slice(6);
-  const init = decodeGameInit(payload);
-  return [
-    { type: Message.GAME_INIT, payload },
-    {
-      type: Message.GAME_SNAPSHOT,
-      payload: encodeGameSnapshot({
-        sequence: 1,
-        acceptedInputSequence: 0,
-        elapsedMS: 0n,
-        remainingMS: init.round_duration_ms,
-        mouse: init.mouse,
-        cat: init.cat,
-        phase: 0,
-        collectedMask: 0,
-        exitOpen: false,
-        dashCooldownMS: 0,
-      }),
-    },
-  ];
-}
-
 function welcome(
-  mode: 'escape' | 'leash' = 'escape',
-  capabilities = mode === 'escape'
-    ? ['dash', 'game_input', 'game_view']
+  mode: 'leash' = 'leash',
+  capabilities = mode === 'leash'
+    ? ['terminal_output']
     : ['terminal_input', 'terminal_output'],
   accessMode: 'code' | 'link' = 'link',
 ): Frame {
   return jsonFrame(Message.SERVER_WELCOME, {
-    protocol: mode === 'escape' ? 1 : 2,
+    protocol: 2,
     mode,
     session_state: 'active',
     expires_at: 0,
@@ -1364,7 +1210,7 @@ function fakePeer(initial: Frame | null = welcome(), acknowledgeClose = true) {
         push(encodeFrame('host', 'await-server-welcome', initial));
       }
       if (bytes[4] === Message.CLOSE && acknowledgeClose) {
-        push(encodeFrame('host', 'active-escape', closeFrame('normal')));
+        push(encodeFrame('host', 'active-leash', closeFrame('normal')));
       }
     },
     close: vi.fn(async (_options?: Parameters<ByteStream['close']>[0]) => {

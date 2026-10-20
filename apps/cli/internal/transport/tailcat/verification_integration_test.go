@@ -184,7 +184,7 @@ func TestHermeticTailcatClientVerification(t *testing.T) {
 		BaseURL  string `json:"baseURL"`
 		Fragment string `json:"fragment"`
 		Address  string `json:"address"`
-	}{static.URL, mouseCardFragment(t, string(address), invitation.ModeEscape), string(address)}
+	}{static.URL, mouseCardFragment(t, string(address), invitation.ModeLeash), string(address)}
 	payload, err := json.Marshal(request)
 	request.Fragment, request.Address = "", ""
 	if err != nil {

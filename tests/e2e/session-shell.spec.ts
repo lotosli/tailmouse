@@ -237,7 +237,7 @@ test('fragment stays out of requests, disappears from history, and establishes a
   await expect(page.getByTestId('latency')).toContainText('ms /');
   await page.getByText('About TailMouse', { exact: true }).click();
   await expect(
-    page.getByText('TMOUSE Escape protocol 1', { exact: true }),
+    page.getByText('TMOUSE Leash protocol 2', { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText(/^Tailcat revision [0-9a-f]{40}$/u),
@@ -495,7 +495,7 @@ test('protocol mismatch is terminal and peer details stay redacted', async ({
 });
 
 for (const [mode, oversizedFrame] of [
-  ['escape', 'global'],
+  ['leash', 'global'],
   ['leash', 'terminal'],
 ] as const) {
   test(`${mode} rejects an oversized frame with one safe notification before closing`, async ({

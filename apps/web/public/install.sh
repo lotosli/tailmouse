@@ -1,7 +1,7 @@
 #!/bin/sh
 # Install the official TailMouse executable for the current user.
 set -eu
-version=0.1.0-alpha.3
+version=1.0.0
 case "$(uname -s)" in
   Linux) platform=linux ;;
   Darwin) platform=darwin ;;

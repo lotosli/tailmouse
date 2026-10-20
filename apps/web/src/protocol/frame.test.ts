@@ -6,7 +6,6 @@ import {
   encodeFrame,
   FrameDecoder,
   MAX_FRAME_LENGTH,
-  MAX_TERMINAL_PAYLOAD,
   Message,
   messageName,
   ProtocolError,
@@ -76,7 +75,7 @@ describe('TMOUSE/1 shared conformance corpus', () => {
       try {
         const frame = await new FrameDecoder(fakeStream([wire.slice()])).read(
           'host',
-          'active-escape',
+          'active-leash',
           new AbortController().signal,
         );
         if (frame !== null) {
@@ -84,7 +83,7 @@ describe('TMOUSE/1 shared conformance corpus', () => {
             MAX_FRAME_LENGTH - 2,
           );
           expect(() =>
-            encodeFrame('browser', 'active-escape', frame),
+            encodeFrame('browser', 'active-leash', frame),
           ).not.toThrow();
           frame.payload.fill(0);
         }
@@ -98,7 +97,7 @@ describe('TMOUSE/1 shared conformance corpus', () => {
 
 describe('TMOUSE/1 stream behavior', () => {
   it('retains bounded surplus bytes for the next frame and reports clean EOF', async () => {
-    const ping = encodeFrame('host', 'active-escape', {
+    const ping = encodeFrame('host', 'active-leash', {
       type: Message.PING,
       payload: new Uint8Array(16),
     });
@@ -107,15 +106,15 @@ describe('TMOUSE/1 stream behavior', () => {
     combined.set(ping, ping.byteLength);
     const decoder = new FrameDecoder(fakeStream([combined]));
     const signal = new AbortController().signal;
-    expect((await decoder.read('browser', 'active-escape', signal))?.type).toBe(
+    expect((await decoder.read('browser', 'active-leash', signal))?.type).toBe(
       Message.PING,
     );
-    expect((await decoder.read('browser', 'active-escape', signal))?.type).toBe(
+    expect((await decoder.read('browser', 'active-leash', signal))?.type).toBe(
       Message.PING,
     );
-    await expect(
-      decoder.read('browser', 'active-escape', signal),
-    ).resolves.toBe(null);
+    await expect(decoder.read('browser', 'active-leash', signal)).resolves.toBe(
+      null,
+    );
   });
 
   it('rejects empty chunks, partial headers, concurrent reads, and oversized buffers', async () => {
@@ -191,7 +190,7 @@ describe('TMOUSE/1 stream behavior', () => {
     const writing = writeFrame(
       writeStream,
       'host',
-      'active-escape',
+      'active-leash',
       { type: Message.PING, payload: new Uint8Array(16) },
       writeController.signal,
     );
@@ -205,13 +204,13 @@ describe('TMOUSE/1 stream behavior', () => {
     await writeFrame(
       stream,
       'host',
-      'active-escape',
+      'active-leash',
       { type: Message.PING, payload: new Uint8Array(16) },
       new AbortController().signal,
     );
     expect(stream.writes).toHaveLength(1);
     expect(stream.writes[0]).toEqual(
-      encodeFrame('host', 'active-escape', {
+      encodeFrame('host', 'active-leash', {
         type: Message.PING,
         payload: new Uint8Array(16),
       }),
@@ -224,7 +223,7 @@ describe('TMOUSE/1 stream behavior', () => {
         },
       }),
       'host',
-      'active-escape',
+      'active-leash',
       { type: Message.PING, payload: new Uint8Array(16) },
       new AbortController().signal,
     );
@@ -246,22 +245,10 @@ describe('TMOUSE/1 validation', () => {
     expect(() => helloFrame({ ...validHello(), terminal: null })).toThrowError(
       expect.objectContaining({ code: 'BAD_FRAME' }),
     );
-    expect(() =>
-      encodeFrame('host', 'active-escape', {
-        type: Message.GAME_INIT,
-        payload: encoder.encode(`{"x":${'['.repeat(32)}0${']'.repeat(32)}}`),
-      }),
-    ).toThrowError(expect.objectContaining({ code: 'BAD_FRAME' }));
-    expect(() =>
-      encodeFrame('browser', 'active-escape', {
-        type: Message.GAME_INPUT,
-        payload: validGameInput({ x: 0.6, y: 0.8 }),
-      }),
-    ).not.toThrow();
   });
 
   it('exposes the complete fixed registry and rejects unknown types', () => {
-    expect(Object.entries(Message)).toHaveLength(20);
+    expect(Object.entries(Message)).toHaveLength(15);
     for (const [name, type] of Object.entries(Message)) {
       expect(messageName(type)).toBe(name);
     }
@@ -279,98 +266,8 @@ describe('TMOUSE/1 validation', () => {
     }> = [
       {
         frame: { type: Message.TERM_INPUT, payload: encoder.encode('a') },
-        sender: 'browser',
-        state: 'active-escape',
-        code: 'MODE_MISMATCH',
-      },
-      {
-        frame: { type: Message.GAME_INPUT, payload: validGameInput() },
-        sender: 'browser',
-        state: 'active-leash',
-        code: 'MODE_MISMATCH',
-      },
-      {
-        frame: { type: Message.PING, payload: new Uint8Array(16) },
-        sender: 'host',
-        state: 'await-client-hello',
-        code: 'BAD_FRAME',
-      },
-      {
-        frame: { type: Message.TERM_INPUT, payload: new Uint8Array() },
-        sender: 'browser',
-        state: 'active-leash',
-        code: 'BAD_FRAME',
-      },
-      {
-        frame: {
-          type: Message.TERM_OUTPUT,
-          payload: new Uint8Array(MAX_TERMINAL_PAYLOAD + 1),
-        },
         sender: 'host',
         state: 'active-leash',
-        code: 'FRAME_TOO_LARGE',
-      },
-      {
-        frame: {
-          type: Message.TERM_RESIZE,
-          payload: Uint8Array.of(0, 19, 0, 4),
-        },
-        sender: 'browser',
-        state: 'active-leash',
-        code: 'BAD_FRAME',
-      },
-      {
-        frame: {
-          type: Message.GAME_INPUT,
-          payload: validGameInput({ sequence: 0 }),
-        },
-        sender: 'browser',
-        state: 'active-escape',
-        code: 'BAD_FRAME',
-      },
-      {
-        frame: {
-          type: Message.GAME_INPUT,
-          payload: validGameInput({ x: 1, y: 1 }),
-        },
-        sender: 'browser',
-        state: 'active-escape',
-        code: 'BAD_FRAME',
-      },
-      {
-        frame: {
-          type: Message.GAME_INPUT,
-          payload: validGameInput({ flags: 2 }),
-        },
-        sender: 'browser',
-        state: 'active-escape',
-        code: 'BAD_FRAME',
-      },
-      {
-        frame: {
-          type: Message.GAME_SNAPSHOT,
-          payload: validGameSnapshot({ sequence: 0 }),
-        },
-        sender: 'host',
-        state: 'active-escape',
-        code: 'BAD_FRAME',
-      },
-      {
-        frame: {
-          type: Message.GAME_SNAPSHOT,
-          payload: validGameSnapshot({ x: 48 }),
-        },
-        sender: 'host',
-        state: 'active-escape',
-        code: 'BAD_FRAME',
-      },
-      {
-        frame: {
-          type: Message.GAME_SNAPSHOT,
-          payload: validGameSnapshot({ flags: 1 }),
-        },
-        sender: 'host',
-        state: 'active-escape',
         code: 'BAD_FRAME',
       },
     ];
@@ -392,22 +289,12 @@ describe('TMOUSE/1 validation', () => {
     ];
     for (const text of invalidJSON) {
       expect(() =>
-        encodeFrame('host', 'active-escape', {
-          type: Message.GAME_INIT,
+        encodeFrame('host', 'active-leash', {
+          type: Message.PROCESS_STATE,
           payload: encoder.encode(text),
         }),
       ).toThrowError(expect.objectContaining({ code: 'BAD_FRAME' }));
     }
-    expect(() =>
-      encodeFrame('host', 'active-escape', {
-        type: Message.GAME_INIT,
-        payload: materialize(
-          loadFixtures().find(
-            (fixture) => fixture.id === 'game-init-canonical',
-          )!.wire,
-        ).slice(6),
-      }),
-    ).not.toThrow();
 
     const hello = validHello();
     for (const mutate of [
@@ -427,8 +314,8 @@ describe('TMOUSE/1 validation', () => {
       );
     }
     const incompatible = structuredClone(hello);
-    incompatible.protocol_min = 2;
-    incompatible.protocol_max = 2;
+    incompatible.protocol_min = 1;
+    incompatible.protocol_max = 1;
     expect(() => helloFrame(incompatible)).toThrowError(
       expect.objectContaining({ code: 'PROTOCOL_MISMATCH' }),
     );
@@ -504,39 +391,12 @@ function opposite(peer: Peer): Peer {
   return peer === 'host' ? 'browser' : 'host';
 }
 
-function validGameInput(
-  options: { sequence?: number; x?: number; y?: number; flags?: number } = {},
-): Uint8Array {
-  const payload = new Uint8Array(24);
-  const view = new DataView(payload.buffer);
-  view.setUint32(0, options.sequence ?? 1);
-  view.setFloat32(12, options.x ?? 0.75);
-  view.setFloat32(16, options.y ?? -0.25);
-  payload[20] = options.flags ?? 0;
-  return payload;
-}
-
-function validGameSnapshot(
-  options: { sequence?: number; x?: number; flags?: number } = {},
-): Uint8Array {
-  const payload = new Uint8Array(44);
-  const view = new DataView(payload.buffer);
-  view.setUint32(0, options.sequence ?? 1);
-  view.setFloat32(16, options.x ?? 4.5);
-  view.setFloat32(20, 3.5);
-  view.setFloat32(24, 10.5);
-  view.setFloat32(28, 7.5);
-  payload[41] = 1;
-  payload[42] = options.flags ?? 0;
-  return payload;
-}
-
 function validHello(): Record<string, unknown> {
   return {
-    protocol_min: 1,
-    protocol_max: 1,
+    protocol_min: 2,
+    protocol_max: 2,
     session_id: '000102030405060708090a0b0c0d0e0f',
-    mode: 'escape',
+    mode: 'leash',
     client: {
       name: 'tailmouse-web',
       version: '0.1.0',

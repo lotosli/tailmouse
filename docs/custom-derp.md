@@ -17,14 +17,14 @@ Follow that guide's installation and service-management procedure on a relay hos
 These hostnames are illustrative `.invalid` placeholders, not live infrastructure. Replace them with your configured Web origin and relay before running:
 
 ```sh
-tailmouse escape --web-base-url https://web.example.invalid/ --derp-host derp.example.invalid
+tailmouse leash --web-base-url https://web.example.invalid/ --derp-host derp.example.invalid --readonly -- sh
 tailmouse leash --web-base-url https://web.example.invalid/ --derp-host derp.example.invalid --readonly -- vim
-tailmouse escape --web-base-url https://web.example.invalid/ --derp-map-url https://map.example.invalid/derp.json
+tailmouse leash --web-base-url https://web.example.invalid/ --derp-map-url https://map.example.invalid/derp.json --readonly -- sh
 ```
 
 Hostname mode builds a custom region with ID 900, code `mouse`, name `TailMouse Custom DERP`, DERP port 443 and STUN port 3478 by default. The configuration file can change supported region/port values. Map mode delegates selection to Tailcat. Both modes embed the selected region's node data in the invitation, so the browser does not need to download the map separately. A hostname is not a URL; supplying both effective host and map settings fails validation. See [configuration](configuration.md).
 
-Use normal public TLS validation. Self-signed relay certificates and production TLS-verification bypasses are unsupported. A hosting provider serving a valid static page is not evidence that its relay protocol also works. Check Native and Web revision metadata, the redacted relay/connection status and both mode flows before relying on a new relay. Keep invitations and PTY content out of diagnostics. Public-host and physical-device acceptance remain separate from the repository's loopback relay tests.
+Use normal public TLS validation. Self-signed relay certificates and production TLS-verification bypasses are unsupported. A hosting provider serving a valid static page is not evidence that its relay protocol also works. Check Native and Web revision metadata, the redacted relay/connection status and the terminal and resource flows before relying on a new relay. Keep invitations and PTY content out of diagnostics. Public-host and physical-device acceptance remain separate from the repository's loopback relay tests.
 
 Map downloads use verified HTTPS for the initial request and every redirect, without URL credentials or fragments. They are bounded to ten requests, ten seconds and an eight-MiB body. A rejected certificate, plaintext redirect, invalid map, `InsecureForTests` node or raw self-signed-certificate override stops startup before relay selection. Failure does not reuse an older map. The same checks apply to the official map; there is no flag to disable them.
 

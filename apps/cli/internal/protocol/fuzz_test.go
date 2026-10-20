@@ -27,7 +27,7 @@ func FuzzReadFrame(f *testing.F) {
 			state State
 		}{
 			{PeerHost, StateAwaitClientHello}, {PeerBrowser, StateAwaitServerWelcome},
-			{PeerHost, StateActiveEscape}, {PeerBrowser, StateActiveEscape},
+			{PeerHost, StateActiveLeash}, {PeerBrowser, StateActiveLeash},
 			{PeerHost, StateActiveLeash}, {PeerBrowser, StateActiveLeash},
 		} {
 			frame, err := ReadFrame(context.Background(), io.NopCloser(bytes.NewReader(wire)), receiver.peer, receiver.state)

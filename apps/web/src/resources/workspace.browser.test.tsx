@@ -122,16 +122,35 @@ describe('onboarding and support', () => {
     await expect
       .element(
         page.getByRole('link', {
-          name: 'Download v0.1.0-alpha.3 ↗',
+          name: 'Download v1.0.0 ↗',
           exact: true,
         }),
       )
       .toHaveAttribute(
         'href',
-        'https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.3',
+        'https://github.com/lotosli/tailmouse/releases/tag/v1.0.0',
       );
+    await page.getByRole('button', { name: 'Windows', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Copy Windows install', exact: true })
+      .click();
+    expect(clipboard).toHaveBeenCalledWith(
+      'irm https://tailmouse.com/install.ps1 | iex',
+    );
+    await page
+      .getByRole('button', { name: 'macOS / Linux', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Copy macOS/Linux install', exact: true })
+      .click();
+    expect(clipboard).toHaveBeenCalledWith(
+      'curl -fsSL https://tailmouse.com/install.sh | sh',
+    );
     expect(root.textContent).toContain('127.0.0.1:8080');
     expect(root.textContent).toContain('not a sandbox');
+    await page
+      .getByText('Terminal, folders and receiving files', { exact: true })
+      .click();
     await page
       .getByRole('button', { name: 'Copy first-share command' })
       .click();
@@ -154,7 +173,7 @@ describe('onboarding and support', () => {
       .element(page.getByText('Review the prepared input before sending.'))
       .toBeVisible();
     clipboard.mockRejectedValueOnce(new Error('private failure detail'));
-    await page.getByRole('button', { name: 'Copy Escape command' }).click();
+    await page.getByRole('button', { name: 'Copy Web example' }).click();
     await expect
       .element(
         page.getByText('Copy unavailable. Select and copy the command above.'),

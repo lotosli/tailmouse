@@ -21,10 +21,10 @@ import { TailcatTransportError } from './transport/tailcat/adapter.ts';
 const escapeInvitation: MouseCard = {
   address: 'tcSyntheticEscapeCredential',
   expiresAt: 0,
-  mode: 'escape',
+  mode: 'leash',
   port: 44321,
-  protocolMax: 1,
-  protocolMin: 1,
+  protocolMax: 2,
+  protocolMin: 2,
   sessionID: new Uint8Array(16).fill(7),
   version: 1,
 };
@@ -71,7 +71,7 @@ describe('Session connection presentation', () => {
       detail: invalid.message,
       stage: 'error',
     });
-    expect(titleFor(escapeInvitation)).toBe('TailMouse Escape');
+    expect(titleFor(escapeInvitation)).toBe('TailMouse Leash');
     expect(titleFor(leashInvitation)).toBe('TailMouse Leash');
     expect(titleFor(invalid)).toBe('TailMouse');
   });

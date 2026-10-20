@@ -338,7 +338,7 @@ export class BrowserSession {
     this.welcome = welcome;
     this.#signal = AbortSignal.any([signal, this.#controller.signal]);
     this.#state = 'active-leash';
-     {
+    {
       this.terminal = new LeashClient(
         welcome,
         (frame) => this.#send(frame),
@@ -469,9 +469,7 @@ export class BrowserSession {
             this.terminal?.pongSent();
           } else if (frame.type === Message.PONG) {
             this.#latency.pong(frame.payload, performance.now());
-          } else if (
-            !(await this.terminal?.receive(frame))
-          ) {
+          } else if (!(await this.terminal?.receive(frame))) {
             throw new ProtocolError('BAD_FRAME');
           }
         } finally {

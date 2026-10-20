@@ -30,7 +30,7 @@ const jsonFrame = (type: MessageType, value: unknown): Frame => ({
 describe('TMOUSE/1 typed control boundary', () => {
   it('builds a bounded HELLO without collecting browser identity details', async () => {
     const identifier = Uint8Array.from({ length: 16 }, (_, index) => index);
-    const frame = helloFrame(identifier, 'escape');
+    const frame = helloFrame(identifier, 'leash');
     const wire = encodeFrame('browser', 'await-client-hello', frame);
     let read = false;
     const decoder = new FrameDecoder({
@@ -47,12 +47,12 @@ describe('TMOUSE/1 typed control boundary', () => {
       'await-client-hello',
       new AbortController().signal,
     );
-    expect(decoded?.selectedProtocol).toBe(1);
+    expect(decoded?.selectedProtocol).toBe(2);
     expect(
       JSON.parse(new TextDecoder().decode(decoded?.payload)),
     ).toMatchObject({
       session_id: '000102030405060708090a0b0c0d0e0f',
-      mode: 'escape',
+      mode: 'leash',
       client: { name: 'tailmouse-web', platform: 'web', user_agent: '' },
     });
     expect(identifier[15]).toBe(15);
@@ -65,7 +65,7 @@ describe('TMOUSE/1 typed control boundary', () => {
       protocol_max: 2,
       mode: 'leash',
     });
-    expect(() => helloFrame(new Uint8Array(16), 'escape')).toThrowError(
+    expect(() => helloFrame(new Uint8Array(16), 'leash')).toThrowError(
       new ProtocolError('BAD_MOUSE_CARD'),
     );
     expect(() => helloFrame(new Uint8Array(17), 'leash')).toThrowError(
@@ -105,7 +105,7 @@ describe('TMOUSE/1 typed control boundary', () => {
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result.relay)).toBe(true);
     expect(Object.isFrozen(result.capabilities)).toBe(true);
-    expect(() => decodeWelcome(frame, 'escape')).toThrowError(
+    expect(() => decodeWelcome(frame, 'unsupported' as 'leash')).toThrowError(
       new ProtocolError('MODE_MISMATCH'),
     );
     for (const invalid of [

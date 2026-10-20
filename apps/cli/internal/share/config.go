@@ -377,7 +377,6 @@ Run tailmouse without arguments for guided startup; tailmouse update upgrades th
   tailmouse receive [options] <existing-directory>
   tailmouse dev --web 5173 --receive ./uploads -- codex
   tailmouse dev --cli codex --web localhost:5173
-  tailmouse escape                     retained minigame
 
 Default: tailmouse.com, with no configuration file or account required.
 The hosted UI and previews share an origin; use only apps you trust.

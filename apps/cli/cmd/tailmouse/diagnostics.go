@@ -46,20 +46,20 @@ type diagnosticRecord struct {
 }
 
 type diagnostics struct {
-	mu                     sync.Mutex
-	writer                 io.Writer
-	json                   bool
-	quiet                  bool
-	verbose                bool
-	rawTerminal, spectator bool
-	session, mode          string
-	err                    error // First sink failure; never formatted into a diagnostic.
+	mu            sync.Mutex
+	writer        io.Writer
+	json          bool
+	quiet         bool
+	verbose       bool
+	rawTerminal   bool
+	session, mode string
+	err           error // First sink failure; never formatted into a diagnostic.
 }
 
-func (log *diagnostics) terminal(raw, spectator bool) {
+func (log *diagnostics) terminal(raw bool) {
 	log.mu.Lock()
 	defer log.mu.Unlock()
-	log.rawTerminal, log.spectator = raw, spectator
+	log.rawTerminal = raw
 }
 
 func newDiagnostics(options config.Options, writer io.Writer) *diagnostics {
@@ -125,11 +125,7 @@ func (log *diagnostics) listening(relay tailcattransport.Relay, noTTL bool) erro
 	if err := log.write(diagnosticRecord{Event: "browser_waiting", State: "waiting"}, false, false); err != nil {
 		return err
 	}
-	if log.mode == "escape" {
-		if err := log.write(diagnosticRecord{Event: "warning", Reason: "bearer_link", Message: "Treat the invitation link like a password. Browser traffic is DERP-only."}, true, false); err != nil {
-			return err
-		}
-	}
+
 	if noTTL {
 		return log.write(diagnosticRecord{Event: "warning", Reason: "no_ttl", Message: "No TTL; keep the invitation private until the Host share ends."}, true, false)
 	}
@@ -198,9 +194,7 @@ func (log *diagnostics) write(record diagnosticRecord, essential, debug bool) er
 	if (log.quiet && !essential) || (debug && !log.verbose) {
 		return nil
 	}
-	if log.spectator && !log.json && !log.verbose && (record.Event == "rtt" || record.Event == "browser_connected" || record.Event == "browser_disconnected") {
-		return nil
-	}
+
 	record.TS, record.Session = time.Now().UTC().Format(time.RFC3339Nano), log.session
 	var output []byte
 	if log.json {

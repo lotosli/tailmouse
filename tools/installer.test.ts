@@ -36,7 +36,7 @@ await test(
       const digest = createHash('sha256')
         .update(readFileSync(archive))
         .digest('hex');
-      const name = 'tailmouse_0.1.0-alpha.3_linux_amd64.tar.gz';
+      const name = 'tailmouse_1.0.0_linux_amd64.tar.gz';
       writeFileSync(
         join(root, 'fixture', 'SHA256SUMS'),
         `${digest}  ${name}\n`,

@@ -41,7 +41,7 @@ func shortFixture(t *testing.T) (*Invitation, string) {
 }
 
 func TestShortSelection(t *testing.T) {
-	for _, mode := range []Mode{ModeEscape, ModeLeash} {
+	for _, mode := range []Mode{ModeLeash, ModeLeash} {
 		for _, noPassword := range []bool{false, true} {
 			for _, base := range []string{OfficialWebBase, strings.TrimSuffix(OfficialWebBase, "/"), "http://link.tailmouse.com/", "https://link.tailmouse.com/app/", "https://mouse.example/", "https://link.tailmouse.com:444/", "https://link.tailmouse.com/?x=y", "https://user@link.tailmouse.com/"} {
 				want := mode == ModeLeash && !noPassword && (base == OfficialWebBase || base+"/" == OfficialWebBase)
@@ -297,7 +297,7 @@ func TestShortInvalidRequestsAndResolution(t *testing.T) {
 	if lease, err := client.Publish(t.Context(), nil); err == nil || lease != nil {
 		t.Fatal("nil publication accepted")
 	}
-	if lease, err := client.Publish(t.Context(), testInvitation(t, ModeEscape)); err == nil || lease != nil {
+	if lease, err := client.Publish(t.Context(), testInvitation(t, ModeLeash)); err == nil || lease != nil {
 		t.Fatal("Escape publication accepted")
 	}
 	if lease, err := client.Publish(t.Context(), value); !errors.Is(err, ErrShortRequest) || lease != nil || strings.Contains(err.Error(), "synthetic-secret") {

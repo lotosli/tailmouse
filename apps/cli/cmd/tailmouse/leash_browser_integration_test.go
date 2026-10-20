@@ -128,10 +128,6 @@ func TestHermeticLeashSlowConsumerMemory(t *testing.T) {
 	testNativeBrowser(t, "network-memory", &profile)
 }
 
-func TestHermeticEscapeIdleMemory(t *testing.T) {
-	testNativeBrowser(t, "escape-idle", nil)
-}
-
 func testNativeBrowser(t *testing.T, scenario string, profile *tailcattransport.TestNetworkProfile) {
 	testNativeBrowserWithAccess(t, scenario, profile, scenario == "protected" || strings.HasPrefix(scenario, "ai-"), false)
 }
@@ -144,11 +140,10 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	t.Helper()
 	startedAt := time.Now()
 	isNetwork := scenario == "network" || scenario == "network-memory"
-	isEscape := scenario == "escape-idle"
 	if engine != "chromium" && engine != "chrome" {
 		t.Fatal("unsupported Leash acceptance browser engine")
 	}
-	if official && (profile != nil || isEscape) {
+	if official && profile != nil {
 		t.Fatal("official relay acceptance cannot use a hermetic network profile")
 	}
 	_, source, _, ok := runtime.Caller(0)
@@ -289,7 +284,7 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	if scenario == "long-task" {
 		deadline = 100 * time.Second
 	}
-	if scenario == "startup" || isEscape || official {
+	if scenario == "startup" || official {
 		deadline = 90 * time.Second
 	}
 	if isNetwork {
@@ -456,12 +451,7 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 		wantCode = 143
 	}
 	args = append(args, argv...)
-	if isEscape {
-		// Reuse only the owned transport/browser fixture, never launch the
-		// Leash command above. Idle means a connected result between rounds.
-		args = []string{"escape", "--derp-host=localhost", "--no-qr", "--once=false", "--seed=42", "--map=courtyard", "--round=30s", "--ttl=2m"}
-		wantCode = exitOK
-	}
+
 	go func() {
 		var interrupts <-chan os.Signal
 		if scenario == "revocation" {
@@ -594,8 +584,6 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 	probeFile := "leash.mjs"
 	if scenario == "startup" {
 		probeFile = "startup.mjs"
-	} else if isEscape {
-		probeFile = "escape-memory.mjs"
 	} else if isNetwork {
 		probeFile = "leash-network.mjs"
 	}
@@ -675,33 +663,6 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 		if measured.ColdMS >= 15_000 || measured.WarmMS >= 3000 {
 			t.Error("PRD startup target exceeded; local-relay measurements are not physical-device acceptance")
 		}
-	} else if isEscape {
-		var memory struct {
-			Samples               int    `json:"samples"`
-			IdleSettleMS          int    `json:"idleSettleMS"`
-			BrowserVersion        string `json:"browserVersion"`
-			HostRSSBytes          int64  `json:"hostRSSBytes"`
-			BrowserRSSBytes       int64  `json:"browserRSSBytes"`
-			HostFootprintBytes    int64  `json:"hostFootprintBytes"`
-			BrowserFootprintBytes int64  `json:"browserFootprintBytes"`
-			BaselineBrowserBytes  int64  `json:"baselineBrowserBytes"`
-		}
-		if err := json.Unmarshal(probe.Bytes(), &memory); err != nil || memory.Samples != 5 || memory.IdleSettleMS != 35000 || memory.HostRSSBytes <= 0 || memory.BrowserRSSBytes <= 0 || memory.BaselineBrowserBytes <= 0 || !strings.HasPrefix(memory.BrowserVersion, "Chrome/") || len(memory.BrowserVersion) > 40 {
-			t.Fatal("Escape idle-memory evidence is missing or invalid")
-		}
-		hostBytes, browserBytes := memory.HostRSSBytes, memory.BrowserRSSBytes
-		if runtime.GOOS == "darwin" {
-			if memory.HostFootprintBytes <= 0 || memory.BrowserFootprintBytes <= 0 {
-				t.Fatal("Escape idle macOS physical footprints are missing")
-			}
-			hostBytes, browserBytes = memory.HostFootprintBytes, memory.BrowserFootprintBytes
-		}
-		t.Logf("Escape idle: %s, connected retained result; page-only inspection, normal PWA caching, 35000 ms natural settling and five one-second samples; no child process", memory.BrowserVersion)
-		t.Logf("maximum sampled idle RSS: Host including test/relay %d bytes, complete browser %d bytes", memory.HostRSSBytes, memory.BrowserRSSBytes)
-		t.Logf("idle %s accounting: Host %.1f MiB, complete browser %.1f MiB, undeducted blank-browser baseline %.1f MiB; browser 200 MiB advisory exceeded: %t", runtime.GOOS, float64(hostBytes)/(1<<20), float64(browserBytes)/(1<<20), float64(memory.BaselineBrowserBytes)/(1<<20), browserBytes >= 200<<20)
-		if hostBytes >= 150<<20 {
-			t.Error("PRD Escape host idle memory target exceeded")
-		}
 	} else if isNetwork {
 		var evidence struct {
 			InputBytes       int     `json:"inputBytes"`
@@ -778,13 +739,7 @@ func testNativeBrowserWithEngineAccess(t *testing.T, scenario string, profile *t
 		t.Logf("browser runtime %s %s", engine, acceptance.BrowserVersion)
 	}
 	waitForExit := ctx
-	if isEscape {
-		// A normal browser CLOSE completes Escape. Join that natural exit;
-		// owner cancellation remains failure cleanup, not the success path.
-		var stop context.CancelFunc
-		waitForExit, stop = context.WithTimeout(ctx, 8*time.Second)
-		defer stop()
-	}
+
 	select {
 	case code := <-done:
 		finished = true

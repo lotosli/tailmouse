@@ -1,16 +1,16 @@
-# Private Alpha task study
+# First-share task study
 
 Status: plan prepared on 2026-10-17. No participants have been contacted and no real task outcomes are claimed.
 
 ## Entry conditions
 
-Recover and publish the matching native source and verified packages before asking unfamiliar users to install without help. Keep the current same-origin deployment limited to trusted apps. Preserve Escape and four representative network profiles; this study does not add a network matrix or analytics service.
+Recover and publish the matching native source and verified packages before asking unfamiliar users to install without help. Keep the current same-origin deployment limited to trusted apps. Use the current game-free 1.0 candidate and preserve four representative Leash network profiles; this study does not add a network matrix or analytics service.
 
 ## Run three tasks, fix repeated friction, then reach about ten
 
-The owner invites colleagues who already have a real temporary collaboration task. Ask each host to begin with the website and obtain the matching version, without giving them an unrecorded shortcut. Observe the smallest relevant task: Receive for a first success, Web for an existing running app, or Dev when the actual job needs multiple resources.
+The owner invites colleagues who already have a real temporary collaboration task. Ask each host to begin with the website and obtain the matching version, without giving them an unrecorded shortcut. Observe the smallest relevant task: browser file/text sharing for a first success, Web for an existing running app, or Dev when the actual job needs multiple resources.
 
-For Dev, observe preview → reproduction file → explicit terminal use → preview verification → host ends access. Ask the visitor what they expect to happen to the terminal, web server and received file before ending the session. Record whether the host needed to explain the visitor slot, approval or input permissions.
+For Dev, observe preview → reproduction file → explicit terminal use → preview verification → host ends access. Ask the visitor what they expect to happen to the terminal, web server and received file before ending the session. Record whether the host needed to explain visitor slots, browser download limits, approval or input permissions. Test the actual file/text browser entry without an installation shortcut.
 
 Time installation, connection and task execution separately. Record the step where help was necessary. Stop and fix repeated blockers after the first three tasks before expanding the sample. Do not treat a lack of a second task as a failure to retain a user: ask about reuse only when another relevant task actually occurs.
 

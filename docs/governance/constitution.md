@@ -4,7 +4,7 @@ This constitution governs specifications, code, tests, tooling, and agent behavi
 
 ## 1. Product boundary
 
-v0.1 implements the PRD's end-to-end path plus escape and leash. Accounts, general-purpose databases, a generic cloud control plane, business traffic relays, persistent terminal history, P1/P2 features, and hypothetical platform capabilities are out of scope unless an explicit decision and accepted specification add them. The accepted V2 protected-short-invitation change is a narrow exception: it may add one lease-bounded official locator service and its required strongly consistent mapping storage, but not accounts, session discovery, or terminal relaying.
+The owner-directed 1.0 implements resource sharing and protected legacy Leash; the minigame is removed under `finish-first-share-v1`. Historical product evidence and published artifacts remain immutable. Accounts, general-purpose databases, a generic cloud control plane, business traffic relays, persistent terminal history, P1/P2 features, and hypothetical platform capabilities are out of scope unless an explicit decision and accepted specification add them. The accepted V2 protected-short-invitation change is a narrow exception: it may add one lease-bounded official locator service and its required strongly consistent mapping storage, but not accounts, session discovery, or terminal relaying.
 
 ## 2. Evidence before decisions
 
