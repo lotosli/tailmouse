@@ -128,10 +128,6 @@ func validatePayload(message MessageType, payload []byte, sender Peer) (uint16, 
 	return 0, nil
 }
 
-func finiteUnit(value float32) bool {
-	return !math.IsNaN(float64(value)) && !math.IsInf(float64(value), 0) && value >= -1 && value <= 1
-}
-
 type clientHello struct {
 	ProtocolMin float64        `json:"protocol_min"`
 	ProtocolMax float64        `json:"protocol_max"`

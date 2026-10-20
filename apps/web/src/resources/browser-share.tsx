@@ -67,6 +67,18 @@ export function BrowserShare() {
         ...Array.from(selected).slice(0, Math.max(0, 101 - current.length)),
       ]);
   }
+  async function copy(
+    value: string,
+    confirmation: string,
+    fallback: string,
+  ): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(value);
+      setStatus(confirmation);
+    } catch {
+      setStatus(fallback);
+    }
+  }
   async function start(): Promise<void> {
     if (tooLarge || issues.some(Boolean) || !validText(text)) return;
     setStatus('');
@@ -207,8 +219,9 @@ export function BrowserShare() {
           />
         </label>
         <p class="panel-status">
-          {formatBytes(textBytes)} / 16 KiB. One shared text value; updates
-          replace it. An empty session lets the visitor write first.
+          {textBytes.toLocaleString()} / 16,384 UTF-8 bytes. One shared text
+          value; updates replace it. An empty session lets the visitor write
+          first.
         </p>
         {!validText(text) && <p role="alert">Use plain text up to 16 KiB.</p>}
         {view?.status === 'sharing' ? (
@@ -273,9 +286,10 @@ export function BrowserShare() {
               <button
                 disabled={link === ''}
                 onClick={() =>
-                  void navigator.clipboard.writeText(link).then(
-                    () => setStatus('Private link copied.'),
-                    () => setStatus('Select and copy the private link above.'),
+                  void copy(
+                    link,
+                    'Private link copied.',
+                    'Select and copy the private link above.',
                   )
                 }
               >
@@ -340,9 +354,10 @@ export function BrowserShare() {
               class="secondary"
               disabled={view.text === ''}
               onClick={() =>
-                void navigator.clipboard.writeText(view.text).then(
-                  () => setStatus('Text copied.'),
-                  () => setStatus('Select and copy the text above.'),
+                void copy(
+                  view.text,
+                  'Text copied.',
+                  'Select and copy the text above.',
                 )
               }
             >

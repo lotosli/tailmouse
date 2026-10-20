@@ -316,8 +316,8 @@ export function TextPanel({
         Update shared text
       </button>
       <p class="panel-status">
-        {formatBytes(new TextEncoder().encode(draft).length)} / 16 KiB.
-        Refreshing never replaces your draft.
+        {new TextEncoder().encode(draft).length.toLocaleString()} / 16,384 UTF-8
+        bytes. Refreshing never replaces your draft.
       </p>
       <p role="status">
         {validText(draft) ? status : 'Use plain text up to 16 KiB.'}

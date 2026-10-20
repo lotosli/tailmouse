@@ -46,8 +46,8 @@ Package-manager recipes pin the published archive digests. Use the relevant pack
 
 **v1.0.0** Choose the archive for the machine that will host the session. Guests do not download anything.
 
-| Host platform | Processor                    | Download                                                                                                                                 |
-| ------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Host platform | Processor                    | Download                                                                                                                 |
+| ------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | macOS         | Apple Silicon (M1 and newer) | [darwin_arm64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_darwin_arm64.tar.gz) |
 | macOS         | Intel x64                    | [darwin_amd64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_darwin_amd64.tar.gz) |
 | Linux         | x64 / AMD64                  | [linux_amd64.tar.gz](https://github.com/lotosli/tailmouse/releases/download/v1.0.0/tailmouse_1.0.0_linux_amd64.tar.gz)   |

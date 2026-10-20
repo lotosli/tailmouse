@@ -366,7 +366,6 @@ func fixtureState(t *testing.T, value string) State {
 		"await-client-hello":   StateAwaitClientHello,
 		"await-server-welcome": StateAwaitServerWelcome,
 		"await-auth-proof":     StateAwaitAuthProof,
-		"active-escape":        StateActiveLeash,
 		"active-leash":         StateActiveLeash,
 	}
 	state, ok := states[value]

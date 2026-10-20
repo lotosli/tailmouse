@@ -485,7 +485,7 @@ function validateServerWelcome(payload: Uint8Array): number {
     typeof value.relay.host !== 'string' ||
     !validHostname(value.relay.host) ||
     !Array.isArray(value.capabilities) ||
-    !validCapabilities(value.mode, value.capabilities)
+    !validCapabilities(value.capabilities)
   ) {
     throw new ProtocolError('BAD_FRAME');
   }
@@ -499,7 +499,7 @@ function validateServerWelcome(payload: Uint8Array): number {
   return value.protocol as 1 | 2;
 }
 
-function validCapabilities(mode: 'leash', value: unknown[]): boolean {
+function validCapabilities(value: unknown[]): boolean {
   const allowed = [
     'interrupt',
     'resize',
@@ -509,7 +509,6 @@ function validCapabilities(mode: 'leash', value: unknown[]): boolean {
     'terminate',
   ];
   return (
-    mode === 'leash' &&
     value.length > 0 &&
     value.every(
       (capability, index) =>

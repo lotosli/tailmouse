@@ -100,7 +100,7 @@ The repository SHALL maintain a machine-checkable or reviewable ledger mapping e
 
 ### Requirement: Milestone-ordered implementation
 
-Implementation SHALL progress through M0 transport, M1 session/protocol, M2 escape, M3 Unix leash, M4 Windows leash, and M5 release hardening. A later milestone MUST NOT hide a failing prerequisite or redefine an earlier acceptance outcome.
+Implementation SHALL progress through transport, session/protocol, Unix/Windows Leash, resource sharing and release hardening. A later milestone MUST NOT hide a failing prerequisite or redefine an earlier acceptance outcome.
 
 #### Scenario: Clean-source verification needs an implementation revision
 
@@ -131,7 +131,7 @@ The gate SHALL cover unit, Go/TypeScript protocol conformance, native integratio
 
 ### Requirement: Bounded resource behavior
 
-The implementation MUST keep all queues, rings, frames, samples, retries, timers, goroutines, browser subscriptions, and sessions within explicit limits. It SHALL target host idle memory below 150 MiB excluding the child and average one-way Escape application payload below 20 KiB/s. Browser idle memory SHALL be measured and optimized on a best-effort basis. Per the owner's 2026-09-03 decision, the original 200 MiB browser target is an advisory reference, not a hard acceptance gate; accounting scope remains explicit and measurements MUST NOT be relabeled as meeting that target when they exceed it.
+The implementation MUST keep all queues, rings, frames, samples, retries, timers, goroutines, browser subscriptions, and sessions within explicit limits. It SHALL target host idle memory below 150 MiB excluding the child. Browser idle memory SHALL be measured and optimized on a best-effort basis. Per the owner's 2026-09-03 decision, the original 200 MiB browser target is an advisory reference, not a hard acceptance gate; accounting scope remains explicit and measurements MUST NOT be relabeled as meeting that target when they exceed it.
 
 #### Scenario: Browser idle memory exceeds the advisory reference
 

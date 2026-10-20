@@ -229,7 +229,6 @@ export async function negotiateSession(
         frame.payload.fill(0);
       }
       try {
-        if (card.mode !== 'leash') throw new ProtocolError('BAD_FRAME');
         if (accessCode === undefined || accessCode.length === 0) {
           throw new ProtocolError('AUTH_REQUIRED');
         }
@@ -279,9 +278,8 @@ export async function negotiateSession(
       }
       welcome = decodeWelcome(frame, card.mode);
       if (
-        card.mode === 'leash' &&
-        (welcome.accessMode !== (authenticated ? 'code' : 'link') ||
-          (card.requiresAccessCode === true && !authenticated))
+        welcome.accessMode !== (authenticated ? 'code' : 'link') ||
+        (card.requiresAccessCode === true && !authenticated)
       ) {
         throw new ProtocolError('BAD_FRAME');
       }
@@ -306,7 +304,7 @@ export async function negotiateSession(
 // A retry creates a new session; no queued input survives a disconnect.
 export class BrowserSession {
   readonly welcome: Welcome;
-  readonly terminal: LeashClient | undefined;
+  readonly terminal: LeashClient;
   readonly done: Promise<CloseReason>;
   readonly #stream: ByteStream;
   readonly #decoder: FrameDecoder;
@@ -323,7 +321,7 @@ export class BrowserSession {
   readonly #latency = new Latency();
   readonly #pingTimer: ReturnType<typeof setInterval>;
   #pingInProgress = false;
-  readonly #abortTerminal = () => this.terminal?.dispose();
+  readonly #abortTerminal = () => this.terminal.dispose();
 
   constructor(
     stream: ByteStream,
@@ -368,7 +366,7 @@ export class BrowserSession {
   close(): Promise<CloseReason> {
     if (!this.#closing && !this.#closed) {
       this.#closing = true;
-      this.terminal?.dispose();
+      this.terminal.dispose();
       clearInterval(this.#pingTimer);
       this.#closeTimer = setTimeout(() => this.#controller.abort(), 2000);
       void this.#send(closeFrame('normal')).catch(() =>
@@ -444,7 +442,7 @@ export class BrowserSession {
             result = decodeClose(frame);
             if (!this.#closing) {
               this.#closing = true;
-              this.terminal?.dispose();
+              this.terminal.dispose();
               clearInterval(this.#pingTimer);
               await this.#send(closeFrame(result));
             }
@@ -454,7 +452,7 @@ export class BrowserSession {
           }
           if (frame.type === Message.ERROR) {
             const error = decodeError(frame);
-            if (!this.#closing && this.terminal?.reject(error)) continue;
+            if (!this.#closing && this.terminal.reject(error)) continue;
             graceful = true;
             throw error;
           }
@@ -466,10 +464,10 @@ export class BrowserSession {
               type: Message.PONG,
               payload: frame.payload.slice(),
             });
-            this.terminal?.pongSent();
+            this.terminal.pongSent();
           } else if (frame.type === Message.PONG) {
             this.#latency.pong(frame.payload, performance.now());
-          } else if (!(await this.terminal?.receive(frame))) {
+          } else if (!(await this.terminal.receive(frame))) {
             throw new ProtocolError('BAD_FRAME');
           }
         } finally {
@@ -491,7 +489,7 @@ export class BrowserSession {
         failure.code === 'FRAME_TOO_LARGE'
       ) {
         this.#closing = true;
-        this.terminal?.dispose();
+        this.terminal.dispose();
         this.#decoder.discard();
         clearInterval(this.#pingTimer);
         this.#closeTimer = setTimeout(() => this.#controller.abort(), 2000);
@@ -507,7 +505,7 @@ export class BrowserSession {
       }
     } finally {
       this.#closed = true;
-      this.terminal?.dispose();
+      this.terminal.dispose();
       this.#signal.removeEventListener('abort', this.#abortTerminal);
       clearInterval(this.#pingTimer);
       clearTimeout(this.#closeTimer);

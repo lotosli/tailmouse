@@ -21,7 +21,10 @@ async function downloadBytes(page, name) {
     hash.update(chunk);
   }
   await expect(
-    page.getByText('Download verified.', { exact: true }),
+    page.getByText(
+      'Download verified. Check your browser downloads for the saved file.',
+      { exact: true },
+    ),
   ).toBeVisible();
   return hash.digest('hex');
 }
@@ -57,17 +60,34 @@ try {
   stage = 'native-text';
   await native.setViewportSize({ width: 768, height: 1024 });
   await expect(
-    native.getByRole('heading', { name: 'Temporary text', exact: true }),
+    native.getByRole('heading', { name: 'Temporary shared text', exact: true }),
   ).toBeVisible();
   await native
-    .getByLabel('Text to send', { exact: true })
+    .getByLabel('Shared text draft', { exact: true })
     .fill('native visitor reply');
-  await native.getByRole('button', { name: 'Send text', exact: true }).click();
-  await expect(native.getByText('Text sent.', { exact: true })).toBeVisible();
+  await native
+    .getByRole('button', { name: 'Update shared text', exact: true })
+    .click();
+  await expect(
+    native.getByText('Shared text updated. This replaces the previous value.', {
+      exact: true,
+    }),
+  ).toBeVisible();
   await nativeContext.close();
 
   const hostContext = await browser.newContext(options);
-  const guestContext = await browser.newContext(options);
+  // Optional acceptance recording contains only the guest viewport and synthetic data.
+  // The host's invitation/QR and browser chrome are never recorded.
+  const recording = process.env.TAILMOUSE_RECORDING_DIR;
+  const guestContext = await browser.newContext({
+    ...options,
+    ...(recording
+      ? {
+          recordVideo: { dir: recording, size: { width: 1280, height: 800 } },
+          viewport: { width: 1280, height: 800 },
+        }
+      : {}),
+  });
   await guestContext.addInitScript(() => {
     Object.defineProperty(globalThis, 'showSaveFilePicker', {
       value: undefined,
@@ -81,7 +101,9 @@ try {
   stage = 'browser-host';
   await host.goto(request.origin + '/#share');
   const content = Buffer.from('browser transfer\n'.repeat(4000));
-  const filename = 'browser-' + 'long-'.repeat(30) + '.txt';
+  const filename = recording
+    ? 'example-report.txt'
+    : 'browser-' + 'long-'.repeat(30) + '.txt';
   await host.getByLabel('Files to share', { exact: true }).setInputFiles({
     name: filename,
     mimeType: 'text/plain',
@@ -124,9 +146,11 @@ try {
     guest.getByText('browser host text', { exact: true }),
   ).toBeVisible();
   await guest
-    .getByLabel('Text to send', { exact: true })
+    .getByLabel('Shared text draft', { exact: true })
     .fill('browser visitor reply');
-  await guest.getByRole('button', { name: 'Send text', exact: true }).click();
+  await guest
+    .getByRole('button', { name: 'Update shared text', exact: true })
+    .click();
   await expect(
     host.getByText('browser visitor reply', { exact: true }),
   ).toBeVisible();

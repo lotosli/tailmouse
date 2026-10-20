@@ -194,6 +194,10 @@ func (c *wizardConsole) Write(_ context.Context, s string) error {
 func (c *wizardConsole) Size() (int, int, error) { return 80, 24, nil }
 func (c *wizardConsole) Close() error            { return nil }
 func TestWizardChoosesExplicitResources(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "my file.zip")
+	if err := os.WriteFile(file, []byte("fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	program := "sh"
 	if runtime.GOOS == "windows" {
 		program = "powershell.exe"
@@ -202,7 +206,7 @@ func TestWizardChoosesExplicitResources(t *testing.T) {
 		input string
 		want  []string
 	}{
-		{"1\r\r", []string{"web", "8080"}}, {"3\rmy file.zip\r", []string{"send", "my file.zip"}}, {"4\r\r", []string{"files", "."}}, {"5\rhello world\r", []string{"text", "hello world"}}, {"2\r\r2\ry\r", []string{"cli", "--", program}}, {"7\r5173\r\r2\ry\r", []string{"dev", "--web", "5173", "--", program}}, {"1\r8081\b0\r", []string{"web", "8080"}},
+		{"1\r\r", []string{"web", "8080"}}, {"3\r" + file + "\r", []string{"send", file}}, {"4\r\r", []string{"files", "."}}, {"5\rhello world\r", []string{"text", "hello world"}}, {"2\r\r2\ry\r", []string{"cli", "--", program}}, {"7\r5173\r\r2\ry\r", []string{"dev", "--web", "5173", "--", program}}, {"1\r8081\b0\r", []string{"web", "8080"}},
 	} {
 		console := &wizardConsole{input: tc.input}
 		args, err := wizardArgs(context.Background(), console)
@@ -236,5 +240,27 @@ func TestWizardChoosesExplicitResources(t *testing.T) {
 	}
 	if _, err := os.Stat(missing); !errors.Is(err, os.ErrNotExist) {
 		t.Fatal("directory created without consent")
+	}
+}
+
+func TestWizardRetriesChoicesAndShowsPlatformCapabilities(t *testing.T) {
+	console := &wizardConsole{input: "invalid\r2\rsh\rwrong\r1\ry\r"}
+	args, err := wizardArgsForPlatform(t.Context(), console, "linux")
+	if err != nil || strings.Join(args, "|") != "cli|--read-only|--|sh" || !strings.Contains(console.output.String(), "listed resources") {
+		t.Fatal("readonly/retry path failed", err)
+	}
+	console = &wizardConsole{input: "6\r5\rtext\r"}
+	args, err = wizardArgsForPlatform(t.Context(), console, "windows")
+	if err != nil || strings.Join(args, "|") != "text|text" || strings.Contains(console.output.String(), "6 Receive files") || !strings.Contains(console.output.String(), "unavailable on Windows") {
+		t.Fatal("Windows choices are misleading", err)
+	}
+	file := filepath.Join(t.TempDir(), "offer.txt")
+	if err := os.WriteFile(file, []byte("fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	console = &wizardConsole{input: "3\rmissing\r" + file + "\r"}
+	args, err = wizardArgsForPlatform(t.Context(), console, "linux")
+	if err != nil || len(args) != 2 || args[1] != file || !strings.Contains(console.output.String(), "Try again") {
+		t.Fatal("file correction failed", err)
 	}
 }

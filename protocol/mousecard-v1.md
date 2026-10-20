@@ -23,12 +23,12 @@ The payload is one definite-length CBOR map with exactly eight text keys. Encode
 | Key | Meaning                    | CBOR type        | v1 constraint                                                                            |
 | --- | -------------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
 | `v` | Card version               | unsigned integer | exactly `1`                                                                              |
-| `m` | Initial mode hint          | text string      | exactly `escape` or `leash`                                                              |
+| `m` | Initial mode hint          | text string      | exactly `leash`                                                                          |
 | `t` | Full Tailcat ConnBlob      | text string      | non-empty, self-contained, and bounded by the URL limit                                  |
 | `p` | TailMouse virtual TCP port | unsigned integer | exactly `44321`                                                                          |
 | `s` | Session identifier         | byte string      | exactly 16 cryptographically random bytes; all-zero is invalid                           |
 | `e` | Expiration                 | unsigned integer | Unix seconds in `0..9007199254740991`; `0` means host lifetime, otherwise a future value |
-| `a` | Minimum protocol           | unsigned integer | exactly `1` for Escape and exactly `2` for phase-two Leash                               |
+| `a` | Minimum protocol           | unsigned integer | exactly `2` for protected-capable Leash                                                  |
 | `z` | Maximum protocol           | unsigned integer | exactly equal to `a` for the selected mode                                               |
 
 The card must not contain command, argv, cwd, environment, username, log, process, terminal content, relay credentials beyond the opaque ConnBlob, capability, or authorization fields.
@@ -43,7 +43,7 @@ A v1 decoder must:
 4. reject an expired nonzero `e` as `EXPIRED` and other card failures as `BAD_MOUSE_CARD` without returning any original payload text;
 5. retain the opaque `t` value only for the bounded Tailcat dial lifetime and erase application references during teardown.
 
-Changing `m` does not grant another mode. The host compares the HELLO session ID and mode with its authoritative session and returns `MODE_MISMATCH` on disagreement. Protocol selection is mode-specific connection metadata: Escape cards use only `a=1,z=1`, while phase-two Leash cards use only `a=2,z=2`. A decoder rejects mixed-mode identifiers, wider ranges, and old Leash identifier 1 before transport. No global `1..2` range is advertised or inferred. The shared `fixtures/v1/mousecards.json` corpus is consumed by both Go and TypeScript tests and includes exact pairs, mixed-mode pairs, wider ranges, and a recognizable access-code field that must be rejected.
+Changing `m` does not grant another mode. The host compares the HELLO session ID and mode with its authoritative session and returns `MODE_MISMATCH` on disagreement. Protocol selection is mode-specific connection metadata: Leash cards use only `a=2,z=2`; removed game modes are rejected. A decoder rejects mixed-mode identifiers, wider ranges, and old Leash identifier 1 before transport. No global `1..2` range is advertised or inferred. The shared `fixtures/v1/mousecards.json` corpus is consumed by both Go and TypeScript tests and includes exact pairs, mixed-mode pairs, wider ranges, and a recognizable access-code field that must be rejected.
 
 ## QR presentation
 

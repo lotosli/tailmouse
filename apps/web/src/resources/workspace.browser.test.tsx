@@ -157,8 +157,18 @@ describe('onboarding and support', () => {
     expect(clipboard).toHaveBeenCalledWith(
       'mkdir -p ./tailmouse-uploads\ntailmouse receive ./tailmouse-uploads',
     );
+    for (const [name, command] of [
+      ['Copy readonly command', 'tailmouse cli --read-only -- sh'],
+      ['Copy terminal command', 'tailmouse cli -- sh'],
+      ['Copy folder command', 'tailmouse files ./dist'],
+    ]) {
+      await page.getByRole('button', { name: name!, exact: true }).click();
+      expect(clipboard).toHaveBeenCalledWith(command);
+    }
     await expect
-      .element(page.getByText('Copied. Review the command before running it.'))
+      .element(
+        page.getByText('Copied. Review the command before running it.').first(),
+      )
       .toBeVisible();
     await page.getByRole('button', { name: /5 End sharing/ }).click();
     await expect

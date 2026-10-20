@@ -8,7 +8,7 @@ Define the complete native command, configuration, validation, and exit behavior
 
 ### Requirement: Single executable command surface
 
-TailMouse SHALL ship one `tailmouse` executable exposing `escape`, `leash -- <command> [args...]`, `version`, and `config path`, and MUST reject unknown commands or missing leash commands with usage and exit code 2.
+TailMouse SHALL ship one `tailmouse` executable exposing resource commands, `leash -- <command> [args...]`, `update`, `version`, and `config path`, and MUST reject unknown commands or missing leash commands with usage and exit code 2.
 
 #### Scenario: User requests command help
 
@@ -54,7 +54,7 @@ TailMouse MUST preserve the PRD exit classifications: 0 for normal completion, 2
 
 ### Requirement: Mode-specific arguments are bounded
 
-Escape and leash flags SHALL use the PRD defaults and ranges, reject invalid durations, sizes, modes, URLs, maps, and controls before side effects, and MUST preserve an immutable leash argv/cwd/environment snapshot for restart.
+Leash flags SHALL use the PRD defaults and ranges, reject invalid durations, sizes, modes, URLs, and controls before side effects, and MUST preserve an immutable leash argv/cwd/environment snapshot for restart.
 
 #### Scenario: Scrollback exceeds the supported range
 

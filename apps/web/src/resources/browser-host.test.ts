@@ -32,7 +32,12 @@ class Transport {
   next = 0;
   streams: ByteStream[] = [];
   closed = false;
-  listen = vi.fn(async () => 'synthetic-address');
+  listen = vi.fn(
+    async (
+      _url: string,
+      _progress?: (value: { received: number; total: number }) => void,
+    ) => 'synthetic-address',
+  );
   async accept(): Promise<{ stream: ByteStream; peer: string }> {
     const next = this.queue.shift();
     if (next !== undefined) return next;
@@ -364,4 +369,28 @@ it('renders local invitation QR data and rejects malformed matrices without expo
     await expect(host.qr('http://localhost')).rejects.toThrow('QR unavailable');
   }
   expect(host.view.expiresAt).toBeGreaterThan(Date.now());
+});
+
+it('reports listener loading and ignores a late completion after hosting ends', async () => {
+  const transport = new Transport();
+  const pending = Promise.withResolvers<string>();
+  let report:
+    ((value: { received: number; total: number }) => void) | undefined;
+  transport.listen.mockImplementationOnce(async (_url, progress) => {
+    report = progress;
+    progress?.({ received: 4, total: 8 });
+    return pending.promise;
+  });
+  const host = new BrowserHost([], '', vi.fn(), transport);
+  hosts.push(host);
+  const starting = host.start();
+  expect(host.view.runtimeProgress).toEqual({ received: 4, total: 8 });
+  host.close();
+  const closed = host.view;
+  report?.({ received: 8, total: 8 });
+  pending.resolve('synthetic-late-listener');
+  await starting;
+  expect(host.view).toBe(closed);
+  expect(host.view.status).toBe('closed');
+  expect(() => host.invitation('https://example.invalid')).toThrow('not ready');
 });

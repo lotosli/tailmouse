@@ -214,18 +214,16 @@ func testRelayBrowserWasm(t *testing.T, mode RelayMode, engine string) {
 	incorrectAddress := wrongServerAddress(t, address)
 	defer eraseBytes(incorrectAddress)
 	request := browserRequest{
-		Engine:             engine,
-		BaseURL:            staticServer.URL,
-		ValidFragment:      mouseCardFragment(t, string(address), invitation.ModeLeash),
-		InvalidFragment:    mouseCardFragment(t, string(incorrectAddress), invitation.ModeLeash),
-		MismatchedFragment: mouseCardFragment(t, string(address), invitation.ModeLeash),
-		IncorrectAddress:   string(incorrectAddress),
+		Engine:           engine,
+		BaseURL:          staticServer.URL,
+		ValidFragment:    mouseCardFragment(t, string(address), invitation.ModeLeash),
+		InvalidFragment:  mouseCardFragment(t, string(incorrectAddress), invitation.ModeLeash),
+		IncorrectAddress: string(incorrectAddress),
 	}
 	payload, err := json.Marshal(request)
 	request.ValidFragment = ""
 	request.InvalidFragment = ""
 	request.IncorrectAddress = ""
-	request.MismatchedFragment = ""
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -395,12 +393,11 @@ func testCanceledDial(t *testing.T, address []byte) {
 }
 
 type browserRequest struct {
-	Engine             string `json:"engine"`
-	BaseURL            string `json:"baseURL"`
-	ValidFragment      string `json:"validFragment"`
-	InvalidFragment    string `json:"invalidFragment"`
-	IncorrectAddress   string `json:"incorrectAddress"`
-	MismatchedFragment string `json:"mismatchedFragment"`
+	Engine           string `json:"engine"`
+	BaseURL          string `json:"baseURL"`
+	ValidFragment    string `json:"validFragment"`
+	InvalidFragment  string `json:"invalidFragment"`
+	IncorrectAddress string `json:"incorrectAddress"`
 }
 
 func mouseCardFragment(t *testing.T, address string, mode invitation.Mode) string {

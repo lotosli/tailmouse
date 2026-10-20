@@ -104,13 +104,14 @@ export class BrowserHost {
   }
   async start(mapURL = 'https://tailcat.dev/derpmap.json'): Promise<void> {
     try {
-      this.#address = await this.#transport.listen(
+      const address = await this.#transport.listen(
         mapURL,
         (runtimeProgress) => {
           if (!this.#closed) this.#update({ runtimeProgress });
         },
       );
       if (this.#closed) return;
+      this.#address = address;
       this.#expires = Date.now() + 3_600_000;
       this.#expiry = setTimeout(
         () => this.close('This sharing session expired.'),

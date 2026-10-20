@@ -14,7 +14,7 @@ func TestDecodeHelloRetainsOnlyAuthoritativeHandshakeInputs(t *testing.T) {
 	payload := fixturePayload(t, "valid-client-hello-v2")
 	hello, err := DecodeHello(Frame{Type: TypeClientHello, Payload: payload})
 	if err != nil || hello.Protocol != 2 || hello.Mode != "leash" || hello.Columns != 0 || hello.Rows != 0 {
-		t.Fatal("escape hello did not decode")
+		t.Fatal("Leash hello did not decode")
 	}
 	for index, value := range hello.SessionID {
 		if value != byte(index) {

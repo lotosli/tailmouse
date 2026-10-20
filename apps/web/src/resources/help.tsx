@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { BUILD } from '../build.ts';
 import type { SharedResource } from './session.ts';
 
@@ -10,6 +10,7 @@ export function CopyCommand({
   label?: string;
 }) {
   const [status, setStatus] = useState('');
+  useEffect(() => setStatus(''), [command]);
   return (
     <div class="command-block">
       <pre>

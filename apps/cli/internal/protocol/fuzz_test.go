@@ -19,15 +19,13 @@ func FuzzReadFrame(f *testing.F) {
 		if len(wire) > MaxFrameLength+frameHeaderBytes {
 			t.Skip()
 		}
-		// A fixed Escape receiver rejects terminal/handshake frames before
-		// their payload decoders. Exercise every receiving phase so all shared
+		// Exercise every receiving phase so all shared
 		// seeds and mutations reach their actual untrusted-value boundary.
 		for _, receiver := range []struct {
 			peer  Peer
 			state State
 		}{
 			{PeerHost, StateAwaitClientHello}, {PeerBrowser, StateAwaitServerWelcome},
-			{PeerHost, StateActiveLeash}, {PeerBrowser, StateActiveLeash},
 			{PeerHost, StateActiveLeash}, {PeerBrowser, StateActiveLeash},
 		} {
 			frame, err := ReadFrame(context.Background(), io.NopCloser(bytes.NewReader(wire)), receiver.peer, receiver.state)

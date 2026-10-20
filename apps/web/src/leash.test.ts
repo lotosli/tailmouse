@@ -91,7 +91,12 @@ function setup(
 describe('Connection-local Leash state and bounded I/O', () => {
   it('validates mode, reset-first ordering, capabilities and display ownership', async () => {
     expect(
-      () => new LeashClient({ ...welcome, mode: 'removed' as typeof welcome.mode }, vi.fn(), vi.fn()),
+      () =>
+        new LeashClient(
+          { ...welcome, mode: 'removed' as typeof welcome.mode },
+          vi.fn(),
+          vi.fn(),
+        ),
     ).toThrow(ProtocolError);
     const f = setup();
     expect(f.client.input(Uint8Array.of(1))).toBe(false);

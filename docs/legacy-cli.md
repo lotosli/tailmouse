@@ -1,16 +1,10 @@
-# Legacy Escape / Leash development reference
+# Protected legacy Leash development reference
 
 This is the pre-resource-sharing README. Its native build instructions and lifecycle defaults describe the legacy checkout, not the resource-sharing test build at tailmouse.com.
 
 # TailMouse
 
-A small native CLI and a mobile-first browser client for two kinds of temporary session:
-
-## Escape demo
-
-Steer the mouse, dash, and avoid the cat following your RTT-delayed scent trail. The browser predicts your movement locally; the host decides the outcome.
-
-![Real Escape gameplay with joystick movement, dash cooldown, RTT and a pursuing cat](media/escape.gif)
+A native CLI and mobile-first browser client for temporary terminal collaboration.
 
 ## Leash demo
 
@@ -18,7 +12,7 @@ Control one explicitly launched terminal application from a browser. Interactive
 
 ![Real Vim editing over Leash, including Unicode input and browser shortcut controls](media/leash-vim.gif)
 
-These 18.6-second Escape and 16.18-second Vim recordings use the built browser client and a native macOS host over official Tailcat DERP. They demonstrate working flows, not completed release or physical-mobile acceptance.
+The 16.18-second Vim recording uses the built browser client and a native macOS host over official Tailcat DERP. It demonstrates that historical flow, not fresh 1.0 or physical-mobile acceptance.
 
 TailMouse is an **unofficial** application built on [Tailcat](https://github.com/tailscale/tailcat). The host needs only the `tailmouse` executable; it embeds Tailcat's Go library. The browser loads the same dependency revision as Wasm. Users do not separately install the Tailcat CLI or join a Tailscale account. Browser transport is currently **DERP-only**; there is no browser direct-UDP or WebRTC upgrade. Leash does **not** stream native GUI windows or desktops.
 
@@ -28,7 +22,7 @@ TailMouse is not affiliated with or endorsed by Tailscale Inc. Tailscale and Tai
 
 ## Development status
 
-This checkout is not a published v0.1 release. macOS has native/browser integration evidence. Linux and Windows builds, static checks, artifacts and platform-specific test binaries are present, but native execution is explicitly deferred until the owner provides matching environments; those platforms are `not verified`, and no runtime-support claim is made. This deferral does not block the current macOS-scoped development completion. Unix cleanup owns the launched session-leader group and session-validated foreground job groups selected through its controlling PTY; native macOS tests cover ordinary interactive-shell separation, but a descendant that deliberately creates an unrelated session is outside this portable boundary. Use disposable test commands until the remaining release acceptance is complete.
+Current releases support resource sharing and protected Leash. Linux native/browser acceptance is exercised by the release gate; macOS evidence predates 1.0, and native Windows execution remains unverified. Six target archives are cross-built. Use disposable test commands on unverified systems; see the README and release notes for current limits.
 
 The release target is macOS 13+, Linux glibc distributions and Windows 11, each on amd64/arm64. Browser targets are the latest two major Safari, Chrome, Edge and Firefox versions, with iPhone Safari and Android Chrome as mobile acceptance targets. Automated browser profiles do not establish physical-device support. See the [conformance ledger](evidence/prd-conformance.md) for current evidence and remaining work, including process-tree, platform and final release acceptance. The official static browser client and short-link edge are deployed for prelaunch testing; the Homebrew tap and versioned application release are not yet claimed.
 
@@ -74,24 +68,13 @@ corepack pnpm --filter @tailmouse/web exec vite preview --host 127.0.0.1 --port 
 Leave that terminal running. In another terminal at the repository root, start either example:
 
 ```sh
-tailmouse escape --web-base-url http://127.0.0.1:4173/
+tailmouse leash --web-base-url http://127.0.0.1:4173/ --readonly -- sh
 tailmouse leash --web-base-url http://127.0.0.1:4173/ -- vim
 ```
 
 The second example requires Vim on the host. Open the invitation printed by the CLI in your browser. Leash's default `connect-or-enter` policy waits for a valid browser connection or local Enter before starting the saved command.
 
 The loopback URL is only for a browser on the host computer: `127.0.0.1` on a phone means the phone itself. For a phone, use the verified official `https://link.tailmouse.com/` deployment or publish the same static files to another trusted reachable HTTPS origin, set `--web-base-url` or `TAILMOUSE_WEB_BASE_URL` to that origin, then scan the new QR code. The [self-hosting guide](web-self-hosting.md) covers HTTPS, Nginx, MIME types, compression, cache updates and non-root mounts. Vite preview is a local verification server, not the production hosting configuration.
-
-## Escape
-
-```sh
-tailmouse escape --web-base-url http://127.0.0.1:4173/ --control touch --map courtyard --seed 42 --round 45s
-tailmouse escape --web-base-url http://127.0.0.1:4173/ --control tilt --once=false
-```
-
-Collect both cheeses, then reach the unlocked exit before capture or timeout. Use the touch joystick and Dash control; tilt is an explicit optional action with permission and calibration, and touch remains available after refusal. The browser shows RTT, connection state and dash cooldown. The host decides collisions and results.
-
-The terminal shows the spectator map and scent trail. `q` or Ctrl+C closes Escape; after a result, `r` starts another round when `--once=false` and the session has not expired. `d` toggles debug details. Defaults are a 45-second round and a 10-minute session TTL. A temporary connection loss slows/stops movement, then pauses the round; reconnect has a 30-second grace window.
 
 ## Leash
 
@@ -127,7 +110,7 @@ While a child runs, the first local Ctrl+C interrupts it; a second within two se
 ```sh
 tailmouse config path
 tailmouse --help
-tailmouse escape --help
+tailmouse leash --help --readonly -- sh
 tailmouse leash --help
 ```
 

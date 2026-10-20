@@ -66,7 +66,7 @@ Release source and artifacts SHALL include the complete Apache-2.0 project licen
 
 ### Requirement: Demonstration and device evidence
 
-A release candidate MUST include an Escape demonstration followed by a Leash terminal/TUI demonstration and SHALL record real-device acceptance for native macOS, Linux, and Windows plus iPhone Safari and Android Chrome.
+A release candidate MUST include a real synthetic-data browser transfer demonstration and SHALL record six-target build verification and actual native/public runtime acceptance. Unverified target execution, physical phones and signing identities MUST be stated explicitly; cross-builds do not establish device acceptance.
 
 #### Scenario: Only simulated browser tests exist
 

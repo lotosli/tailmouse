@@ -66,7 +66,9 @@ async function main() {
         .querySelector('[data-testid="latency"]')
         ?.textContent?.includes('ms /'),
     );
-    await validPage.getByText('Read only', { exact: true }).waitFor({ timeout: 5000 });
+    await validPage
+      .getByText('Read only', { exact: true })
+      .waitFor({ timeout: 5000 });
     enterStage('busy');
     const busyPage = await context.newPage();
     await busyPage.goto(invitationURL(request.baseURL, request.validFragment));
@@ -126,7 +128,6 @@ async function main() {
     request.validFragment = '';
     request.invalidFragment = '';
     request.incorrectAddress = '';
-    request.mismatchedFragment = '';
   } catch (error) {
     failureStage = stage;
     throw error;
@@ -146,10 +147,8 @@ function assertInput(request) {
     typeof request.validFragment !== 'string' ||
     typeof request.invalidFragment !== 'string' ||
     typeof request.incorrectAddress !== 'string' ||
-    typeof request.mismatchedFragment !== 'string' ||
     !/^[A-Za-z0-9_-]+$/.test(request.validFragment) ||
-    !/^[A-Za-z0-9_-]+$/.test(request.invalidFragment) ||
-    !/^[A-Za-z0-9_-]+$/.test(request.mismatchedFragment)
+    !/^[A-Za-z0-9_-]+$/.test(request.invalidFragment)
   ) {
     throw new ProbeError('INPUT_INVALID');
   }

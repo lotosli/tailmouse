@@ -3,7 +3,8 @@ import { act } from 'preact/test-utils';
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { BrowserShare } from './browser-share.tsx';
-import { type BrowserHostView } from './browser-host.ts';
+import { BrowserHost, type BrowserHostView } from './browser-host.ts';
+import { ResourceError } from './wire.ts';
 import { FilesPanel, TextPanel } from './transfer-panels.tsx';
 import * as transfers from './transfers.ts';
 import type { ResourceSession } from './session.ts';
@@ -46,7 +47,7 @@ vi.mock('./browser-host.ts', () => ({
       this.change(this.view);
     }
     async qr() {
-      return ('0'.repeat(21) + '\n').repeat(21);
+      return ('1' + '0'.repeat(20) + '\n').repeat(21);
     }
     invitation() {
       return 'https://example.invalid/.tailmouse/workspace/#synthetic';
@@ -87,6 +88,7 @@ afterEach(() => {
   root.remove();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 it('starts browser sharing, copies its link, exchanges text and ends access', async () => {
@@ -327,7 +329,7 @@ it('shares through the native sheet and handles cancellation and failure without
     await page.getByRole('button', { name: 'Share link…' }).click();
     await expect
       .element(page.getByRole('status', { name: 'Action notice' }))
-      .toHaveTextContent('sharing sheet');
+      .toHaveTextContent('Sharing sheet');
     share.mockRejectedValueOnce(new DOMException('Canceled', 'AbortError'));
     await page.getByRole('button', { name: 'Share link…' }).click();
     await expect
@@ -397,4 +399,129 @@ it('preserves a newer shared-text draft while an earlier update is in flight', a
   await expect
     .element(page.getByRole('status'))
     .toHaveTextContent('Shared text updated');
+});
+
+it('supports drag/drop before sharing and protects an active hosting page', async () => {
+  render(<BrowserShare />, root);
+  const zone = page
+    .getByText('Drop files here or choose files', { exact: true })
+    .element();
+  const transfer = new DataTransfer();
+  transfer.items.add(new File(['drop'], 'drop.txt'));
+  await act(() => {
+    zone.dispatchEvent(
+      new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: transfer,
+      }),
+    );
+    zone.dispatchEvent(
+      new DragEvent('drop', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: transfer,
+      }),
+    );
+  });
+  await expect
+    .element(page.getByRole('button', { name: 'Remove drop.txt, item 1' }))
+    .toBeVisible();
+  await page.getByRole('button', { name: 'Start browser sharing' }).click();
+  const warning = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(warning);
+  expect(warning.defaultPrevented).toBe(true);
+  await act(() =>
+    zone.dispatchEvent(
+      new DragEvent('drop', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: transfer,
+      }),
+    ),
+  );
+  await expect
+    .element(page.getByRole('button', { name: 'Remove drop.txt, item 2' }))
+    .not.toBeInTheDocument();
+});
+
+it('retains a usable private link if local QR generation fails', async () => {
+  vi.spyOn(BrowserHost.prototype, 'qr').mockRejectedValue(
+    new Error('Unavailable'),
+  );
+  render(<BrowserShare />, root);
+  await page.getByRole('button', { name: 'Start browser sharing' }).click();
+  await expect
+    .element(page.getByRole('status', { name: 'Action notice' }))
+    .toHaveTextContent('Copy the private link instead');
+  await expect
+    .element(page.getByLabelText('Private sharing link'))
+    .toBeVisible();
+});
+
+it('clears transient notices without losing persistent session guidance', async () => {
+  render(<BrowserShare />, root);
+  await page.getByRole('button', { name: 'Start browser sharing' }).click();
+  vi.useFakeTimers();
+  const button = page
+    .getByRole('button', { name: 'Copy sharing link' })
+    .element() as HTMLButtonElement;
+  await act(async () => {
+    button.click();
+    await Promise.resolve();
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5001);
+  });
+  await expect
+    .element(page.getByRole('status', { name: 'Action notice' }))
+    .toHaveTextContent('');
+  await expect
+    .element(page.getByRole('status', { name: 'Session status' }))
+    .toHaveTextContent('Keep this page open');
+});
+
+it('keeps selection and explains malformed configuration', async () => {
+  vi.mocked(fetch).mockResolvedValueOnce(new Response('null'));
+  render(<BrowserShare />, root);
+  await page.getByLabelText('Text to share').fill('keep this draft');
+  await page.getByRole('button', { name: 'Start browser sharing' }).click();
+  await expect
+    .element(page.getByRole('status', { name: 'Session status' }))
+    .toHaveTextContent('Invalid sharing configuration');
+  await expect
+    .element(page.getByLabelText('Text to share'))
+    .toHaveValue('keep this draft');
+});
+
+it('offers deliberate download retry after an actionable transfer error', async () => {
+  const file = { name: 'retry.txt', path: 'retry.txt', dir: false, size: 3 };
+  vi.spyOn(transfers, 'listFiles').mockResolvedValue({
+    type: 'files.list',
+    path: '',
+    entries: [file],
+    next: 1,
+    more: false,
+  });
+  vi.spyOn(transfers, 'chooseDownload').mockResolvedValue({
+    write: vi.fn(),
+    close: vi.fn(),
+    abort: vi.fn(),
+  });
+  vi.spyOn(transfers, 'downloadFile')
+    .mockRejectedValueOnce(new ResourceError('TRANSFER_LIMIT'))
+    .mockImplementationOnce(
+      async (_session, _file, _sink, _signal, progress) => {
+        progress(3);
+      },
+    );
+  render(<FilesPanel session={{} as ResourceSession} enabled />, root);
+  await page.getByRole('button', { name: 'Download retry.txt' }).click();
+  await expect
+    .element(page.getByRole('status'))
+    .toHaveTextContent('Ask the host before retrying');
+  await page.getByRole('button', { name: 'Retry download' }).click();
+  await expect
+    .element(page.getByRole('status'))
+    .toHaveTextContent('Download verified');
 });

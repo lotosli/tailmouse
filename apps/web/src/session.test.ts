@@ -893,7 +893,11 @@ describe('Browser session ownership', () => {
     });
     const mismatch = fakePeer(welcome('leash', ['terminal_output']));
     await expect(
-      negotiateSession(mismatch.stream, { ...card, mode: 'unsupported' as typeof card.mode }, new AbortController().signal),
+      negotiateSession(
+        mismatch.stream,
+        { ...card, mode: 'unsupported' as typeof card.mode },
+        new AbortController().signal,
+      ),
     ).rejects.toMatchObject({ code: 'BAD_FRAME' });
     expect(mismatch.stream.close).toHaveBeenCalledExactlyOnceWith({
       graceful: false,

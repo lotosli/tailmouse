@@ -49,11 +49,11 @@ Critical browser flows SHALL be tested through isolated browser contexts using a
 
 ### Requirement: Mode-selected application shell
 
-The single PWA SHALL select `escape` or `leash` presentation from a validated MouseCard only for initial routing, display an explicit connection/loading/error state before mode data, and MUST defer all authority and capabilities to `SERVER_WELCOME`.
+The single PWA SHALL select protected Leash presentation from a validated MouseCard, or resource presentation from a validated resource invitation, display an explicit connection/loading/error state before mode data, and MUST defer all authority and capabilities to `SERVER_WELCOME`.
 
 #### Scenario: Card mode disagrees with host
 
-- **WHEN** the initial route says escape but the authenticated host rejects or reports another mode
+- **WHEN** the initial route names an unsupported mode or the authenticated host rejects it
 - **THEN** the client performs no mode action and shows a non-secret mode mismatch rather than trusting the route
 
 ### Requirement: Tailcat Wasm lifecycle

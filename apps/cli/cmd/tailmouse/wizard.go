@@ -143,9 +143,22 @@ func wizardArgsForPlatform(ctx context.Context, console startupConsole, platform
 			}
 			continue
 		}
-		value, err := ask(prompt, fallback)
-		if err != nil {
-			return nil, err
+		var value string
+		for {
+			value, err = ask(prompt, fallback)
+			if err != nil {
+				return nil, err
+			}
+			if command == "send" || command == "files" {
+				info, problem := os.Lstat(value)
+				if problem != nil || (command == "send" && !info.Mode().IsRegular()) || (command == "files" && !info.IsDir()) {
+					if err := console.Write(ctx, "Choose an existing regular file or directory for this resource. Try again, or Ctrl+C to quit.\r\n"); err != nil {
+						return nil, err
+					}
+					continue
+				}
+			}
+			break
 		}
 		if command == "receive" {
 			if _, err := os.Stat(value); errors.Is(err, os.ErrNotExist) {

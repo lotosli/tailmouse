@@ -110,7 +110,6 @@ const protocolContract = readFileSync(
   'utf8',
 );
 for (const anchor of [
-  'Wire identifier `1` denotes TMOUSE/1.0',
   'Wire identifier `2` denotes TMOUSE/1.1',
   '### Fail-closed Leash compatibility',
   '| `0x07` | `AUTH_CHALLENGE`',

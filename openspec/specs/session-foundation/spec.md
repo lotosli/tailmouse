@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the interoperable and bounded session behavior shared by escape and leash without binding the TMOUSE/1 contract to either runtime implementation.
+Define the interoperable and bounded session behavior used by protected Leash and resource sharing without binding the TMOUSE/1 contract to either runtime implementation.
 
 ## Requirements
 
@@ -53,7 +53,7 @@ Every session SHALL transition only through creating, listening, connecting, act
 
 ### Requirement: Mode-specific lifetime defaults
 
-Escape SHALL default to a ten-minute invitation/session TTL, leash to four hours, leash post-exit retention to ten minutes, and reconnect grace to 30 seconds. TTL zero MAY retain a session only until host exit or mode completion and SHALL produce a warning for public sharing.
+Resource sessions SHALL default to one hour and one visitor. Protected legacy Leash SHALL default to host lifetime, host-retained process results and no browser-absence deadline; obsolete reconnect-grace settings SHALL fail with migration guidance. TTL zero MAY retain a session only until host exit or mode completion and SHALL produce a warning for public sharing.
 
 #### Scenario: Zero TTL is selected
 
@@ -78,7 +78,7 @@ As confirmed in PRD section 7.4 on 2026-09-03, the Host SHALL detect an establis
 - **WHEN** the active browser is forcibly killed without sending CLOSE and no valid PONG arrives for 30 seconds
 - **THEN** the Host closes the old stream and frees its active slot before accepting a replacement during the existing reconnect grace
 - **AND** default Leash policy keeps the same child and local terminal alive, and the replacement receives reset/history/live output without restarting the child or replaying old input
-- **AND** an explicitly selected kill-on-disconnect policy still applies, while Escape input-silence and mode-completion rules remain unchanged
+- **AND** an explicitly selected kill-on-disconnect policy still applies
 
 #### Scenario: Valid heartbeat or unrelated traffic reaches the Host
 
@@ -99,10 +99,10 @@ The host SHALL derive capabilities from mode and local flags, publish them in we
 
 Reconnect SHALL create a new Tailcat stream and protocol handshake, retain host-authoritative mode state, discard stale connection-local writes, and resume only the state defined by the active mode. Grace expiry MUST free the browser slot and mode resources according to policy.
 
-#### Scenario: Escape reconnects during grace
+#### Scenario: A browser reconnects to a live terminal
 
-- **WHEN** a valid replacement completes negotiation before 30 seconds
-- **THEN** it receives current authoritative game state and no movement intent queued by the old stream is replayed
+- **WHEN** a valid replacement completes negotiation while the Host share remains live
+- **THEN** it receives the current terminal reset, process state and scrollback, and no terminal input queued by the old stream is replayed
 
 ### Requirement: Ordered bounded shutdown
 

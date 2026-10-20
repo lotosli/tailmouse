@@ -38,7 +38,6 @@
     "typecheck": "pnpm --recursive --if-present run typecheck",
     "verify:origin": "node tools/verify-public-origin.mjs",
     "web:recover-assets": "node tools/recover-web-assets.mjs",
-    "web:recovery-build": "pnpm web:recover-assets && pnpm --dir apps/web exec vite build --config vite.recovery.config.ts",
     "resource:bridge": "node tools/resource-bridge.mjs",
     "resource:deploy": "node tools/resource-deploy.mjs"
   },

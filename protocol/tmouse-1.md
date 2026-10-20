@@ -2,7 +2,7 @@
 
 TMOUSE/1 runs on one reliable, ordered Tailcat virtual TCP stream at port 44321. Tailcat supplies encryption, retransmission, and ordering. TMOUSE/1 adds none of those facilities and does not multiplex another stream.
 
-All byte counts below are exact. Multi-byte integers are unsigned big-endian. `f32` is IEEE 754 binary32 in big-endian byte order; NaN and infinities are invalid. Text is UTF-8. Unless a type defines another limit, the declared frame length is at most 1,048,576 bytes.
+All byte counts below are exact. Multi-byte integers are unsigned big-endian. Text is UTF-8. Unless a type defines another limit, the declared frame length is at most 1,048,576 bytes.
 
 ## Frame envelope
 
@@ -22,40 +22,27 @@ Control JSON payloads are at most 16,384 bytes and must decode to one object wit
 
 ## Version compatibility
 
-Wire identifier `1` denotes TMOUSE/1.0 and is the only Escape contract. Wire identifier `2` denotes TMOUSE/1.1 and is the only phase-two Leash contract. `protocol_min`, `protocol_max` and WELCOME `protocol` use bounded numeric wire identifiers, not application build versions. Support is mode-specific: a build that implements Escape identifier 1 and Leash identifier 2 does not advertise or accept either identifier for the other mode, even though its complete identifier set contains adjacent numbers.
-
-Escape MouseCards and HELLO ranges are exactly `1..1`; phase-two Leash MouseCards and HELLO ranges are exactly `2..2`. A wider range is rejected before transport because a numeric interval cannot express the mode-specific set and must never create an authentication downgrade. Backward compatibility exists only where the selected mode has an explicitly implemented common contract. Receivers do not ignore unknown mandatory fields or treat a higher identifier as implemented.
+Wire identifier `2` denotes TMOUSE/1.1, the retained legacy terminal protocol. MouseCard, HELLO and WELCOME select exactly `2..2`.
 
 ### Fail-closed Leash compatibility
 
-| Invitation and Host           | Browser implementation    | Outcome                                                                                        |
-| ----------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- |
-| Escape identifier 1           | Identifier 1 Escape       | Negotiate TMOUSE/1.0 with the unchanged Escape handshake.                                      |
-| Leash identifier 2, protected | Identifier 2 Leash        | Complete challenge/proof authentication before admission.                                      |
-| Leash identifier 2, link-only | Identifier 2 Leash        | Admit after HELLO without a challenge and report link-only access in WELCOME.                  |
-| Leash identifier 2            | Identifier 1-only browser | Reject the MouseCard as `PROTOCOL_MISMATCH` before dialing.                                    |
-| Leash identifier 1            | Phase-two browser         | Reject the MouseCard as `PROTOCOL_MISMATCH` before dialing; do not offer legacy bearer access. |
-| Leash identifier 1 peer       | Identifier 2 Host         | Reject before terminal disclosure, active-slot allocation or process startup.                  |
-
-A future same-major minor receives a new documented wire identifier plus exact negotiation and cross-version fixtures before release metadata changes. Breaking changes require a distinct version and explicit migration/rejection evidence.
+Identifier-1 Leash peers fail closed before authentication, terminal disclosure or child startup. There is no downgrade. The removed game's mode and message types are unsupported; former game IDs are not reused. Resource sharing has its own TMOUSE/2 envelope documented in `docs/resource-sharing.md`.
 
 ## Connection states
 
 Each new Tailcat stream starts in `await-client-hello` on the host and `await-server-response` in the browser.
 
 ```text
-identifier 1 host: await-client-hello -> active-escape -> closing -> closed
 identifier 2 protected host: await-client-hello -> await-auth-proof -> active-leash -> closing -> closed
 identifier 2 link-only host: await-client-hello -> active-leash -> closing -> closed
 
-identifier 1 browser: await-server-response -> active-escape -> closing -> closed
 identifier 2 protected browser: await-server-response -> await-auth-input -> await-auth-result -> active-leash -> closing -> closed
 identifier 2 link-only browser: await-server-response -> active-leash -> closing -> closed
 ```
 
-The browser's first frame must be `CLIENT_HELLO`. An identifier-1 Escape Host replies with exactly one `SERVER_WELCOME` or one `ERROR`. An identifier-2 protected Leash Host replies with one `AUTH_CHALLENGE`, then accepts exactly one `AUTH_PROOF` before replying with `SERVER_WELCOME` or `ERROR`. An identifier-2 link-only Host sends no authentication frame and replies with `SERVER_WELCOME` or `ERROR`. No mode message, task metadata, capability or active-slot ownership is legal before WELCOME. A replacement uses a new Tailcat stream and repeats the complete handshake and authentication; it never resumes a partial frame or connection-local queue.
+The browser's first frame must be `CLIENT_HELLO`. An identifier-2 protected Leash Host replies with one `AUTH_CHALLENGE`, then accepts exactly one `AUTH_PROOF` before replying with `SERVER_WELCOME` or `ERROR`. An identifier-2 link-only Host sends no authentication frame and replies with `SERVER_WELCOME` or `ERROR`. No mode message, task metadata, capability or active-slot ownership is legal before WELCOME. A replacement uses a new Tailcat stream and repeats the complete handshake and authentication; it never resumes a partial frame or connection-local queue.
 
-`CLOSE` moves the sender to `closing`; it sends no later application frame. The receiver may finish one already accepted write, may reply with `CLOSE`, and then closes the stream. Transport EOF without `CLOSE` follows the mode's connection-loss policy rather than inventing a protocol result. Escape retains its reconnect grace. Phase-two Leash releases connection-local work and returns the live Host share to listening without starting a browser-absence deadline.
+`CLOSE` moves the sender to `closing`; it sends no later application frame. The receiver may finish one already accepted write, may reply with `CLOSE`, and then closes the stream. Transport EOF without `CLOSE` follows the mode's connection-loss policy rather than inventing a protocol result. Phase-two Leash releases connection-local work and returns the live Host share to listening without starting a browser-absence deadline.
 
 ## Message registry
 
@@ -76,17 +63,12 @@ The browser's first frame must be `CLIENT_HELLO`. An identifier-1 Escape Host re
 | `0x14` | `PROCESS_CONTROL` | Browser to host | JSON     |           512 | active-leash with the matching capability                 |
 | `0x15` | `PROCESS_STATE`   | Host to browser | JSON     |          1024 | active-leash                                              |
 | `0x16` | `OUTPUT_DROPPED`  | Host to browser | JSON     |           512 | active-leash                                              |
-| `0x20` | `GAME_INIT`       | Host to browser | JSON     |        16,384 | first mode frame in active-escape                         |
-| `0x21` | `GAME_INPUT`      | Browser to host | binary   |            24 | active-escape with `game_input`                           |
-| `0x22` | `GAME_SNAPSHOT`   | Host to browser | binary   |            44 | active-escape after GAME_INIT                             |
-| `0x23` | `GAME_EVENT`      | Either          | JSON     |          1024 | active-escape after GAME_INIT                             |
-| `0x24` | `GAME_RESULT`     | Host to browser | JSON     |          2048 | active-escape, exactly once per round                     |
 
-An exact-size binary payload with any other size is `BAD_FRAME`. Receiving a mode-family message in the other mode is `MODE_MISMATCH`. Missing host capability is `UNAUTHORIZED_CAPABILITY`, or the more specific `READONLY`, `RESTART_DISABLED`, or `TERMINATE_DISABLED` where applicable.
+An exact-size binary payload with any other size is `BAD_FRAME`. Receiving a retired game message type is `BAD_FRAME`. Missing host capability is `UNAUTHORIZED_CAPABILITY`, or the more specific `READONLY`, `RESTART_DISABLED`, or `TERMINATE_DISABLED` where applicable.
 
 ## Handshake JSON
 
-`CLIENT_HELLO` has this exact shape; `terminal` is omitted for Escape and may be omitted for Leash until the browser has measured its viewport. The shown Leash form selects identifier 2; Escape uses `protocol_min` and `protocol_max` of 1.
+`CLIENT_HELLO` has this exact shape; `terminal` may be omitted until the browser has measured its viewport. The Leash form selects identifier 2.
 
 ```json
 {
@@ -106,11 +88,11 @@ An exact-size binary payload with any other size is `BAD_FRAME`. Receiving a mod
 
 - `protocol_min` and `protocol_max` are integers from 1 through 65535 and minimum must not exceed maximum.
 - `session_id` is exactly 32 lowercase hexadecimal characters representing the 16 MouseCard bytes.
-- `mode` is `escape` or `leash` and must match host state.
+- `mode` is `leash` and must match host state.
 - Client `name`, `version`, and `platform` are non-empty and at most 64, 32, and 32 UTF-8 bytes respectively. `user_agent` is at most 512 UTF-8 bytes and may be empty. None is an authority input.
 - Terminal `cols` is 20 through 500 and `rows` is 5 through 200.
 
-The Host accepts only the exact identifier defined for the selected mode. A valid Escape HELLO may atomically acquire the single browser slot. A valid Leash HELLO performs only preliminary session, mode and protocol validation: it does not acquire the active slot, disclose task state or trigger browser-mediated startup.
+The Host accepts only the exact identifier defined for the selected mode. A valid Leash HELLO performs only preliminary session, mode and protocol validation: it does not acquire the active slot, disclose task state or trigger browser-mediated startup.
 
 ### Identifier-2 access authentication
 
@@ -171,11 +153,11 @@ Identifier-2 `SERVER_WELCOME` has this exact shape:
 }
 ```
 
-- `protocol` is the mode's selected identifier and `mode` is authoritative. Identifier 1 WELCOME retains the TMOUSE/1.0 field set and omits `access_mode`; identifier 2 requires it.
+- `protocol` is the mode's selected identifier and `mode` is authoritative. Identifier 2 requires `access_mode`.
 - `session_state` is `active` for a newly accepted stream.
 - `expires_at` is safe-integer Unix seconds from 0 through 9,007,199,254,740,991; zero means host lifetime.
 - Relay `mode` is `official`, `custom-host`, or `custom-map`; `host` is a validated diagnostic hostname of at most 253 ASCII bytes; browser path is exactly `derp` in v1.
-- Capabilities are unique strings in lexicographic order. Escape may grant `dash`, `game_input`, and `game_view`. Leash may grant `interrupt`, `resize`, `restart`, `terminal_input`, `terminal_output`, and `terminate`. The Host checks the applicable capability again before every side effect.
+- Capabilities are unique strings in lexicographic order. Leash may grant `interrupt`, `resize`, `restart`, `terminal_input`, `terminal_output`, and `terminate`. The Host checks the applicable capability again before every side effect.
 - Identifier-2 `access_mode` is exactly `code` for a successfully authenticated protected share or `link` for an explicit link-only share. It is Host-authoritative and appears only after admission.
 
 ## Common binary payloads
@@ -199,49 +181,6 @@ offset  size  field
 ```
 
 Invalid sizes have no PTY effect.
-
-## Escape binary payloads
-
-`GAME_INPUT` is exactly 24 bytes:
-
-```text
-offset  size  field
-0       4     input_sequence: u32, starts at 1 and strictly increases
-4       8     client_time_ms: u64, diagnostic only
-12      4     velocity_x: f32, -1.0..1.0
-16      4     velocity_y: f32, -1.0..1.0
-20      1     flags: bit 0 dash; bits 1..7 zero
-21      3     reserved: all zero
-```
-
-The velocity magnitude is normalized to at most 1.0; receivers permit at most `0.000001` rounding tolerance in the squared magnitude of the decoded f32 components. Client time never determines authority or simulation time. Sequence zero and wrap are invalid for one session. A latest-only sender may replace only a queued movement with no dash bit; it must preserve an accepted dash event in order. The host ignores stale or duplicate input sequences and applies its no-input decay/stop/pause policy from receipt time.
-
-The browser assigns input sequences when writing, not when replacing queued movement. It samples current intent every 50 ms, permits one game-input write in flight, and retains at most one replaceable movement plus eight ordered dash requests. Overflow rejects the new dash locally without discarding an accepted one. Host acceptance is also bounded to eight pending dash requests; overload is `BACKPRESSURE` before changing accepted sequence or receipt time. Expired or cooldown-blocked dash requests produce rejection feedback rather than being replayed as a burst. Disconnect revokes pending discrete work. Receipt age preserves direction with linear speed decay from 150 through 500 ms, stops movement at 500 ms, freezes the simulation at three seconds, and terminates the round at 30 seconds. Ping traffic and stale input cannot extend that deadline; fresh authorized input before it resumes one fixed step without replaying missed ticks.
-
-A completed stream write may still be buffered in TCP. After an active input gap longer than 150 ms, the host therefore waits for a validated PONG for a regular PING sent after that gap before accepting more movement. The ordered PONG drains earlier buffered input; it is not a timestamp or one-way-latency estimate. Old movement is ignored and old dash requests receive `dash_rejected`. Neither ignored packets nor PONG updates the simulation's last accepted input time. The confirmation is valid for at most 150 ms until fresh input arrives, so another outage before that first input cannot reuse it indefinitely. New input after the boundary resumes normal receipt-time policy, and another gap needs another boundary. A newly negotiated stream has no inherited boundary or buffered input. The one-hertz PING cadence and all wire payloads are unchanged.
-
-`GAME_SNAPSHOT` is exactly 44 bytes:
-
-```text
-offset  size  field
-0       4     server_sequence: u32, starts at 1 and strictly increases
-4       4     accepted_input_sequence: u32, zero before any accepted input
-8       8     server_elapsed_ms: u64 active round time, excluding countdown/pauses
-16      4     mouse_x: f32
-20      4     mouse_y: f32
-24      4     cat_x: f32
-28      4     cat_y: f32
-32      4     remaining_ms: u32
-36      4     dash_cooldown_ms: u32, 0..5000
-40      1     collected_mask: bits 0..1 are cheeses; bits 2..7 zero
-41      1     phase: 0 countdown, 1 running, 2 paused
-42      1     flags: bit 0 exit-open; bits 1..7 zero
-43      1     reserved: zero
-```
-
-Coordinates must be finite and inside the 48 by 18 map's continuous bounds. The exit-open bit must equal `collected_mask == 0x03`. Sequence zero is malformed; a valid sequence not newer than the last applied snapshot is discarded without changing browser state. `remaining_ms` is at most the configured 30,000 through 45,000 millisecond round duration. The u64 time fields are decoded losslessly (not through a binary64 number). Stateful freshness, round-duration consistency and legal tile occupancy are enforced by the session after structural decoding.
-
-A connection receives `GAME_INIT` before any other game message and an initial snapshot before sending input. Reconnection starts with empty browser queues and continues input sequences after the snapshot's accepted-input sequence; the host separately rejects work from an old connection lease. Snapshot and event sequences continue within the host session, including round restarts. Within a round, active elapsed time, accepted input and collected cheese bits never decrease, and running cannot transition back to countdown. Snapshot positions must occupy floor cells in the initialized map. Countdown snapshots have zero active elapsed time, collected mask and dash cooldown. Active elapsed time is rounded down to whole milliseconds; `remaining_ms` equals initialized round duration minus that elapsed value. The wire duration rounds a sub-millisecond CLI duration upward without altering simulation precision. Snapshot scheduling preserves its 100 ms cadence under tick jitter and never replays a missed snapshot backlog.
 
 ## Mode JSON payloads
 
@@ -269,20 +208,6 @@ State is `waiting`, `starting`, `running`, `interrupting`, `terminating`, `exite
 Optional `title` is a nonempty display string of at most 256 UTF-8 bytes after JSON decoding, with no U+0000-U+001F or U+007F-U+009F characters. It is the immutable command basename or explicit host title, never argv, cwd or environment. JSON's unmatched UTF-16 surrogate escapes normalize to U+FFFD before display and byte counting. A missing title renders the neutral Terminal label; null, wrong types, empty/oversized/control-containing titles and all other unknown fields are `BAD_FRAME`. The entire payload remains bounded to 1024 bytes. This completes the unreleased v1 payload without changing framing, message IDs or capabilities; existing title-less payloads remain valid.
 
 `OUTPUT_DROPPED` is `{"generation":1,"dropped_bytes":290816}`. The count is a non-negative safe integer and is cumulative for that process generation.
-
-`GAME_INIT` is a compact object containing exactly `seed`, `map`, `mouse`, `cat`, `cheeses`, `exit`, `round_duration_ms`, `countdown_ms`, `constants`, and `presentation`. Seed is the signed CLI int64 rendered as a base-10 string. Map contains `name`, `width` 48, `height` 18, and exactly 18 UTF-8 rows of 48 cells using `#` for wall and `.` for traversable floor. Mouse, cat, the two cheeses, and exit each contain finite numeric `x` and `y` coordinates at legal distinct traversable positions. Round duration is 30,000 through 45,000; countdown is 3000. Constants contain the fixed v1 values `mouse_speed` 6.0, `cat_base_speed` 5.3, `cat_max_speed` 6.2, `dash_multiplier` 2.2, `dash_duration_ms` 350, and `dash_cooldown_ms` 5000.
-
-Presentation contains exactly `control` (`touch` or `tilt`), `phone_render` (boolean), and `show_net` (boolean). These are the host's initial PRD configuration, not capability grants: disabling rendering preserves authorized controls and text state; selecting tilt still requires the user's explicit permission gesture and touch fallback. The browser may switch its local control preference. Missing, additional, null, or incorrectly typed fields are `BAD_FRAME`; no value is coerced. This is part of the unreleased v1 definition, not an optional extension understood by older partial implementations. Older payloads missing this object are rejected before gameplay. Terminal rendering is host-local and is not transmitted.
-
-Seed uses canonical decimal spelling: no leading plus, leading zeroes or negative zero, and the inclusive range is -9223372036854775808 through 9223372036854775807. Map name is one of `courtyard`, `pantry`, `corridors`, `switchbacks`, and `crossroads`. Outer cells are walls; the five entities occupy different floor cells. Arrays have exactly the stated lengths. All listed nested objects have exactly their listed keys, and null is invalid except where explicitly allowed. Initial JSON coordinates retain their finite numeric values; live snapshots use the f32 layout above.
-
-On the same connection another `GAME_INIT` is legal only after the previous round's result. It clears round-local intent, snapshot, event presentation and result state, but does not rewind session sequence numbers. A result stops input until such initialization and the next initial snapshot arrive. A result's relay matches the authoritative WELCOME relay, and its elapsed time is at least the last applied snapshot's elapsed time and at most the initialized round duration. Structurally valid stale snapshots/events are ignored even after a result; a new snapshot/event after a result and before another initialization is malformed.
-
-`GAME_EVENT` contains exactly `sequence`, `event`, and `value`. Sequence is a positive u32 scoped to the sender. The browser-to-host `exit_requested` event has a null value. Host-to-browser values are: `countdown`, integer 0 through 3; `cheese_collected`, integer 0 or 1; `dash_rejected`, integer remaining cooldown milliseconds from 0 through 5000; and `exit_opened`, `connection_paused`, or `connection_resumed`, each null. Unknown events or mismatched value types are `BAD_FRAME` in v1.
-
-`GAME_RESULT` contains exactly `outcome`, `elapsed_ms`, `relay`, `rtt_p50_ms`, `rtt_p95_ms`, `jitter_ms`, and `message`. Outcome is `escaped`, `caught`, `timeout`, or `connection_lost`; elapsed and metric fields are non-negative safe integers, with jitter nullable when unavailable. Relay is a validated diagnostic hostname or `official`. Message is one PRD result message of at most 256 UTF-8 bytes. One round emits exactly one result.
-
-The result message is exactly `The cat was always <rtt_p50_ms>ms too late.` for `escaped`, `The connection was too good.` for `caught` or `timeout`, and `Connection lost.` for `connection_lost`. The integer in the escaped message has canonical decimal spelling. A different message is malformed, not text to display or log. The disconnect message supplies the neutral status omitted from the PRD's two illustrated ending screens. RTT p95 must not be less than p50. Codecs check numeric bounds; the session enforces result timing and exactly-once delivery.
 
 ## Common control JSON
 

@@ -44,7 +44,7 @@ Each frame SHALL contain a four-byte unsigned big-endian length followed by one-
 
 ### Requirement: Fixed v1 message registry
 
-TMOUSE/1 SHALL implement the PRD type IDs and directions for `CLIENT_HELLO` 0x01, `SERVER_WELCOME` 0x02, `ERROR` 0x03, `PING` 0x04, `PONG` 0x05, `CLOSE` 0x06, terminal messages 0x10 through 0x16, and game messages 0x20 through 0x24. Control payloads SHALL use bounded JSON and high-frequency game payloads SHALL use documented fixed binary layouts.
+TMOUSE/1 SHALL implement the PRD type IDs and directions for `CLIENT_HELLO` 0x01, `SERVER_WELCOME` 0x02, `ERROR` 0x03, `PING` 0x04, `PONG` 0x05, `CLOSE` 0x06, authentication messages 0x07 through 0x08 and terminal messages 0x10 through 0x16. Control payloads SHALL use bounded JSON. Retired game IDs SHALL remain unsupported and SHALL NOT be reused.
 
 #### Scenario: Message arrives in an illegal direction or state
 

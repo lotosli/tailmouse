@@ -125,8 +125,8 @@ func validateFixtureMetadata(t *testing.T, fixture fixtureCase) {
 	t.Helper()
 	validCategories := []string{"boundary", "compatibility", "fragmented", "illegal-state", "malformed", "oversized", "valid"}
 	validReceivers := []string{"browser", "host"}
-	validStates := []string{"active-escape", "active-leash", "await-auth-proof", "await-client-hello", "await-server-welcome"}
-	validMessages := []string{"AUTH_CHALLENGE", "AUTH_PROOF", "CLIENT_HELLO", "ERROR", "CLOSE", "GAME_INIT", "GAME_INPUT", "GAME_SNAPSHOT", "GAME_EVENT", "GAME_RESULT", "PING", "SERVER_WELCOME", "TERM_INPUT", "TERM_OUTPUT", "TERM_RESIZE", "TERM_RESET", "PROCESS_CONTROL", "PROCESS_STATE", "OUTPUT_DROPPED"}
+	validStates := []string{"active-leash", "await-auth-proof", "await-client-hello", "await-server-welcome"}
+	validMessages := []string{"AUTH_CHALLENGE", "AUTH_PROOF", "CLIENT_HELLO", "ERROR", "CLOSE", "PING", "SERVER_WELCOME", "TERM_INPUT", "TERM_OUTPUT", "TERM_RESIZE", "TERM_RESET", "PROCESS_CONTROL", "PROCESS_STATE", "OUTPUT_DROPPED"}
 	validErrors := []string{"AUTH_REQUIRED", "BAD_FRAME", "FRAME_TOO_LARGE", "MODE_MISMATCH", "PROTOCOL_MISMATCH"}
 	if fixture.Description == "" || !slices.Contains(validCategories, fixture.Category) ||
 		!slices.Contains(validReceivers, fixture.Receiver) || !slices.Contains(validStates, fixture.State) {

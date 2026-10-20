@@ -10,7 +10,6 @@ import (
 
 const (
 	MaxFrameLength       = 1_048_576
-	MaxControlPayload    = 16_384
 	MaxTerminalPayload   = 32_766
 	frameHeaderBytes     = 4
 	frameMetadataBytes   = 2

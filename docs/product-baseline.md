@@ -4,7 +4,9 @@ Source: [TailMouse PRD v1.0](evidence/TailMouse_PRD_v1.0.zh-CN.md), supplied by 
 
 **Observed, 2026-09-04:** The repository copy includes the owner-approved section 7.4 liveness supplement dated 2026-09-03 and section 13.4 startup-stage correction dated 2026-09-04. After the latter correction its SHA-256 is `f6374403775d72f5b9d379e81aeb63aab3f94170054efb43f5fdf66eab03e466`; the original supplied file remains unchanged. The 30-second valid-PONG deadline still precedes existing reconnect grace and preserves default child survival and explicit kill policies.
 
-## Product outcome
+**Current scope, owner-directed 2026-10-20:** Resource sharing and protected Leash are retained for 1.0; the minigame is completely removed. The original PRD below remains historical product evidence, superseded by `finish-first-share-v1` for this decision.
+
+## Original product outcome
 
 - **Reported:** TailMouse connects two devices for direct terminal collaboration through Tailcat/Tailscale networking without a central business-traffic relay.
 - **Reported:** The native side embeds Tailcat as a Go library; the browser uses Tailcat's Go/Wasm transport.

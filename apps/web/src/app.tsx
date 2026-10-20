@@ -278,7 +278,6 @@ export function App() {
   const [welcome, setWelcome] = useState<Welcome>();
   const [metrics, setMetrics] = useState<ConnectionMetrics>();
   const [task, setTask] = useState<LeashState>();
-  const [showNet, setShowNet] = useState(true);
   const [accessMode, setAccessMode] = useState<'unknown' | 'code' | 'link'>(
     'unknown',
   );
@@ -416,7 +415,6 @@ export function App() {
     setMetrics(session.inspectMetrics());
     const timer = setInterval(() => {
       setMetrics(session.inspectMetrics());
-      setShowNet(true);
     }, 1000);
     return () => clearInterval(timer);
   }, [session]);
@@ -443,7 +441,6 @@ export function App() {
     let active = true;
     setSession(undefined);
     setWelcome(undefined);
-    setShowNet(true);
     const forget = (): void => {
       accessCode.current = undefined;
       rememberedAccessCode.current = undefined;
@@ -630,32 +627,28 @@ export function App() {
                 ? 'Control'
                 : 'Read only'}
             </dd>
-            {welcome.mode === 'leash' ? (
-              <>
-                <dt>Protection</dt>
-                <dd>
-                  {welcome.accessMode === 'code'
-                    ? 'Password protected'
-                    : 'No password — link grants access'}
-                </dd>
-              </>
-            ) : null}
-            {showNet ? (
-              <>
-                <dt>RTT / jitter</dt>
-                <dd data-testid="latency">
-                  {metrics !== undefined && metrics.samples > 0
-                    ? `${metrics.rttMs.toFixed(1)} ms / ${metrics.jitterMs.toFixed(1)} ms`
-                    : 'Measuring'}
-                </dd>
-                <dt>RTT p50 / p95</dt>
-                <dd>
-                  {metrics !== undefined && metrics.samples > 0
-                    ? `${metrics.p50Ms.toFixed(1)} ms / ${metrics.p95Ms.toFixed(1)} ms`
-                    : 'Measuring'}
-                </dd>
-              </>
-            ) : null}
+            <>
+              <dt>Protection</dt>
+              <dd>
+                {welcome.accessMode === 'code'
+                  ? 'Password protected'
+                  : 'No password — link grants access'}
+              </dd>
+            </>
+            <>
+              <dt>RTT / jitter</dt>
+              <dd data-testid="latency">
+                {metrics !== undefined && metrics.samples > 0
+                  ? `${metrics.rttMs.toFixed(1)} ms / ${metrics.jitterMs.toFixed(1)} ms`
+                  : 'Measuring'}
+              </dd>
+              <dt>RTT p50 / p95</dt>
+              <dd>
+                {metrics !== undefined && metrics.samples > 0
+                  ? `${metrics.p50Ms.toFixed(1)} ms / ${metrics.p95Ms.toFixed(1)} ms`
+                  : 'Measuring'}
+              </dd>
+            </>
           </dl>
         ) : null}
         {exitControl}

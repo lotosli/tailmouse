@@ -40,21 +40,19 @@ For custom-host mode, set `mode = "custom-host"` and a nonempty `hosts` list; le
 
 ## Environment and flags
 
-| Environment variable        | Corresponding flag or meaning                                     |
-| --------------------------- | ----------------------------------------------------------------- |
-| `TAILMOUSE_CONFIG`          | `--config`: explicit file path                                    |
-| `TAILMOUSE_WEB_BASE_URL`    | `--web-base-url`: trusted static Web base URL                     |
-| `TAILMOUSE_DERP_HOST`       | `--derp-host`: comma-separated hostnames, not URLs or IP literals |
-| `TAILMOUSE_DERP_MAP_URL`    | `--derp-map-url`: HTTPS DERP map URL                              |
-| `TAILMOUSE_TTL`             | `--ttl`: session lifetime, overriding the selected mode's default |
-| `TAILMOUSE_NO_QR`           | `--no-qr`: boolean, retaining the explicit invitation URL         |
-| `TAILMOUSE_LOG`             | `info`, `quiet`, `verbose`, `debug` (verbose alias), or `json`    |
+| Environment variable     | Corresponding flag or meaning                                     |
+| ------------------------ | ----------------------------------------------------------------- |
+| `TAILMOUSE_CONFIG`       | `--config`: explicit file path                                    |
+| `TAILMOUSE_WEB_BASE_URL` | `--web-base-url`: trusted static Web base URL                     |
+| `TAILMOUSE_DERP_HOST`    | `--derp-host`: comma-separated hostnames, not URLs or IP literals |
+| `TAILMOUSE_DERP_MAP_URL` | `--derp-map-url`: HTTPS DERP map URL                              |
+| `TAILMOUSE_TTL`          | `--ttl`: session lifetime, overriding the selected mode's default |
+| `TAILMOUSE_NO_QR`        | `--no-qr`: boolean, retaining the explicit invitation URL         |
+| `TAILMOUSE_LOG`          | `info`, `quiet`, `verbose`, `debug` (verbose alias), or `json`    |
 
 `--squeak` aliases `--verbose`. Quiet conflicts with verbose and JSON; verbose plus JSON is supported. JSON events go to stderr, with stdout retained for invitation/command output. Do not capture stdout into a shareable log: it can contain the invitation and child output. Additional diagnostics remain redacted, but are not permission to disclose terminal contents.
 
 Use `tailmouse leash --help` for the flag inventory. A boolean can be explicitly disabled with `--flag=false`. CLI `--derp-host=` or `--derp-map-url=` can clear a lower-precedence source. The Web URL must be HTTPS except for local loopback HTTP; no credentials, query or fragment are accepted in the base URL. A public DERP map must always use HTTPS.
-
-
 
 Leash is password-protected by default. Each launch generates a separate access code and writes it only to its controlling terminal (`/dev/tty` on macOS/Linux or the local console on Windows), never to stdout, stderr, JSON, the invitation URL, or the QR code. A protected launch without a usable controlling terminal exits with code 2 before creating an invitation, starting Tailcat, or starting the command. Noninteractive automation must provide a controlling terminal or explicitly pass the CLI-only `--no-password` exception. Link-only mode emits an unsuppressible warning before the invitation, including with `--quiet`; anyone with that full invitation receives the configured permissions, including shell-level access when the selected process is a shell, while `--readonly` remains view-only.
 

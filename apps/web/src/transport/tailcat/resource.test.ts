@@ -146,3 +146,27 @@ describe('resource worker boundary', () => {
     expect(() => transport()).toThrow('BROWSER_UNSUPPORTED');
   });
 });
+
+it('reports bounded runtime byte progress without completing the pending load', async () => {
+  const value = transport();
+  const progress = vi.fn();
+  const pending = value.listen('https://relay-map.example.invalid', progress);
+  const worker = TransportWorker.current;
+  const id = worker.messages[0]!.id;
+  worker.onmessage?.({
+    data: { id, progress: { received: 4, total: 8 } },
+  } as MessageEvent);
+  expect(progress).toHaveBeenCalledWith({ received: 4, total: 8 });
+  for (const invalid of [
+    { received: -1, total: 8 },
+    { received: 9, total: 8 },
+    { received: 1, total: 0 },
+    { received: 0.5, total: 8 },
+  ])
+    worker.onmessage?.({ data: { id, progress: invalid } } as MessageEvent);
+  expect(progress).toHaveBeenCalledTimes(1);
+  worker.reply();
+  await Promise.resolve();
+  worker.reply('synthetic-listener');
+  await expect(pending).resolves.toBe('synthetic-listener');
+});

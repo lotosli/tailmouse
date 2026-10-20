@@ -181,16 +181,6 @@ type shortDiagnosticWriter struct{}
 
 func (shortDiagnosticWriter) Write(value []byte) (int, error) { return len(value) - 1, nil }
 
-type failDiagnosticAt struct{ at, calls int }
-
-func (writer *failDiagnosticAt) Write(value []byte) (int, error) {
-	writer.calls++
-	if writer.calls == writer.at {
-		return 0, errors.New("tcSyntheticSinkSecret")
-	}
-	return len(value), nil
-}
-
 func decodeDiagnostics(t *testing.T, output string) []diagnosticRecord {
 	t.Helper()
 	var events []diagnosticRecord

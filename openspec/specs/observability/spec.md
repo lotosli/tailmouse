@@ -35,7 +35,7 @@ No diagnostic path MUST contain a complete URL, ConnBlob, invitation fragment, P
 
 ### Requirement: Bounded in-memory metrics
 
-Each active session SHALL maintain bounded counters and windows for bytes and frames sent/received, RTT p50/p95, jitter, active connection, reconnect count, protocol errors, output ring usage/drops, process generation, and escape input/snapshot rates. v0.1 MUST NOT expose a Prometheus or network metrics endpoint.
+Each active session SHALL maintain bounded counters and windows for bytes and frames sent/received, RTT p50/p95, jitter, active connection, reconnect count, protocol errors, output ring usage/drops, process generation, . v0.1 MUST NOT expose a Prometheus or network metrics endpoint.
 
 #### Scenario: RTT samples exceed the statistics window
 
