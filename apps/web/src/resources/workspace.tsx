@@ -13,6 +13,7 @@ import type { Recovery } from './invitation.ts';
 import { bindPreview, allowedPreviewPath } from './preview.ts';
 import { CHUNK, ResourceError, type ResourceWire } from './wire.ts';
 import { endConsequences, Feedback } from './help.tsx';
+import { FilesPanel, TextPanel } from './transfer-panels.tsx';
 import './workspace.css';
 import './landing.css';
 
@@ -158,7 +159,11 @@ export function ResourceApp({
               ? 'Terminal'
               : resource.id === 'web'
                 ? 'Preview'
-                : 'Files'}
+                : resource.id === 'text'
+                  ? 'Text'
+                  : resource.id === 'files'
+                    ? 'Downloads'
+                    : 'Upload'}
           </button>
         ))}
       </nav>
@@ -183,6 +188,12 @@ export function ResourceApp({
         >
           {filesOpen ? 'Collapse files' : 'Show files'}
         </button>
+      )}
+      {resources.some((r) => r.id === 'files') && (
+        <FilesPanel session={session} enabled={view.status === 'active'} />
+      )}
+      {resources.some((r) => r.id === 'text') && (
+        <TextPanel session={session} enabled={view.status === 'active'} />
       )}
       <div
         class="resource-grid"

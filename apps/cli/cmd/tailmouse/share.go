@@ -63,6 +63,15 @@ func runShare(ctx context.Context, stdin *os.File, args, environ []string, confi
 		_, _ = fmt.Fprintln(stderr, "Manual approval requires a local terminal; --json cannot use interactive local PTY input.")
 		return 2
 	}
+	if options.TextEnabled && options.Text == "" && !isTTY && stdin != nil {
+		data, readErr := io.ReadAll(io.LimitReader(stdin, share.MaxText+1))
+		if readErr != nil || !share.ValidText(string(data)) {
+			_, _ = fmt.Fprintln(stderr, "Text must be valid plain UTF-8, at most 16 KiB.")
+			return 2
+		}
+		options.Text = string(data)
+		clear(data)
+	}
 	sessionCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	host, token, err := share.NewHost(sessionCtx, options, environ)
@@ -213,6 +222,10 @@ waiting:
 		case event := <-host.Events():
 			if options.JSON {
 				if json.NewEncoder(output).Encode(event) != nil {
+					return 6
+				}
+			} else if event.Event == "text.received" {
+				if _, err := fmt.Fprintf(output, "\r\nReceived shared text:\r\n%s\r\n", host.TextValue()); err != nil {
 					return 6
 				}
 			} else if event.Event == "member.waiting" {

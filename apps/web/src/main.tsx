@@ -2,6 +2,7 @@ import { render } from 'preact';
 
 import { App } from './app.tsx';
 import { ResourceApp } from './resources/workspace.tsx';
+import { BrowserShare } from './resources/browser-share.tsx';
 import { ResourceLanding } from './resources/landing.tsx';
 import { consumeRecovery } from './resources/invitation.ts';
 import './style.css';
@@ -13,7 +14,11 @@ if (!(root instanceof HTMLElement)) {
 const container = root;
 let landing = false;
 function mountRoute(): void {
-  if (
+  if (location.pathname === '/' && location.hash === '#share') {
+    if (landing) render(null, container);
+    render(<BrowserShare />, container);
+    landing = false;
+  } else if (
     location.pathname === '/.tailmouse/workspace/' ||
     location.hash.startsWith('#tm=') ||
     /^s-[a-f0-9]{32}\./u.test(location.hostname)

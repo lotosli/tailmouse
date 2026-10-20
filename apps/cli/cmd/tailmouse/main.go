@@ -68,6 +68,34 @@ func runWithSignals(ctx context.Context, stdin *os.File, args, environ []string,
 	defer cancel()
 	stopStartup := startupSignals(ctx, cancel, interrupts)
 	defer stopStartup()
+	if len(args) == 0 {
+		console, interactive, err := openEscapeConsole(stdin, stdout)
+		if err != nil {
+			return exitInternal
+		}
+		if interactive {
+			selected, wizardErr := wizardArgs(ctx, console)
+			closeErr := console.Close()
+			if closeErr != nil {
+				return exitInternal
+			}
+			if errors.Is(wizardErr, io.EOF) {
+				return exitOK
+			}
+			if wizardErr != nil {
+				_, _ = fmt.Fprintln(stderr, "Could not complete startup. Run tailmouse --help for commands.")
+				return exitConfig
+			}
+			args = selected
+		} else if console != nil {
+			if err := console.Close(); err != nil {
+				return exitInternal
+			}
+		}
+	}
+	if len(args) > 0 && args[0] == "update" {
+		return runUpdate(ctx, args[1:], stdout, stderr)
+	}
 	if len(args) > 0 && share.IsCommand(args[0]) {
 		return runShare(ctx, stdin, args, environ, configDir, stdout, stderr, start, interrupts, stopStartup)
 	}

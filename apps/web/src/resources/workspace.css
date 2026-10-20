@@ -325,3 +325,27 @@
     display: none;
   }
 }
+
+.shared-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 24rem;
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid currentColor;
+}
+.browser-sharing {
+  max-width: 900px;
+  margin-inline: auto;
+}
+.browser-sharing label,
+[aria-label='Temporary text'] label {
+  display: block;
+  margin-block: 1rem;
+}
+.browser-sharing textarea,
+.browser-sharing input:not([type='file']),
+[aria-label='Temporary text'] textarea {
+  width: 100%;
+  box-sizing: border-box;
+}

@@ -62,6 +62,27 @@ export class ResourceTransport {
       throw new Error('Invalid transport identity.');
     return value;
   }
+  async listen(mapURL: string): Promise<string> {
+    await this.call('load', 0, null, 60_000);
+    const value = await this.call('listen', 0, { mapURL }, 35_000);
+    if (typeof value !== 'string' || value.length === 0 || value.length > 24000)
+      throw new Error('Listener unavailable.');
+    return value;
+  }
+  async accept(): Promise<{ stream: ByteStream; peer: string }> {
+    const value = (await this.call('accept', 0, null, 0x7fffffff)) as {
+      id?: unknown;
+      peer?: unknown;
+    } | null;
+    if (
+      value === null ||
+      typeof value.id !== 'number' ||
+      typeof value.peer !== 'string' ||
+      !/^nodekey:[a-f0-9]{64}$/u.test(value.peer)
+    )
+      throw new Error('Invalid transport peer.');
+    return { stream: this.stream(value.id), peer: value.peer };
+  }
   call(
     op: string,
     stream: number,
@@ -90,6 +111,9 @@ export class ResourceTransport {
     const id = await this.call('dial', 0, priority);
     if (typeof id !== 'number')
       throw new Error('Transport stream unavailable.');
+    return this.stream(id);
+  }
+  private stream(id: number): ByteStream {
     let closed = false;
     return {
       read: async () => {

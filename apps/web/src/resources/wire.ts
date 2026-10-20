@@ -31,6 +31,11 @@ export class ResourceWire {
     }
     return result;
   }
+  async acceptPreface(): Promise<void> {
+    const data = await this.#exact(9);
+    if (new TextDecoder().decode(data) !== 'TMOUSE/2\n')
+      throw new ResourceProtocolError('Invalid resource preface.');
+  }
   async read(): Promise<ResourceFrame> {
     const header = await this.#exact(5);
     const length = new DataView(header.buffer).getUint32(0);
@@ -102,6 +107,8 @@ const safeCodes = new Set([
   'WEB_SOCKET_FAILED',
   'WEB_UNSUPPORTED_SECURITY_POLICY',
   'WEB_UNSUPPORTED_ENCODING',
+  'FILE_UNAVAILABLE',
+  'TRANSFER_LIMIT',
   'UPLOAD_CLOSED',
   'UPLOAD_NAME_INVALID',
   'UPLOAD_LIMIT',

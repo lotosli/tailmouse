@@ -13,6 +13,7 @@ import (
 	"hash"
 	"io"
 	"net"
+	"net/url"
 	"sync"
 	"sync/atomic"
 	"syscall/js"
@@ -25,11 +26,13 @@ import (
 
 var state struct {
 	sync.Mutex
-	client  *upstream.Client
-	next    int
-	dialing int
-	streams map[int]*stream
-	hashes  map[int]hash.Hash
+	client   *upstream.Client
+	server   *upstream.Server
+	listener net.Listener
+	next     int
+	dialing  int
+	streams  map[int]*stream
+	hashes   map[int]hash.Hash
 }
 
 var writes *flow.Scheduler
@@ -57,6 +60,63 @@ func call(_ js.Value, args []js.Value) any {
 	op, id, value := args[0].String(), args[1].Int(), args[2]
 	return promise(func() (any, error) {
 		switch op {
+		case "listen":
+			source := value.Get("mapURL")
+			if source.Type() != js.TypeString {
+				return nil, errors.New("BRIDGE_INPUT")
+			}
+			u, err := url.Parse(source.String())
+			if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" {
+				return nil, errors.New("BRIDGE_INPUT")
+			}
+			state.Lock()
+			defer state.Unlock()
+			if state.server != nil || state.client != nil {
+				return nil, errors.New("BRIDGE_BUSY")
+			}
+			pk := upstream.NewPrivateKey()
+			ci := pk.Public
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			ci.RegionID = -1
+			if ci.Expand(ctx, upstream.ExpandForServer, upstream.DERPMapURL(source.String())) != nil {
+				return nil, errors.New("LISTEN_FAILED")
+			}
+			srv := &upstream.Server{Key: pk.Private, PresharedKey: pk.Public.PresharedKey, Region: ci.Region[0], Logf: func(string, ...any) {}}
+			listener, err := srv.Listen(ctx, "tcp", ":44321")
+			if err != nil {
+				srv.Close()
+				return nil, errors.New("LISTEN_FAILED")
+			}
+			state.server, state.listener = srv, listener
+			return string(srv.TailcatAddr()), nil
+		case "accept":
+			state.Lock()
+			listener, srv := state.listener, state.server
+			full := len(state.streams) >= 16
+			state.Unlock()
+			if listener == nil || full {
+				return nil, errors.New("BRIDGE_BUSY")
+			}
+			conn, err := listener.Accept()
+			if err != nil {
+				return nil, errors.New("ACCEPT_FAILED")
+			}
+			peer, ok := srv.PeerKey(conn.RemoteAddr())
+			if !ok {
+				conn.Close()
+				return nil, errors.New("PEER_UNKNOWN")
+			}
+			state.Lock()
+			defer state.Unlock()
+			if len(state.streams) >= 16 {
+				conn.Close()
+				return nil, errors.New("BRIDGE_BUSY")
+			}
+			state.next++
+			sid := state.next
+			state.streams[sid] = &stream{Conn: conn, priority: 3}
+			return map[string]any{"id": sid, "peer": peer.String()}, nil
 		case "open":
 			address := value.Get("address")
 			secret := value.Get("key")

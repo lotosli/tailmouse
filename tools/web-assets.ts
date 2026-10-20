@@ -76,6 +76,8 @@ export function webObjectMetadata(fileName: string): WebObjectMetadata {
             : rawName.endsWith('.json') || rawName.endsWith('.map')
               ? 'application/json'
               : rawName.endsWith('.txt') ||
+                  rawName.endsWith('.sh') ||
+                  rawName.endsWith('.ps1') ||
                   ['LICENSE', 'NOTICE'].includes(rawName)
                 ? 'text/plain; charset=utf-8'
                 : rawName.endsWith('.svg')

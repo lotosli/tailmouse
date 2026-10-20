@@ -26,6 +26,8 @@ var ErrConfig = errors.New("invalid resource-sharing configuration; see tailmous
 
 type Options struct {
 	Command                                          string
+	Offer, Text                                      string
+	TextEnabled                                      bool
 	Argv                                             []string
 	Cwd, Title, Target, Directory, Approval          string
 	FrontendBase, ContentBase, DERPMap, CAFile       string
@@ -37,7 +39,7 @@ type Options struct {
 }
 
 func IsCommand(value string) bool {
-	return value == "cli" || value == "web" || value == "receive" || value == "dev"
+	return value == "cli" || value == "web" || value == "receive" || value == "dev" || value == "send" || value == "files" || value == "text"
 }
 
 // Parse has no process, transport or directory-creation side effects.
@@ -214,6 +216,22 @@ func Parse(args, environ []string, configDir string) (Options, bool, error) {
 			return o, false, ErrConfig
 		}
 		o.Target = rest[0]
+	case "send", "files":
+		if len(rest) != 1 || len(argv) != 0 || program != "" || o.Target != "" || o.Directory != "" {
+			return o, false, ErrConfig
+		}
+		o.Offer = rest[0]
+	case "text":
+		if len(rest) > 1 || len(argv) != 0 || program != "" || o.Target != "" || o.Directory != "" {
+			return o, false, ErrConfig
+		}
+		o.TextEnabled = true
+		if len(rest) == 1 {
+			o.Text = rest[0]
+		}
+		if !ValidText(o.Text) {
+			return o, false, ErrConfig
+		}
 	case "receive":
 		if len(rest) != 1 || len(argv) != 0 || program != "" || o.Target != "" || o.Directory != "" {
 			return o, false, ErrConfig
@@ -241,7 +259,7 @@ func Parse(args, environ []string, configDir string) (Options, bool, error) {
 		return o, false, ErrConfig
 	}
 	count := 0
-	for _, set := range []bool{len(o.Argv) > 0, o.Target != "", o.Directory != ""} {
+	for _, set := range []bool{len(o.Argv) > 0, o.Target != "", o.Directory != "", o.Offer != "", o.TextEnabled} {
 		if set {
 			count++
 		}
@@ -262,6 +280,9 @@ func Parse(args, environ []string, configDir string) (Options, bool, error) {
 	}
 	if o.Directory != "" && !filepath.IsAbs(o.Directory) {
 		o.Directory = filepath.Join(o.Cwd, o.Directory)
+	}
+	if o.Offer != "" && !filepath.IsAbs(o.Offer) {
+		o.Offer = filepath.Join(o.Cwd, o.Offer)
 	}
 	if o.Target != "" {
 		if _, err := ParseTarget(o.Target); err != nil {
@@ -346,9 +367,13 @@ func validateOrigins(front, content string, testSingleOrigin bool) error {
 
 const Help = `TailMouse — Share a terminal. Share a web app. Receive files.
 One command. One link. Just a browser.
+Run tailmouse without arguments for guided startup; tailmouse update upgrades the executable.
 
   tailmouse cli [options] -- <program> [args...]
   tailmouse web [options] <port|host:port|http(s)://origin/path>
+  tailmouse send [options] <file>          offer one file for download
+  tailmouse files [options] <directory>   share a read-only directory
+  tailmouse text [options] [text]         exchange temporary text (or pipe stdin)
   tailmouse receive [options] <existing-directory>
   tailmouse dev --web 5173 --receive ./uploads -- codex
   tailmouse dev --cli codex --web localhost:5173

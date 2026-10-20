@@ -119,6 +119,8 @@ export default {
       headers.set('Content-Type', 'text/html; charset=utf-8');
     if (
       rawPath.endsWith('.txt') ||
+      rawPath.endsWith('.sh') ||
+      rawPath.endsWith('.ps1') ||
       rawPath === '/LICENSE' ||
       rawPath === '/NOTICE'
     )

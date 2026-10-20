@@ -9,7 +9,7 @@ import {
 import { validateContentOrigin, validateTestEntry } from './deployment.ts';
 import { saveRecovery, eraseRecovery, type Recovery } from './invitation.ts';
 export interface SharedResource {
-  id: 'cli' | 'web' | 'receive';
+  id: 'cli' | 'web' | 'receive' | 'files' | 'text';
   state: string;
   readOnly?: boolean;
   initialPath?: string;
@@ -289,12 +289,12 @@ export class ResourceSession {
       typeof m.title !== 'string' ||
       !Array.isArray(m.resources) ||
       m.resources.length < 1 ||
-      m.resources.length > 3 ||
+      m.resources.length > 5 ||
       m.resources.some(
         (r) =>
           r === null ||
           typeof r !== 'object' ||
-          !['cli', 'web', 'receive'].includes(r.id),
+          !['cli', 'web', 'receive', 'files', 'text'].includes(r.id),
       ) ||
       new Set(m.resources.map((r) => r.id)).size !== m.resources.length
     )
@@ -445,7 +445,7 @@ export class ResourceSession {
     }
   }
   async open(
-    channel: 'terminal' | 'http' | 'websocket' | 'upload',
+    channel: 'terminal' | 'http' | 'websocket' | 'upload' | 'download' | 'text',
     resource: SharedResource['id'],
   ): Promise<ResourceWire> {
     if (
@@ -468,7 +468,11 @@ export class ResourceSession {
     };
     const wire = new ResourceWire(
       await transport.dial(
-        channel === 'terminal' ? 1 : channel === 'upload' ? 3 : 2,
+        channel === 'terminal'
+          ? 1
+          : channel === 'upload' || channel === 'download'
+            ? 3
+            : 2,
       ),
     );
     try {
@@ -492,6 +496,15 @@ export class ResourceSession {
       await wire.close();
       throw error;
     }
+  }
+  async hash(
+    op: 'start' | 'update' | 'finish' | 'cancel',
+    id = 0,
+    data: Uint8Array | null = null,
+  ): Promise<unknown> {
+    if (this.#transport === undefined)
+      throw new Error('Connection unavailable.');
+    return this.#transport.call('hash.' + op, id, data);
   }
   async release(wire: ResourceWire): Promise<void> {
     this.#streams.delete(wire);

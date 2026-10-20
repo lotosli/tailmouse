@@ -90,6 +90,8 @@ type Host struct {
 	terminal         *Terminal
 	web              *WebResource
 	receiver         *Receiver
+	offer            *FileOffer
+	text             string
 	workers          sync.WaitGroup
 	closeOnce        sync.Once
 	closeErr         error
@@ -146,6 +148,18 @@ func NewHost(ctx context.Context, o Options, environ []string) (*Host, string, e
 		if e != nil {
 			return fail(e)
 		}
+	}
+	if o.Offer != "" {
+		h.offer, e = NewFileOffer(o.Offer, o.Command == "send", o.MaxFile, o.MaxTotal, o.MaxFiles)
+		if e != nil {
+			return fail(e)
+		}
+	}
+	if o.TextEnabled {
+		if !ValidText(o.Text) {
+			return fail(ErrConfig)
+		}
+		h.text = o.Text
 	}
 	if len(o.Argv) > 0 {
 		h.terminal, e = NewTerminal(c, o, environ, h)
@@ -252,6 +266,12 @@ func (h *Host) manifestLocked() Manifest {
 	if h.receiver != nil {
 		m.Resources = append(m.Resources, Resource{ID: "receive", State: "READY", MaxFile: h.options.MaxFile, MaxTotal: h.options.MaxTotal, MaxFiles: h.options.MaxFiles})
 	}
+	if h.offer != nil {
+		m.Resources = append(m.Resources, Resource{ID: "files", State: "READY", ReadOnly: true, MaxFile: h.options.MaxFile, MaxTotal: h.options.MaxTotal, MaxFiles: h.options.MaxFiles})
+	}
+	if h.options.TextEnabled {
+		m.Resources = append(m.Resources, Resource{ID: "text", State: "READY", MaxFile: MaxText})
+	}
 	return m
 }
 func (h *Host) removeMemberLocked(id string) {
@@ -357,6 +377,14 @@ func (h *Host) admit(hello Hello, peer string, stream Stream) (*Member, string, 
 		if hello.Resource != "web" || h.web == nil {
 			return nil, "", ErrAuth
 		}
+	case "download":
+		if hello.Resource != "files" || h.offer == nil {
+			return nil, "", ErrAuth
+		}
+	case "text":
+		if hello.Resource != "text" || !h.options.TextEnabled {
+			return nil, "", ErrAuth
+		}
 	case "upload":
 		if hello.Resource != "receive" || h.receiver == nil {
 			return nil, "", ErrAuth
@@ -423,7 +451,7 @@ func (h *Host) Serve(raw Stream, peer string) {
 		stream.priority = 1
 	case "http", "websocket":
 		stream.priority = 2
-	case "upload":
+	case "upload", "download":
 		stream.priority = 3
 	}
 	h.mu.Lock()
@@ -441,6 +469,10 @@ func (h *Host) Serve(raw Stream, peer string) {
 		h.serveHTTP(ctx, stream, m.id)
 	case "websocket":
 		h.serveWebSocket(ctx, stream, m.id)
+	case "download":
+		h.offer.Serve(ctx, stream)
+	case "text":
+		h.serveText(stream)
 	case "upload":
 		h.serveUpload(ctx, stream, m.id)
 	}
@@ -654,6 +686,7 @@ func (h *Host) Close() error {
 		for c := range h.connections {
 			_ = c.Close()
 		}
+		h.text = ""
 		h.mu.Unlock()
 		h.workers.Wait()
 		h.scheduler.Close()
@@ -662,6 +695,9 @@ func (h *Host) Close() error {
 		}
 		if h.web != nil {
 			h.web.Close()
+		}
+		if h.offer != nil {
+			h.closeErr = errors.Join(h.closeErr, h.offer.Close())
 		}
 		if h.receiver != nil {
 			h.closeErr = errors.Join(h.closeErr, h.receiver.Close())

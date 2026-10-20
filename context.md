@@ -1,5 +1,9 @@
 # TailMouse project memory
 
+## Complete simple sharing — 2026-10-20
+
+- **Owner-directed/in progress:** Implement all six reviewed suggestions: native send/files/text, browser-host transfer, no-argument startup and install/update distribution; commit and deploy. Accepted change `complete-simple-sharing` and decision `2026-008` record scope and boundaries. Baseline main is `0b83f54`; alpha.2 remains the published release until new acceptance completes. Keep the Tailcat pin, Escape, four network profiles and owner-authorized direct `[skip ci]` publication.
+
 ## Configuration-free hosted sharing — 2026-10-20
 
 - **Owner-directed:** Remove the local configuration-file prerequisite, use sensible hosted defaults and lower the entry barrier. The accepted `default-hosted-resource-config` change and decision `2026-007` preserve custom-deployment validation and existing safety/resource limits. Ship the change in a new immutable `v0.1.0-alpha.2` release and retain the owner's Latest and `[skip ci]` preferences.

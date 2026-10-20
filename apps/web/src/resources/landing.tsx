@@ -149,17 +149,17 @@ export function ResourceLanding() {
         <p class="eyebrow">Start on the sharing machine</p>
         <h2 id="get-title">Download, extract, and share.</h2>
         <div class="availability-note">
-          <strong>TailMouse v0.1.0-alpha.2 is available.</strong>
+          <strong>TailMouse v0.1.0-alpha.3 is available.</strong>
           <p>
             Download the sharing app for Linux, macOS or Windows on x64 or
             ARM64. Guests do not install anything.
           </p>
           <a
-            href="https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.2"
+            href="https://github.com/lotosli/tailmouse/releases/tag/v0.1.0-alpha.3"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Download v0.1.0-alpha.2 ↗
+            Download v0.1.0-alpha.3 ↗
           </a>{' '}
           <a
             href="https://github.com/lotosli/tailmouse#build-from-source"
@@ -175,7 +175,7 @@ export function ResourceLanding() {
           </p>
         </div>
         <p>
-          Use v0.1.0-alpha.2 or newer for built-in tailmouse.com defaults. No
+          Use v0.1.0-alpha.3 or newer for built-in tailmouse.com defaults. No
           configuration file or account is needed. Extract the archive and add
           TailMouse to your PATH, or run ./tailmouse on Linux/macOS and
           .\tailmouse.exe on Windows from the extracted folder.
@@ -373,6 +373,21 @@ export function ResourceLanding() {
           open its invitation in a browser.
         </p>
         <CopyCommand command="tailmouse escape" label="Copy Escape command" />
+      </section>
+      <section class="landing-section" id="browser-sharing">
+        <h2>Just moving a file or some text?</h2>
+        <p>
+          Open TailMouse on both devices. Share selected files and temporary
+          text without installing anything.
+        </p>
+        <a class="button primary" href="/#share">
+          Share from your browser ↗
+        </a>
+        <p>
+          Hosts can also use <code>tailmouse send report.zip</code>,{' '}
+          <code>tailmouse files ./dist</code> or{' '}
+          <code>tailmouse text "hello"</code>.
+        </p>
       </section>
       <footer class="landing-footer">
         <Feedback phase="onboarding" />
